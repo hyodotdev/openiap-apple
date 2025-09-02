@@ -1,0 +1,27 @@
+{
+  "object" : {
+    "artifacts" : [
+
+    ],
+    "dependencies" : [
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "ios-iap",
+          "kind" : "fileSystem",
+          "location" : "/Users/hyo/Github/hyochan/ios-iap",
+          "name" : "IosIAP"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/hyo/Github/hyochan/ios-iap"
+        },
+        "subpath" : "ios-iap"
+      }
+    ],
+    "prebuilts" : [
+
+    ]
+  },
+  "version" : 7
+}
