@@ -2,7 +2,7 @@ import Foundation
 import StoreKit
 
 @available(iOS 16.0, macOS 13.0, *)
-public struct IapAppTransaction: Codable {
+public struct OpenIapAppTransaction: Codable {
     public let bundleId: String
     public let appVersion: String
     public let originalAppVersion: String
@@ -21,7 +21,7 @@ public struct IapAppTransaction: Codable {
 }
 
 @available(iOS 16.0, macOS 13.0, *)
-extension IapAppTransaction {
+extension OpenIapAppTransaction {
     init(from appTransaction: AppTransaction) {
         self.bundleId = appTransaction.bundleID
         self.appVersion = appTransaction.appVersion
@@ -50,12 +50,12 @@ extension IapAppTransaction {
     }
 }
 
-public struct IapSubscriptionStatus: Codable {
+public struct OpenIapSubscriptionStatus: Codable {
     public let state: String
-    public let renewalInfo: IapRenewalInfo?
+    public let renewalInfo: OpenIapRenewalInfo?
 }
 
-public struct IapRenewalInfo: Codable {
+public struct OpenIapRenewalInfo: Codable {
     public let autoRenewStatus: Bool
     public let autoRenewPreference: String?
     public let expirationReason: Int?
@@ -64,16 +64,16 @@ public struct IapRenewalInfo: Codable {
     public let gracePeriodExpirationDate: Date?
 }
 
-public struct IapValidationResult: Codable {
+public struct OpenIapValidationResult: Codable {
     public let isValid: Bool
     public let receiptData: String
     public let jwsRepresentation: String
-    public let latestTransaction: IapPurchase?
+    public let latestTransaction: OpenIapPurchase?
 }
 
 // MARK: - Product and Transaction serialization models
 
-public struct IapProductData: Codable {
+public struct OpenIapProductData: Codable {
     public let id: String
     public let title: String
     public let description: String
@@ -95,67 +95,26 @@ public struct IapProductData: Codable {
     }
 }
 
-public struct IapTransactionData: Codable {
-    public let id: String
-    public let productId: String
-    public let transactionId: String
-    public let transactionDate: Double
-    public let transactionReceipt: String
-    public let platform: String
-    public let quantityIOS: Int
-    public let originalTransactionDateIOS: Double
-    public let originalTransactionIdentifierIOS: String
-    public let appAccountToken: String?
-    public let productTypeIOS: String
-    public let isUpgradedIOS: Bool
-    public let ownershipTypeIOS: String
-    public let revocationDateIOS: Double?
-    public let revocationReasonIOS: Int?
-    public let expirationDateIOS: Double?
-    public let jwsRepresentationIOS: String?
-    public let purchaseToken: String?
-    public let environmentIOS: String?
-    
-    public init(id: String, productId: String, transactionId: String, transactionDate: Double, transactionReceipt: String, platform: String = "ios", quantityIOS: Int, originalTransactionDateIOS: Double, originalTransactionIdentifierIOS: String, appAccountToken: String?, productTypeIOS: String, isUpgradedIOS: Bool, ownershipTypeIOS: String, revocationDateIOS: Double?, revocationReasonIOS: Int?, expirationDateIOS: Double?, jwsRepresentationIOS: String?, purchaseToken: String?, environmentIOS: String?) {
-        self.id = id
-        self.productId = productId
-        self.transactionId = transactionId
-        self.transactionDate = transactionDate
-        self.transactionReceipt = transactionReceipt
-        self.platform = platform
-        self.quantityIOS = quantityIOS
-        self.originalTransactionDateIOS = originalTransactionDateIOS
-        self.originalTransactionIdentifierIOS = originalTransactionIdentifierIOS
-        self.appAccountToken = appAccountToken
-        self.productTypeIOS = productTypeIOS
-        self.isUpgradedIOS = isUpgradedIOS
-        self.ownershipTypeIOS = ownershipTypeIOS
-        self.revocationDateIOS = revocationDateIOS
-        self.revocationReasonIOS = revocationReasonIOS
-        self.expirationDateIOS = expirationDateIOS
-        self.jwsRepresentationIOS = jwsRepresentationIOS
-        self.purchaseToken = purchaseToken
-        self.environmentIOS = environmentIOS
-    }
-}
+// IapTransactionData is deprecated - use OpenIapPurchase instead
+// This type has been merged into OpenIapPurchase for better API consistency
 
-public struct IapPromotedProduct: Codable {
+public struct OpenIapPromotedProduct: Codable {
     public let productIdentifier: String
     public let localizedTitle: String
     public let localizedDescription: String
     public let price: Double
-    public let priceLocale: IapPriceLocale
+    public let priceLocale: OpenIapPriceLocale
 }
 
-public struct IapPriceLocale: Codable {
+public struct OpenIapPriceLocale: Codable {
     public let currencyCode: String
     public let currencySymbol: String
     public let countryCode: String
 }
 
-public struct IapReceiptValidation: Codable {
+public struct OpenIapReceiptValidation: Codable {
     public let isValid: Bool
     public let receiptData: String
     public let jwsRepresentation: String
-    public let latestTransaction: IapTransactionData?
+    public let latestTransaction: OpenIapPurchase?
 }

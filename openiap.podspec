@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
-  s.name             = 'openiap'
-  s.version          = '1.0.0'
+  s.name             = 'OpenIAP'
+  s.version          = '1.1.0'
   s.summary          = 'OpenIAP - Modern Swift library for in-app purchases'
   s.description      = <<-DESC
     OpenIAP is a modern Swift library for handling in-app purchases using StoreKit 2.
@@ -20,4 +20,5 @@ Pod::Spec.new do |s|
   
   s.frameworks = 'StoreKit'
   s.requires_arc = true
+  s.module_name = 'OpenIAP'
 end

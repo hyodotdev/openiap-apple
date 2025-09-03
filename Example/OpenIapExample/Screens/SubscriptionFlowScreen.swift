@@ -122,7 +122,7 @@ struct SubscriptionFlowScreen: View {
 }
 
 struct SubscriptionCard: View {
-    let product: IapProductData
+    let product: OpenIapProductData
     let isSubscribed: Bool
     let isLoading: Bool
     let onSubscribe: () -> Void

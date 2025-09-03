@@ -1,7 +1,7 @@
 import Foundation
 import StoreKit
 
-public struct IapProduct: Codable, Equatable {
+public struct OpenIapProduct: Codable, Equatable {
     public let productId: String
     public let productType: ProductType
     public let localizedTitle: String
@@ -68,7 +68,7 @@ public struct IapProduct: Codable, Equatable {
 }
 
 @available(iOS 15.0, macOS 12.0, *)
-extension IapProduct {
+extension OpenIapProduct {
     init(from product: Product) async {
         self.productId = product.id
         self.localizedTitle = product.displayName
@@ -135,7 +135,7 @@ extension IapProduct {
 
 @available(iOS 15.0, macOS 12.0, *)
 extension Product.SubscriptionPeriod.Unit {
-    func toPeriodUnit() -> IapProduct.SubscriptionPeriod.PeriodUnit {
+    func toPeriodUnit() -> OpenIapProduct.SubscriptionPeriod.PeriodUnit {
         switch self {
         case .day:
             return .day
@@ -153,7 +153,7 @@ extension Product.SubscriptionPeriod.Unit {
 
 @available(iOS 15.0, macOS 12.0, *)
 extension Product.SubscriptionOffer.PaymentMode {
-    func toPaymentMode() -> IapProduct.IntroductoryOffer.PaymentMode {
+    func toPaymentMode() -> OpenIapProduct.IntroductoryOffer.PaymentMode {
         switch self {
         case .payAsYouGo:
             return .payAsYouGo

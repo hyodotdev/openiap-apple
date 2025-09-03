@@ -1,6 +1,6 @@
 import Foundation
 
-public enum IapError: LocalizedError {
+public enum OpenIapError: LocalizedError {
     case productNotFound(productId: String)
     case purchaseFailed(reason: String)
     case purchaseCancelled

@@ -4,7 +4,7 @@ import XCTest
 final class OpenIapTests: XCTestCase {
     
     func testProductModel() {
-        let product = IapProduct(
+        let product = OpenIapProduct(
             productId: "dev.hyo.premium",
             productType: .autoRenewableSubscription,
             localizedTitle: "Premium Subscription",
@@ -13,11 +13,11 @@ final class OpenIapTests: XCTestCase {
             localizedPrice: "$9.99",
             currencyCode: "USD",
             countryCode: "US",
-            subscriptionPeriod: IapProduct.SubscriptionPeriod(unit: .month, value: 1),
-            introductoryPrice: IapProduct.IntroductoryOffer(
+            subscriptionPeriod: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
+            introductoryPrice: OpenIapProduct.IntroductoryOffer(
                 price: 0,
                 localizedPrice: "Free",
-                period: IapProduct.SubscriptionPeriod(unit: .week, value: 1),
+                period: OpenIapProduct.SubscriptionPeriod(unit: .week, value: 1),
                 numberOfPeriods: 1,
                 paymentMode: .freeTrial
             ),
@@ -33,7 +33,7 @@ final class OpenIapTests: XCTestCase {
     }
     
     func testPurchaseModel() {
-        let purchase = IapPurchase(
+        let purchase = OpenIapPurchase(
             productId: "dev.hyo.premium",
             purchaseToken: "token123",
             transactionId: "trans123",
@@ -58,34 +58,34 @@ final class OpenIapTests: XCTestCase {
         XCTAssertEqual(purchase.quantity, 1)
     }
     
-    func testIapError() {
-        let error1 = IapError.productNotFound(productId: "test.product")
+    func testOpenIapError() {
+        let error1 = OpenIapError.productNotFound(productId: "test.product")
         XCTAssertNotNil(error1.errorDescription)
         XCTAssertTrue(error1.errorDescription?.contains("test.product") ?? false)
         
-        let error2 = IapError.purchaseCancelled
+        let error2 = OpenIapError.purchaseCancelled
         XCTAssertNotNil(error2.errorDescription)
         XCTAssertTrue(error2.errorDescription?.contains("cancelled") ?? false)
         
-        let error3 = IapError.verificationFailed(reason: "Invalid signature")
+        let error3 = OpenIapError.verificationFailed(reason: "Invalid signature")
         XCTAssertNotNil(error3.errorDescription)
         XCTAssertTrue(error3.errorDescription?.contains("Invalid signature") ?? false)
     }
     
     func testSubscriptionPeriod() {
-        let period1 = IapProduct.SubscriptionPeriod(unit: .month, value: 1)
-        let period2 = IapProduct.SubscriptionPeriod(unit: .month, value: 1)
-        let period3 = IapProduct.SubscriptionPeriod(unit: .year, value: 1)
+        let period1 = OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1)
+        let period2 = OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1)
+        let period3 = OpenIapProduct.SubscriptionPeriod(unit: .year, value: 1)
         
         XCTAssertEqual(period1, period2)
         XCTAssertNotEqual(period1, period3)
     }
     
     func testIntroductoryOffer() {
-        let offer = IapProduct.IntroductoryOffer(
+        let offer = OpenIapProduct.IntroductoryOffer(
             price: 4.99,
             localizedPrice: "$4.99",
-            period: IapProduct.SubscriptionPeriod(unit: .month, value: 1),
+            period: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
             numberOfPeriods: 3,
             paymentMode: .payAsYouGo
         )
@@ -97,7 +97,7 @@ final class OpenIapTests: XCTestCase {
     
     func testReceipt() {
         let purchases = [
-            IapPurchase(
+            OpenIapPurchase(
                 productId: "product1",
                 purchaseToken: "token1",
                 transactionId: "trans1",
@@ -116,7 +116,7 @@ final class OpenIapTests: XCTestCase {
             )
         ]
         
-        let receipt = IapReceipt(
+        let receipt = OpenIapReceipt(
             bundleId: "dev.hyo.app",
             applicationVersion: "1.0.0",
             originalApplicationVersion: "1.0.0",

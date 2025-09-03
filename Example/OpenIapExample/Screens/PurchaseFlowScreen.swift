@@ -62,7 +62,7 @@ struct PurchaseFlowScreen: View {
 }
 
 struct ProductCard: View {
-    let product: IapProductData
+    let product: OpenIapProductData
     let isLoading: Bool
     let onPurchase: () -> Void
     
@@ -412,7 +412,7 @@ struct HeaderCardView: View {
 struct ProductsContentView: View {
     @ObservedObject var store: StoreViewModel
     
-    var consumableProducts: [IapProductData] {
+    var consumableProducts: [OpenIapProductData] {
         store.products.filter { product in
             // Filter out premium subscription products
             !product.id.contains("premium") && product.type == "inapp"

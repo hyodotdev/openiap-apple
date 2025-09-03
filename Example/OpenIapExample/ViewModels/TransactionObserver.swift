@@ -4,11 +4,11 @@ import OpenIAP
 @MainActor
 @available(iOS 15.0, *)
 class TransactionObserver: ObservableObject {
-    @Published var latestPurchase: IapPurchase?
+    @Published var latestPurchase: OpenIapPurchase?
     @Published var errorMessage: String?
     @Published var isPending = false
     
-    private let iapModule = IapModule.shared
+    private let iapModule = OpenIapModule.shared
     
     init() {
         setupListeners()
@@ -36,14 +36,14 @@ class TransactionObserver: ObservableObject {
         }
     }
     
-    private func handlePurchaseUpdated(_ purchase: IapPurchase) {
+    private func handlePurchaseUpdated(_ purchase: OpenIapPurchase) {
         print("✅ Purchase successful: \(purchase.productId)")
         latestPurchase = purchase
         isPending = false
         errorMessage = nil
     }
     
-    private func handlePurchaseError(_ error: IapError) {
+    private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ Purchase failed: \(error)")
         errorMessage = error.localizedDescription
         isPending = false

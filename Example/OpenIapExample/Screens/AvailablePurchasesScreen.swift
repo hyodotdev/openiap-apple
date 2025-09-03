@@ -52,7 +52,7 @@ struct AvailablePurchasesScreen: View {
         }
     }
     
-    private var uniqueActivePurchases: [IapPurchase] {
+    private var uniqueActivePurchases: [OpenIapPurchase] {
         let allActivePurchases = store.purchases.filter { purchase in
             // Show unconsumed consumables and active subscriptions
             purchase.purchaseState == .purchased && (
@@ -65,7 +65,7 @@ struct AvailablePurchasesScreen: View {
         }
         
         // Group by productId and take only the latest purchase for each subscription
-        var uniquePurchases: [IapPurchase] = []
+        var uniquePurchases: [OpenIapPurchase] = []
         var seenSubscriptions: Set<String> = []
         
         for purchase in allActivePurchases.sorted(by: { $0.purchaseTime > $1.purchaseTime }) {
@@ -140,7 +140,7 @@ struct AvailablePurchasesScreen: View {
 
 // MARK: - Active Purchase Card (For Available Purchases)
 struct ActivePurchaseCard: View {
-    let purchase: IapPurchase
+    let purchase: OpenIapPurchase
     let onConsume: () -> Void
     
     private var isSubscription: Bool {
@@ -209,7 +209,7 @@ struct ActivePurchaseCard: View {
 
 // MARK: - Purchase History Card
 struct PurchaseHistoryCard: View {
-    let purchase: IapPurchase
+    let purchase: OpenIapPurchase
     
     private var statusColor: Color {
         switch purchase.purchaseState {
@@ -285,7 +285,7 @@ struct PurchaseHistoryCard: View {
 
 // MARK: - Original Purchase Card (Deprecated)
 struct PurchaseCard: View {
-    let purchase: IapPurchase
+    let purchase: OpenIapPurchase
     let onConsume: () -> Void
     
     private var isSubscription: Bool {

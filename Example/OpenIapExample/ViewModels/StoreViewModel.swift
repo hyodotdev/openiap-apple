@@ -4,17 +4,17 @@ import OpenIAP
 @MainActor
 @available(iOS 15.0, *)
 class StoreViewModel: ObservableObject {
-    @Published var products: [IapProductData] = []
-    @Published var purchases: [IapPurchase] = []
+    @Published var products: [OpenIapProductData] = []
+    @Published var purchases: [OpenIapPurchase] = []
     @Published var isLoading = false
     @Published var showError = false
     @Published var errorMessage = ""
     @Published var purchasingProductIds: Set<String> = []
     @Published var showPurchaseSuccess = false
-    @Published var lastPurchasedProduct: IapProductData?
+    @Published var lastPurchasedProduct: OpenIapProductData?
     @Published var isConnectionInitialized = false
     
-    private let iapModule = IapModule.shared
+    private let iapModule = OpenIapModule.shared
     
     init() {
         setupStoreKit()
@@ -109,7 +109,7 @@ class StoreViewModel: ObservableObject {
         isLoading = false
     }
     
-    func purchaseProduct(_ product: IapProductData) {
+    func purchaseProduct(_ product: OpenIapProductData) {
         // Start loading state for this specific product
         purchasingProductIds.insert(product.id)
         
@@ -133,7 +133,7 @@ class StoreViewModel: ObservableObject {
                 } else {
                     print("❌ Purchase failed")
                     await MainActor.run {
-                        handlePurchaseError(IapError.purchaseFailed(reason: "Unknown error"), productId: product.id)
+                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "Unknown error"), productId: product.id)
                     }
                 }
             } catch {
@@ -145,7 +145,7 @@ class StoreViewModel: ObservableObject {
         }
     }
     
-    func finishPurchase(_ purchase: IapPurchase) async {
+    func finishPurchase(_ purchase: OpenIapPurchase) async {
         do {
             // In iOS, there's no distinction between consumable and non-consumable for finishing transactions
             // The product type is determined by App Store Connect configuration
