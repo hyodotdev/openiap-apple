@@ -70,7 +70,7 @@ if #available(iOS 15.0, *) {
 ### Fetch Products
 
 ```swift
-let productIds = ["com.example.premium", "com.example.coins"]
+let productIds = ["dev.hyo.premium", "dev.hyo.coins"]
 let products = try await IapModule.shared.fetchProducts(skus: productIds)
 
 for product in products {
@@ -83,7 +83,7 @@ for product in products {
 ```swift
 do {
     let transaction = try await IapModule.shared.requestPurchase(
-        sku: "com.example.premium",
+        sku: "dev.hyo.premium",
         andDangerouslyFinishTransactionAutomatically: true
     )
     print("Purchase successful: \(transaction?.transactionIdentifier ?? "")")

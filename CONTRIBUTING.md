@@ -35,7 +35,7 @@ swift test
 
 ### Naming Conventions
 
-- **Acronyms**: Use Pascal case when at beginning/middle (`IapModule`, `IosIapTests`)
+- **Acronyms**: Use Pascal case when at beginning/middle (`IapModule`, `OpenIapTests`)
 - **Acronyms as suffix**: Use all caps (`ProductIAP`, `ManagerIOS`)
 - See [CLAUDE.md](CLAUDE.md) for detailed naming rules
 

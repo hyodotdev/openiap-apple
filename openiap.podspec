@@ -1,11 +1,10 @@
 Pod::Spec.new do |s|
   s.name             = 'openiap'
   s.version          = '1.0.0'
-  s.summary          = 'Cross-platform In-App Purchase library using StoreKit 2'
+  s.summary          = 'OpenIAP - Modern Swift library for in-app purchases'
   s.description      = <<-DESC
     OpenIAP is a modern Swift library for handling in-app purchases using StoreKit 2.
-    It provides a clean, async/await based API for managing products, purchases, and subscriptions
-    across iOS, macOS, tvOS, and watchOS platforms.
+    Supports iOS, macOS, tvOS, and watchOS with a simple and intuitive API.
   DESC
 
   s.homepage         = 'https://github.com/hyodotdev/openiap-apple'
@@ -23,5 +22,4 @@ Pod::Spec.new do |s|
   
   s.frameworks = 'StoreKit'
   s.requires_arc = true
-  s.module_name = 'OpenIAP'
 end

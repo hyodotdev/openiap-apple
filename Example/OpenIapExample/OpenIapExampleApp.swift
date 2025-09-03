@@ -1,9 +1,9 @@
 import SwiftUI
-import IosIAP
+import OpenIAP
 
 @main
 @available(iOS 15.0, *)
-struct IosIapExampleApp: App {
+struct OpenIapExampleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
