@@ -1,16 +1,11 @@
 Pod::Spec.new do |s|
-  s.name             = 'IosIAP'
+  s.name             = 'open-iap'
   s.version          = '1.0.0'
-  s.summary          = '[DEPRECATED] Use open-iap instead'
-  s.deprecated       = true
-  s.deprecated_in_favor_of = 'open-iap'
+  s.summary          = 'Cross-platform In-App Purchase library using StoreKit 2'
   s.description      = <<-DESC
-    [DEPRECATED] This pod has been renamed to 'open-iap'.
-    Please update your Podfile to use 'open-iap' instead of 'IosIAP'.
-    
-    pod 'open-iap', '~> 1.0.0'
-    
-    IosIAP is now OpenIAP - a modern Swift library for handling in-app purchases using StoreKit 2.
+    OpenIAP is a modern Swift library for handling in-app purchases using StoreKit 2.
+    It provides a clean, async/await based API for managing products, purchases, and subscriptions
+    across iOS, macOS, tvOS, and watchOS platforms.
   DESC
 
   s.homepage         = 'https://github.com/hyodotdev/openiap-ios'
@@ -28,4 +23,5 @@ Pod::Spec.new do |s|
   
   s.frameworks = 'StoreKit'
   s.requires_arc = true
+  s.module_name = 'OpenIAP'
 end

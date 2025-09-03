@@ -1,6 +1,6 @@
-# Contributing to IosIAP
+# Contributing to OpenIAP
 
-Thank you for your interest in contributing! We love your input and appreciate your efforts to make IosIAP better.
+Thank you for your interest in contributing! We love your input and appreciate your efforts to make OpenIAP better.
 
 ## Quick Start
 
@@ -16,8 +16,8 @@ Thank you for your interest in contributing! We love your input and appreciate y
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/ios-iap.git
-cd ios-iap
+git clone https://github.com/YOUR_USERNAME/openiap-ios.git
+cd openiap-ios
 
 # Open in Xcode
 open Package.swift

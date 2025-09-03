@@ -41,11 +41,11 @@ echo "New version: $NEW_VERSION"
 # Update VERSION file
 echo "$NEW_VERSION" > VERSION
 
-# Update IosIAP.podspec
-sed -i '' "s/s.version.*=.*'.*'/s.version          = '$NEW_VERSION'/" IosIAP.podspec
+# Update open-iap.podspec
+sed -i '' "s/s.version.*=.*'.*'/s.version          = '$NEW_VERSION'/" open-iap.podspec
 
 # Commit changes
-git add VERSION IosIAP.podspec
+git add VERSION open-iap.podspec
 git commit -m "Bump version to $NEW_VERSION"
 
 # Create and push tag
