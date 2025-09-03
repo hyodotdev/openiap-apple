@@ -15,13 +15,24 @@ final class OpenIapTests: XCTestCase {
             countryCode: "US",
             subscriptionPeriod: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
             introductoryPrice: OpenIapProduct.IntroductoryOffer(
+                id: "intro1",
                 price: 0,
                 localizedPrice: "Free",
                 period: OpenIapProduct.SubscriptionPeriod(unit: .week, value: 1),
                 numberOfPeriods: 1,
                 paymentMode: .freeTrial
             ),
-            discounts: nil
+            discounts: nil,
+            subscriptionGroupId: "group1",
+            platform: "iOS",
+            isFamilyShareable: true,
+            jsonRepresentation: nil,
+            displayNameIOS: "Premium Subscription",
+            isFamilyShareableIOS: true,
+            jsonRepresentationIOS: "{}",
+            descriptionIOS: "Get access to all premium features",
+            displayPriceIOS: "$9.99",
+            priceIOS: 9.99
         )
         
         XCTAssertEqual(product.productId, "dev.hyo.premium")
@@ -38,6 +49,8 @@ final class OpenIapTests: XCTestCase {
             purchaseToken: "token123",
             transactionId: "trans123",
             originalTransactionId: "original123",
+            platform: "iOS",
+            ids: ["trans123"],
             purchaseTime: Date(),
             originalPurchaseTime: Date(),
             expiryTime: Date().addingTimeInterval(86400 * 30),
@@ -100,6 +113,7 @@ final class OpenIapTests: XCTestCase {
     
     func testIntroductoryOffer() {
         let offer = OpenIapProduct.IntroductoryOffer(
+            id: "intro2",
             price: 4.99,
             localizedPrice: "$4.99",
             period: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
@@ -119,6 +133,8 @@ final class OpenIapTests: XCTestCase {
                 purchaseToken: "token1",
                 transactionId: "trans1",
                 originalTransactionId: nil,
+                platform: "iOS",
+                ids: ["trans1"],
                 purchaseTime: Date(),
                 originalPurchaseTime: nil,
                 expiryTime: nil,
