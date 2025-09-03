@@ -113,7 +113,13 @@ extension OpenIapPurchase {
         
         // iOS StoreKit 2 additional properties  
         self.webOrderLineItemIdIOS = Int(transaction.webOrderLineItemID ?? "0")
-        self.environmentIOS = transaction.environment.rawValue
+        
+        // Environment (iOS 16.0+)
+        if #available(iOS 16.0, macOS 14.0, *) {
+            self.environmentIOS = transaction.environment.rawValue
+        } else {
+            self.environmentIOS = nil
+        }
         self.storefrontCountryCodeIOS = transaction.storefrontCountryCode
         self.appBundleIdIOS = transaction.appBundleID
         self.subscriptionGroupIdIOS = transaction.subscriptionGroupID
@@ -147,8 +153,8 @@ extension OpenIapPurchase {
             self.ownershipTypeIOS = "purchased"
         }
         
-        // Reason and revocation
-        if #available(iOS 15.4, macOS 14.0, *) {
+        // Reason and revocation (iOS 17.0+)
+        if #available(iOS 17.0, macOS 14.0, *) {
             switch transaction.reason {
             case .purchase:
                 self.reasonIOS = "purchase"
@@ -173,8 +179,8 @@ extension OpenIapPurchase {
             self.revocationReasonIOS = nil
         }
         
-        // Offer information (promotional offers)
-        if #available(iOS 15.4, macOS 14.2, *) {
+        // Offer information (promotional offers, iOS 17.2+)
+        if #available(iOS 17.2, macOS 14.2, *) {
             if let offer = transaction.offer {
                 self.offerIOS = PurchaseOffer(
                     id: offer.id ?? "unknown",

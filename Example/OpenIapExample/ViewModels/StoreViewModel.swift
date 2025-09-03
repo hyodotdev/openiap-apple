@@ -17,19 +17,79 @@ class StoreViewModel: ObservableObject {
     private let iapModule = OpenIapModule.shared
     
     init() {
+        print("🚀 StoreViewModel Initializing...")
         setupStoreKit()
+    }
+    
+    deinit {
+        print("🧹 StoreViewModel Deinitializing - cleaning up listeners...")
+        iapModule.removeAllPurchaseUpdatedListeners()
+        iapModule.removeAllPurchaseErrorListeners()
     }
     
     private func setupStoreKit() {
         Task {
             do {
                 _ = try await iapModule.initConnection()
+                
+                // Setup purchase event listeners
+                setupPurchaseListeners()
+                
                 await MainActor.run {
                     isConnectionInitialized = true
                 }
+                print("🔧 StoreKit initialized and purchase listeners setup")
             } catch {
                 showErrorMessage("Failed to initialize StoreKit: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    private func setupPurchaseListeners() {
+        // Add purchase updated listener
+        iapModule.addPurchaseUpdatedListener { [weak self] purchase in
+            Task { @MainActor in
+                print("🎯 Purchase Updated Event Received:")
+                print("  • Product ID: \(purchase.productId)")
+                print("  • Transaction ID: \(purchase.transactionId)")
+                print("  • Purchase State: \(purchase.purchaseState)")
+                print("  • Purchase Time: \(purchase.purchaseTime)")
+                print("  • Is Auto Renewing: \(purchase.isAutoRenewing)")
+                print("  • Acknowledgement State: \(purchase.acknowledgementState)")
+                
+                self?.handlePurchaseUpdated(purchase)
+            }
+        }
+        
+        // Add purchase error listener
+        iapModule.addPurchaseErrorListener { [weak self] error in
+            Task { @MainActor in
+                print("💥 Purchase Error Event Received:")
+                print("  • Error: \(error)")
+                print("  • Description: \(error.localizedDescription)")
+                
+                self?.handlePurchaseError(error, productId: nil)
+            }
+        }
+        
+        print("👂 Purchase event listeners configured")
+    }
+    
+    private func handlePurchaseUpdated(_ purchase: OpenIapPurchase) {
+        print("🔄 Processing purchase update for: \(purchase.productId)")
+        
+        switch purchase.purchaseState {
+        case .purchased:
+            handlePurchaseSuccess(purchase.productId)
+        case .failed:
+            handlePurchaseError(OpenIapError.purchaseFailed(reason: "Purchase failed"), productId: purchase.productId)
+        case .pending:
+            print("⏳ Purchase pending for: \(purchase.productId)")
+        case .restored:
+            print("♻️ Purchase restored for: \(purchase.productId)")
+            handlePurchaseSuccess(purchase.productId)
+        case .deferred:
+            print("⏸️ Purchase deferred for: \(purchase.productId)")
         }
     }
     
@@ -53,10 +113,14 @@ class StoreViewModel: ObservableObject {
     }
     
     private func handlePurchaseError(_ error: Error, productId: String?) {
-        print("❌ Purchase error: \(error.localizedDescription)")
+        print("❌ Purchase Error Handler Called:")
+        print("  • Error Type: \(type(of: error))")
+        print("  • Error Description: \(error.localizedDescription)")
+        print("  • Product ID: \(productId ?? "N/A")")
         
         // Remove loading state for this product if available
         if let productId = productId {
+            print("  • Removing loading state for product: \(productId)")
             purchasingProductIds.remove(productId)
         }
         
@@ -113,10 +177,15 @@ class StoreViewModel: ObservableObject {
         // Start loading state for this specific product
         purchasingProductIds.insert(product.id)
         
-        print("🛒 Starting purchase request for: \(product.title)")
+        print("🛒 Purchase Process Started:")
+        print("  • Product ID: \(product.id)")
+        print("  • Product Title: \(product.title)")
+        print("  • Product Price: \(product.displayPrice)")
+        print("  • Product Type: \(product.type)")
         
         Task {
             do {
+                print("🔄 Calling requestPurchase API...")
                 let transactionData = try await iapModule.requestPurchase(
                     sku: product.id,
                     andDangerouslyFinishTransactionAutomatically: true,
@@ -125,19 +194,27 @@ class StoreViewModel: ObservableObject {
                     discountOffer: nil
                 )
                 
-                if let _ = transactionData {
-                    print("✅ Purchase successful: \(product.title)")
+                print("📦 Purchase API Response:")
+                if let transaction = transactionData {
+                    print("  • Transaction received: \(transaction.transactionId)")
+                    print("  • Product ID: \(transaction.productId)")
+                    print("  • Purchase State: \(transaction.purchaseState)")
+                    print("✅ Purchase successful via API: \(product.title)")
                     await MainActor.run {
                         handlePurchaseSuccess(product.id)
                     }
                 } else {
-                    print("❌ Purchase failed")
+                    print("  • No transaction data received")
+                    print("❌ Purchase failed: No transaction data")
                     await MainActor.run {
-                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "Unknown error"), productId: product.id)
+                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "No transaction data received"), productId: product.id)
                     }
                 }
             } catch {
-                print("❌ Purchase error: \(error.localizedDescription)")
+                print("💥 Purchase API Error:")
+                print("  • Error Type: \(type(of: error))")
+                print("  • Error Description: \(error.localizedDescription)")
+                print("  • Product ID: \(product.id)")
                 await MainActor.run {
                     handlePurchaseError(error, productId: product.id)
                 }

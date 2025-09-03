@@ -22,7 +22,7 @@ let package = Package(
             dependencies: [],
             path: "Sources"),
         .testTarget(
-            name: "OpenIAPTests",
+            name: "OpenIapTests",
             dependencies: ["OpenIAP"],
             path: "Tests"),
     ],

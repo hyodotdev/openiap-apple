@@ -171,7 +171,7 @@ struct ProductCard: View {
 }
 
 struct RecentPurchasesSection: View {
-    let purchases: [IapPurchase]
+    let purchases: [OpenIapPurchase]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -225,7 +225,7 @@ struct RecentPurchasesSection: View {
 }
 
 struct RecentPurchaseRow: View {
-    let purchase: IapPurchase
+    let purchase: OpenIapPurchase
     
     var body: some View {
         HStack {

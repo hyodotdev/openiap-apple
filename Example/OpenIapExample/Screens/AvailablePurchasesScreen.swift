@@ -448,7 +448,7 @@ struct SectionHeaderView: View {
 
 // MARK: - Product List Card
 struct ProductListCard: View {
-    let product: IapProductData
+    let product: OpenIapProductData
     let onPurchase: () -> Void
     
     var body: some View {
@@ -525,7 +525,7 @@ struct ProductListCard: View {
 
 // MARK: - Product Grid Card (Deprecated)
 struct ProductGridCard: View {
-    let product: IapProductData
+    let product: OpenIapProductData
     let onPurchase: () -> Void
     
     var body: some View {

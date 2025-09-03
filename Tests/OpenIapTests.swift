@@ -43,12 +43,29 @@ final class OpenIapTests: XCTestCase {
             expiryTime: Date().addingTimeInterval(86400 * 30),
             isAutoRenewing: true,
             purchaseState: .purchased,
-            developerPayload: nil,
             acknowledgementState: .acknowledged,
             quantity: 1,
+            developerPayload: nil,
             jwsRepresentation: nil,
             jsonRepresentation: nil,
-            appAccountToken: nil
+            appAccountToken: nil,
+            webOrderLineItemIdIOS: nil,
+            environmentIOS: "Production",
+            storefrontCountryCodeIOS: "US",
+            appBundleIdIOS: "dev.hyo.martie",
+            productTypeIOS: "auto_renewable_subscription",
+            subscriptionGroupIdIOS: "group1",
+            isUpgradedIOS: false,
+            ownershipTypeIOS: "purchased",
+            reasonIOS: "purchase",
+            reasonStringRepresentationIOS: "purchase",
+            transactionReasonIOS: "PURCHASE",
+            revocationDateIOS: nil,
+            revocationReasonIOS: nil,
+            offerIOS: nil,
+            currencyCodeIOS: "USD",
+            currencySymbolIOS: "$",
+            countryCodeIOS: "US"
         )
         
         XCTAssertEqual(purchase.productId, "dev.hyo.premium")
@@ -107,12 +124,29 @@ final class OpenIapTests: XCTestCase {
                 expiryTime: nil,
                 isAutoRenewing: false,
                 purchaseState: .purchased,
-                developerPayload: nil,
                 acknowledgementState: .acknowledged,
                 quantity: 1,
+                developerPayload: nil,
                 jwsRepresentation: nil,
                 jsonRepresentation: nil,
-                appAccountToken: nil
+                appAccountToken: nil,
+                webOrderLineItemIdIOS: nil,
+                environmentIOS: "Production",
+                storefrontCountryCodeIOS: "US",
+                appBundleIdIOS: "dev.hyo.app",
+                productTypeIOS: "consumable",
+                subscriptionGroupIdIOS: nil,
+                isUpgradedIOS: false,
+                ownershipTypeIOS: "purchased",
+                reasonIOS: "purchase",
+                reasonStringRepresentationIOS: "purchase",
+                transactionReasonIOS: "PURCHASE",
+                revocationDateIOS: nil,
+                revocationReasonIOS: nil,
+                offerIOS: nil,
+                currencyCodeIOS: "USD",
+                currencySymbolIOS: "$",
+                countryCodeIOS: "US"
             )
         ]
         
