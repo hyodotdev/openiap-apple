@@ -44,8 +44,14 @@ echo "$NEW_VERSION" > VERSION
 # Update openiap.podspec
 sed -i '' "s/s.version.*=.*'.*'/s.version          = '$NEW_VERSION'/" openiap.podspec
 
+# Update README.md - CocoaPods installation
+sed -i '' "s/pod 'openiap', '~> [0-9.]*'/pod 'openiap', '~> $NEW_VERSION'/" README.md
+
+# Update README.md - Swift Package Manager
+sed -i '' "s/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"[0-9.]*\")/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"$NEW_VERSION\")/" README.md
+
 # Commit changes
-git add VERSION openiap.podspec
+git add VERSION openiap.podspec README.md
 git commit -m "Bump version to $NEW_VERSION"
 
 # Create and push tag
