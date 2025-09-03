@@ -21,7 +21,6 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 ## ✨ Features
 
 - ✅ **StoreKit 2** support with full iOS 15+ compatibility
-- ✅ **Legacy StoreKit** fallback for iOS 13-14
 - ✅ **Cross-platform** support (iOS, macOS, tvOS, watchOS)
 - ✅ **Unified API** following OpenIAP specification
 - ✅ **Product management** with intelligent caching
@@ -35,10 +34,10 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 
 | Platform | Minimum Version |
 |----------|-----------------|
-| iOS | 13.0+ |
-| macOS | 10.15+ |
-| tvOS | 13.0+ |
-| watchOS | 6.0+ |
+| iOS | 15.0+ |
+| macOS | 14.0+ |
+| tvOS | 15.0+ |
+| watchOS | 8.0+ |
 | Swift | 5.9+ |
 
 ## 📦 Installation
