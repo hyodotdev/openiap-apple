@@ -13,10 +13,10 @@ Pod::Spec.new do |s|
     IosIAP is now OpenIAP - a modern Swift library for handling in-app purchases using StoreKit 2.
   DESC
 
-  s.homepage         = 'https://github.com/hyodotdev/openiap-ios'
+  s.homepage         = 'https://github.com/hyodotdev/openiap-apple'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'hyodotdev' => 'hyo@hyo.dev' }
-  s.source           = { :git => 'https://github.com/hyodotdev/openiap-ios.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/hyodotdev/openiap-apple.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '13.0'
   s.osx.deployment_target = '10.15'

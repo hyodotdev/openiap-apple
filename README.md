@@ -31,13 +31,13 @@ Add the following to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/hyodotdev/openiap-ios.git", from: "1.0.0")
+    .package(url: "https://github.com/hyodotdev/openiap-apple.git", from: "1.0.0")
 ]
 ```
 
 Or add it through Xcode:
 1. File → Add Package Dependencies
-2. Enter the repository URL: `https://github.com/hyodotdev/openiap-ios.git`
+2. Enter the repository URL: `https://github.com/hyodotdev/openiap-apple.git`
 3. Select the version and add to your target
 
 ### CocoaPods
@@ -203,4 +203,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/hyodotdev/openiap-ios/issues) page.
+For issues and feature requests, please use the [GitHub Issues](https://github.com/hyodotdev/openiap-apple/issues) page.

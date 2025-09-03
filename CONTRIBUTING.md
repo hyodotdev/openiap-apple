@@ -16,8 +16,8 @@ Thank you for your interest in contributing! We love your input and appreciate y
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/openiap-ios.git
-cd openiap-ios
+git clone https://github.com/YOUR_USERNAME/openiap-apple.git
+cd openiap-apple
 
 # Open in Xcode
 open Package.swift
