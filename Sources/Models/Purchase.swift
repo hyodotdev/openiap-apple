@@ -2,11 +2,17 @@ import Foundation
 import StoreKit
 
 public struct OpenIapPurchase: Codable, Equatable {
-    // Core identification
+    // Core identification (PurchaseCommon required fields)
     public let productId: String
     public let purchaseToken: String
     public let transactionId: String
     public let originalTransactionId: String?
+    
+    // Platform identification
+    public let platform: String
+    
+    // Multiple product IDs support
+    public let ids: [String]?
     
     // Timing information
     public let purchaseTime: Date
@@ -60,6 +66,19 @@ public struct OpenIapPurchase: Codable, Equatable {
         case notAcknowledged
         case acknowledged
     }
+    
+    // Computed properties for TypeScript type compatibility
+    public var id: String {
+        return transactionId
+    }
+    
+    public var transactionDate: TimeInterval {
+        return purchaseTime.timeIntervalSince1970 * 1000
+    }
+    
+    public var transactionReceipt: String {
+        return purchaseToken
+    }
 }
 
 // Support structures
@@ -94,6 +113,10 @@ extension OpenIapPurchase {
         self.transactionId = String(transaction.id)
         self.originalTransactionId = transaction.originalID != 0 ? String(transaction.originalID) : nil
         self.purchaseToken = jwsRepresentation ?? String(transaction.id)
+        
+        // Platform and IDs
+        self.platform = "ios"
+        self.ids = nil // Single product purchase
         
         // Timing information
         self.purchaseTime = transaction.purchaseDate

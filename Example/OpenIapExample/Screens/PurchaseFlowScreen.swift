@@ -62,28 +62,26 @@ struct PurchaseFlowScreen: View {
 }
 
 struct ProductCard: View {
-    let product: OpenIapProductData
+    let product: OpenIapProduct
     let isLoading: Bool
     let onPurchase: () -> Void
     
     private var productIcon: String {
-        switch product.type {
-        case "inapp":
+        switch product.productType {
+        case .consumable, .nonConsumable, .nonRenewingSubscription:
             return "bag.fill"
-        case "subs":
+        case .autoRenewableSubscription:
             return "repeat.circle.fill"
-        default:
-            return "star.fill"
         }
     }
     
     private var productTypeText: String {
-        switch product.type {
-        case "inapp":
+        switch product.productType {
+        case .consumable, .nonConsumable:
             return "In-App Purchase"
-        case "subs":
+        case .autoRenewableSubscription:
             return "Subscription"
-        default:
+        case .nonRenewingSubscription:
             return "Non-Renewing"
         }
     }
@@ -98,7 +96,7 @@ struct ProductCard: View {
                     .frame(width: 32, height: 32)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(product.title)
+                    Text(product.localizedTitle)
                         .font(.headline)
                         .fontWeight(.semibold)
                     
@@ -113,7 +111,7 @@ struct ProductCard: View {
                         
                         Spacer()
                         
-                        Text(product.displayPrice)
+                        Text(product.localizedPrice)
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(AppColors.primary)
@@ -122,13 +120,13 @@ struct ProductCard: View {
             }
             
             // Product description
-            Text(product.description)
+            Text(product.localizedDescription)
                 .font(.subheadline)
                 .foregroundColor(AppColors.secondaryText)
                 .lineLimit(nil)
             
             // Product ID (for testing)
-            Text("ID: \(product.id)")
+            Text("ID: \(product.productId)")
                 .font(.caption)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundColor(AppColors.secondaryText)
@@ -151,7 +149,7 @@ struct ProductCard: View {
                     Spacer()
                     
                     if !isLoading {
-                        Text(product.displayPrice)
+                        Text(product.localizedPrice)
                             .fontWeight(.semibold)
                     }
                 }
@@ -412,7 +410,7 @@ struct HeaderCardView: View {
 struct ProductsContentView: View {
     @ObservedObject var store: StoreViewModel
     
-    var consumableProducts: [OpenIapProductData] {
+    var consumableProducts: [OpenIapProduct] {
         store.products.filter { product in
             // Filter out premium subscription products
             !product.id.contains("premium") && product.type == "inapp"
@@ -432,7 +430,7 @@ struct ProductsContentView: View {
             ForEach(consumableProducts, id: \.id) { product in
                 ProductCard(
                     product: product,
-                    isLoading: store.purchasingProductIds.contains(product.id)
+                    isLoading: store.purchasingProductIds.contains(product.productId)
                 ) {
                     store.purchaseProduct(product)
                 }

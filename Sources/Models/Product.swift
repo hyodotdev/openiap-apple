@@ -2,6 +2,7 @@ import Foundation
 import StoreKit
 
 public struct OpenIapProduct: Codable, Equatable {
+    // Core properties (mapped from StoreKit)
     public let productId: String
     public let productType: ProductType
     public let localizedTitle: String
@@ -14,7 +15,45 @@ public struct OpenIapProduct: Codable, Equatable {
     public let introductoryPrice: IntroductoryOffer?
     public let discounts: [Discount]?
     
-    // Computed property for convenience
+    // iOS StoreKit 2 properties
+    public let platform: String
+    public let isFamilyShareable: Bool?
+    public let jsonRepresentation: String?
+    
+    // Additional fields for type compatibility
+    public let displayNameIOS: String
+    public let isFamilyShareableIOS: Bool
+    public let jsonRepresentationIOS: String
+    public let descriptionIOS: String
+    public let displayPriceIOS: String
+    public let priceIOS: Double
+    
+    // Computed properties for convenience
+    public var id: String {
+        return productId
+    }
+    
+    public var title: String {
+        return localizedTitle
+    }
+    
+    public var displayPrice: String {
+        return localizedPrice
+    }
+    
+    public var description: String {
+        return localizedDescription
+    }
+    
+    public var type: String {
+        switch productType {
+        case .consumable, .nonConsumable, .nonRenewingSubscription:
+            return "inapp"
+        case .autoRenewableSubscription:
+            return "subs"
+        }
+    }
+    
     public var formattedPrice: String {
         return localizedPrice
     }
@@ -77,6 +116,17 @@ extension OpenIapProduct {
         self.localizedPrice = product.displayPrice
         self.currencyCode = product.priceFormatStyle.currencyCode
         self.countryCode = nil
+        self.platform = "ios"
+        self.isFamilyShareable = product.isFamilyShareable
+        self.jsonRepresentation = String(data: product.jsonRepresentation, encoding: .utf8)
+        
+        // iOS-specific fields for TypeScript type compatibility
+        self.displayNameIOS = product.displayName
+        self.isFamilyShareableIOS = product.isFamilyShareable
+        self.jsonRepresentationIOS = String(data: product.jsonRepresentation, encoding: .utf8) ?? ""
+        self.descriptionIOS = product.description
+        self.displayPriceIOS = product.displayPrice
+        self.priceIOS = NSDecimalNumber(decimal: product.price).doubleValue
         
         switch product.type {
         case .consumable:

@@ -25,7 +25,7 @@ public protocol OpenIapModuleProtocol {
     func endConnection() async throws -> Bool
     
     // Product Management
-    func fetchProducts(skus: [String]) async throws -> [OpenIapProductData]
+    func fetchProducts(skus: [String]) async throws -> [OpenIapProduct]
     func getAvailableItems(alsoPublishToEventListenerIOS: Bool?, onlyIncludeActiveItemsIOS: Bool?) async throws -> [OpenIapPurchase]
     
     // Purchase Operations
@@ -141,7 +141,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     // MARK: - Product Management
     
-    public func fetchProducts(skus: [String]) async throws -> [OpenIapProductData] {
+    public func fetchProducts(skus: [String]) async throws -> [OpenIapProduct] {
         try ensureConnection()
         
         let productStore = self.productStore!
@@ -152,7 +152,21 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 productStore.addProduct(product)
             }
             let products = productStore.getAllProducts()
-            return products.map { productToOpenIapProductData($0) }
+            let openIapProducts = await withTaskGroup(of: OpenIapProduct.self) { group in
+                for product in products {
+                    group.addTask {
+                        await OpenIapProduct(from: product)
+                    }
+                }
+                
+                var results: [OpenIapProduct] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results
+            }
+            
+            return openIapProducts
         } catch {
             print("Error fetching items: \(error)")
             throw error
@@ -981,32 +995,8 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
     
-    private func productToOpenIapProductData(_ product: Product) -> OpenIapProductData {
-        let productType: String
-        switch product.type {
-        case .consumable:
-            productType = "inapp"
-        case .nonConsumable:
-            productType = "inapp"  
-        case .autoRenewable:
-            productType = "subs"
-        case .nonRenewable:
-            productType = "inapp"
-        default:
-            productType = "inapp"
-        }
-        
-        return OpenIapProductData(
-            id: product.id,
-            title: product.displayName,
-            description: product.description,
-            price: product.price,
-            displayPrice: product.displayPrice,
-            currency: product.priceFormatStyle.currencyCode,
-            type: productType,
-            platform: "ios"
-        )
-    }
+    // productToOpenIapProductData is deprecated - OpenIapProduct.init(from:) is used instead
+    // This provides better type safety and includes all StoreKit 2 properties
     
     // transactionToIapTransactionData is deprecated - OpenIapPurchase.init(from:) is used instead
     // This provides better type safety and includes all StoreKit 2 properties

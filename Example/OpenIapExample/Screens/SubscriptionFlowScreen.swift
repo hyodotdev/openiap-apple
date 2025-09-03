@@ -122,7 +122,7 @@ struct SubscriptionFlowScreen: View {
 }
 
 struct SubscriptionCard: View {
-    let product: OpenIapProductData
+    let product: OpenIapProduct
     let isSubscribed: Bool
     let isLoading: Bool
     let onSubscribe: () -> Void
@@ -132,7 +132,7 @@ struct SubscriptionCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(product.title)
+                        Text(product.localizedTitle)
                             .font(.headline)
                         
                         if isSubscribed {
@@ -146,7 +146,7 @@ struct SubscriptionCard: View {
                         }
                     }
                     
-                    Text(product.id)
+                    Text(product.productId)
                         .font(.caption)
                         .font(.system(.body, design: .monospaced))
                         .foregroundColor(.secondary)
@@ -155,7 +155,7 @@ struct SubscriptionCard: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(product.displayPrice)
+                    Text(product.localizedPrice)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(isSubscribed ? AppColors.success : AppColors.secondary)
@@ -230,7 +230,7 @@ struct SubscriptionCard: View {
                         Spacer()
                         
                         if !isLoading {
-                            Text(product.displayPrice)
+                            Text(product.localizedPrice)
                                 .fontWeight(.semibold)
                         }
                     }

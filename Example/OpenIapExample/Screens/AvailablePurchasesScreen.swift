@@ -448,7 +448,7 @@ struct SectionHeaderView: View {
 
 // MARK: - Product List Card
 struct ProductListCard: View {
-    let product: OpenIapProductData
+    let product: OpenIapProduct
     let onPurchase: () -> Void
     
     var body: some View {
@@ -467,7 +467,7 @@ struct ProductListCard: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 
-                Text(product.description)
+                Text(product.localizedDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
@@ -477,7 +477,7 @@ struct ProductListCard: View {
             
             // Price and Purchase Button
             VStack(spacing: 8) {
-                Text(product.displayPrice)
+                Text(product.localizedPrice)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(AppColors.primary)
                 
@@ -499,11 +499,11 @@ struct ProductListCard: View {
     }
     
     private var productIcon: String {
-        if product.id.contains("10bulbs") {
+        if product.productId.contains("10bulbs") {
             return "lightbulb"
-        } else if product.id.contains("30bulbs") {
+        } else if product.productId.contains("30bulbs") {
             return "lightbulb.fill"
-        } else if product.id.contains("premium") {
+        } else if product.productId.contains("premium") {
             return "crown"
         } else {
             return "bag"
@@ -511,21 +511,21 @@ struct ProductListCard: View {
     }
     
     private var productTitle: String {
-        if product.id.contains("10bulbs") {
+        if product.productId.contains("10bulbs") {
             return "10 Bulbs Pack"
-        } else if product.id.contains("30bulbs") {
+        } else if product.productId.contains("30bulbs") {
             return "30 Bulbs Pack"
-        } else if product.id.contains("premium") {
+        } else if product.productId.contains("premium") {
             return "Premium Subscription"
         } else {
-            return product.title
+            return product.localizedTitle
         }
     }
 }
 
 // MARK: - Product Grid Card (Deprecated)
 struct ProductGridCard: View {
-    let product: OpenIapProductData
+    let product: OpenIapProduct
     let onPurchase: () -> Void
     
     var body: some View {
@@ -543,7 +543,7 @@ struct ProductGridCard: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                 
-                Text(product.description)
+                Text(product.localizedDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -553,7 +553,7 @@ struct ProductGridCard: View {
             Spacer()
             
             VStack(spacing: 8) {
-                Text(product.displayPrice)
+                Text(product.localizedPrice)
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primary)
@@ -579,11 +579,11 @@ struct ProductGridCard: View {
     }
     
     private var productIcon: String {
-        if product.id.contains("10bulbs") {
+        if product.productId.contains("10bulbs") {
             return "lightbulb"
-        } else if product.id.contains("30bulbs") {
+        } else if product.productId.contains("30bulbs") {
             return "lightbulb.fill"
-        } else if product.id.contains("premium") {
+        } else if product.productId.contains("premium") {
             return "crown"
         } else {
             return "bag"
@@ -591,14 +591,14 @@ struct ProductGridCard: View {
     }
     
     private var productTitle: String {
-        if product.id.contains("10bulbs") {
+        if product.productId.contains("10bulbs") {
             return "10 Bulbs"
-        } else if product.id.contains("30bulbs") {
+        } else if product.productId.contains("30bulbs") {
             return "30 Bulbs"
-        } else if product.id.contains("premium") {
+        } else if product.productId.contains("premium") {
             return "Premium"
         } else {
-            return product.title
+            return product.localizedTitle
         }
     }
 }

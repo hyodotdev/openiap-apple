@@ -4,14 +4,14 @@ import OpenIAP
 @MainActor
 @available(iOS 15.0, *)
 class StoreViewModel: ObservableObject {
-    @Published var products: [OpenIapProductData] = []
+    @Published var products: [OpenIapProduct] = []
     @Published var purchases: [OpenIapPurchase] = []
     @Published var isLoading = false
     @Published var showError = false
     @Published var errorMessage = ""
     @Published var purchasingProductIds: Set<String> = []
     @Published var showPurchaseSuccess = false
-    @Published var lastPurchasedProduct: OpenIapProductData?
+    @Published var lastPurchasedProduct: OpenIapProduct?
     @Published var isConnectionInitialized = false
     
     private let iapModule = OpenIapModule.shared
@@ -100,10 +100,10 @@ class StoreViewModel: ObservableObject {
         purchasingProductIds.remove(productId)
         
         // Find the purchased product
-        if let purchasedProduct = products.first(where: { $0.id == productId }) {
+        if let purchasedProduct = products.first(where: { $0.productId == productId }) {
             lastPurchasedProduct = purchasedProduct
             showPurchaseSuccess = true
-            print("🎉 Purchase success dialog will show for: \(purchasedProduct.title)")
+            print("🎉 Purchase success dialog will show for: \(purchasedProduct.localizedTitle)")
         }
         
         // Reload purchases to show the new purchase
@@ -173,21 +173,21 @@ class StoreViewModel: ObservableObject {
         isLoading = false
     }
     
-    func purchaseProduct(_ product: OpenIapProductData) {
+    func purchaseProduct(_ product: OpenIapProduct) {
         // Start loading state for this specific product
-        purchasingProductIds.insert(product.id)
+        purchasingProductIds.insert(product.productId)
         
         print("🛒 Purchase Process Started:")
-        print("  • Product ID: \(product.id)")
-        print("  • Product Title: \(product.title)")
-        print("  • Product Price: \(product.displayPrice)")
-        print("  • Product Type: \(product.type)")
+        print("  • Product ID: \(product.productId)")
+        print("  • Product Title: \(product.localizedTitle)")
+        print("  • Product Price: \(product.localizedPrice)")
+        print("  • Product Type: \(product.productType.rawValue)")
         
         Task {
             do {
                 print("🔄 Calling requestPurchase API...")
                 let transactionData = try await iapModule.requestPurchase(
-                    sku: product.id,
+                    sku: product.productId,
                     andDangerouslyFinishTransactionAutomatically: true,
                     appAccountToken: nil,
                     quantity: 1,
@@ -199,15 +199,15 @@ class StoreViewModel: ObservableObject {
                     print("  • Transaction received: \(transaction.transactionId)")
                     print("  • Product ID: \(transaction.productId)")
                     print("  • Purchase State: \(transaction.purchaseState)")
-                    print("✅ Purchase successful via API: \(product.title)")
+                    print("✅ Purchase successful via API: \(product.localizedTitle)")
                     await MainActor.run {
-                        handlePurchaseSuccess(product.id)
+                        handlePurchaseSuccess(product.productId)
                     }
                 } else {
                     print("  • No transaction data received")
                     print("❌ Purchase failed: No transaction data")
                     await MainActor.run {
-                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "No transaction data received"), productId: product.id)
+                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "No transaction data received"), productId: product.productId)
                     }
                 }
             } catch {

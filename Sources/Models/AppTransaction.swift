@@ -73,27 +73,8 @@ public struct OpenIapValidationResult: Codable {
 
 // MARK: - Product and Transaction serialization models
 
-public struct OpenIapProductData: Codable {
-    public let id: String
-    public let title: String
-    public let description: String
-    public let price: Decimal
-    public let displayPrice: String
-    public let currency: String?
-    public let type: String
-    public let platform: String
-    
-    public init(id: String, title: String, description: String, price: Decimal, displayPrice: String, currency: String?, type: String, platform: String = "ios") {
-        self.id = id
-        self.title = title
-        self.description = description
-        self.price = price
-        self.displayPrice = displayPrice
-        self.currency = currency
-        self.type = type
-        self.platform = platform
-    }
-}
+// OpenIapProductData is deprecated - use OpenIapProduct instead
+// This type has been merged into OpenIapProduct for better API consistency
 
 // IapTransactionData is deprecated - use OpenIapPurchase instead
 // This type has been merged into OpenIapPurchase for better API consistency
