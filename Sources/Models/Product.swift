@@ -14,6 +14,7 @@ public struct OpenIapProduct: Codable, Equatable {
     public let subscriptionPeriod: SubscriptionPeriod?
     public let introductoryPrice: IntroductoryOffer?
     public let discounts: [Discount]?
+    public let subscriptionGroupId: String?
     
     // iOS StoreKit 2 properties
     public let platform: String
@@ -78,6 +79,7 @@ public struct OpenIapProduct: Codable, Equatable {
     }
     
     public struct IntroductoryOffer: Codable, Equatable {
+        public let id: String?
         public let price: Decimal
         public let localizedPrice: String
         public let period: SubscriptionPeriod
@@ -98,6 +100,7 @@ public struct OpenIapProduct: Codable, Equatable {
         public let localizedPrice: String
         public let period: SubscriptionPeriod?
         public let numberOfPeriods: Int
+        public let paymentMode: String
         
         public enum DiscountType: String, Codable {
             case introductory
@@ -142,6 +145,7 @@ extension OpenIapProduct {
         }
         
         if let subscription = product.subscription {
+            self.subscriptionGroupId = subscription.subscriptionGroupID
             self.subscriptionPeriod = SubscriptionPeriod(
                 unit: subscription.subscriptionPeriod.unit.toPeriodUnit(),
                 value: subscription.subscriptionPeriod.value
@@ -149,6 +153,7 @@ extension OpenIapProduct {
             
             if let introOffer = subscription.introductoryOffer {
                 self.introductoryPrice = IntroductoryOffer(
+                    id: introOffer.id,
                     price: introOffer.price,
                     localizedPrice: introOffer.displayPrice,
                     period: SubscriptionPeriod(
@@ -172,10 +177,12 @@ extension OpenIapProduct {
                         unit: offer.period.unit.toPeriodUnit(),
                         value: offer.period.value
                     ),
-                    numberOfPeriods: offer.periodCount
+                    numberOfPeriods: offer.periodCount,
+                    paymentMode: offer.paymentMode.toPaymentMode().rawValue
                 )
             }
         } else {
+            self.subscriptionGroupId = nil
             self.subscriptionPeriod = nil
             self.introductoryPrice = nil
             self.discounts = nil
