@@ -1,33 +1,51 @@
-# OpenIAP
+# OpenIAP Apple
 
-A comprehensive cross-platform In-App Purchase library following the OpenIAP specification. Simplifies the integration of in-app purchases in iOS/macOS/tvOS/watchOS applications with a clean, modern API.
+<div align="center">
+  <img src="https://openiap.dev/logo.png" alt="OpenIAP Logo" width="120" height="120">
+</div>
 
-## Features
+<div align="center">
+  <strong>A comprehensive Swift implementation of the OpenIAP specification for iOS, macOS, tvOS, and watchOS applications.</strong>
+</div>
 
-- ✅ StoreKit 2 support (iOS 15+)
-- ✅ Legacy StoreKit support (iOS 13-14)
-- ✅ Product fetching and caching
-- ✅ Purchase handling
-- ✅ Receipt validation
-- ✅ Subscription management
-- ✅ Restore purchases
-- ✅ Transaction observation
-- ✅ Swift Package Manager support
-- ✅ CocoaPods support
+<br />
 
-## Requirements
+**OpenIAP** is a unified specification for in-app purchases across platforms, frameworks, and emerging technologies. This Apple ecosystem implementation standardizes IAP implementations to reduce fragmentation and enable consistent behavioral across all Apple platforms.
 
-- iOS 13.0+
-- macOS 10.15+
-- tvOS 13.0+
-- watchOS 6.0+
-- Swift 5.9+
+In the AI coding era, having a unified IAP specification becomes increasingly important as developers build applications across multiple platforms and frameworks with automated tools.
 
-## Installation
+## 🌐 Learn More
+
+Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides, and the full OpenIAP specification.
+
+## ✨ Features
+
+- ✅ **StoreKit 2** support with full iOS 15+ compatibility
+- ✅ **Legacy StoreKit** fallback for iOS 13-14
+- ✅ **Cross-platform** support (iOS, macOS, tvOS, watchOS)
+- ✅ **Unified API** following OpenIAP specification
+- ✅ **Product management** with intelligent caching
+- ✅ **Purchase handling** with automatic transaction verification
+- ✅ **Subscription management** and renewal tracking
+- ✅ **Receipt validation** and transaction security
+- ✅ **Event-driven** purchase observation
+- ✅ **Swift Package Manager** and **CocoaPods** support
+
+## 📋 Requirements
+
+| Platform | Minimum Version |
+|----------|-----------------|
+| iOS | 13.0+ |
+| macOS | 10.15+ |
+| tvOS | 13.0+ |
+| watchOS | 6.0+ |
+| Swift | 5.9+ |
+
+## 📦 Installation
 
 ### Swift Package Manager
 
-Add the following to your `Package.swift` file:
+Add OpenIAP to your `Package.swift`:
 
 ```swift
 dependencies: [
@@ -35,14 +53,14 @@ dependencies: [
 ]
 ```
 
-Or add it through Xcode:
-1. File → Add Package Dependencies
-2. Enter the repository URL: `https://github.com/hyodotdev/openiap-apple.git`
-3. Select the version and add to your target
+Or through Xcode:
+1. **File** → **Add Package Dependencies**
+2. Enter: `https://github.com/hyodotdev/openiap-apple.git`
+3. Select version and add to your target
 
 ### CocoaPods
 
-Add the following to your `Podfile`:
+Add to your `Podfile`:
 
 ```ruby
 pod 'openiap', '~> 1.0.0'
@@ -54,24 +72,22 @@ Then run:
 pod install
 ```
 
-## Usage
+## 🚀 Quick Start
 
-### Initialize the IAP Manager
+### Initialize Connection
 
 ```swift
 import OpenIAP
 
-// For iOS 15+
-if #available(iOS 15.0, *) {
-    try await IapModule.shared.initConnection()
-}
+// Initialize the IAP connection
+try await OpenIapModule.shared.initConnection()
 ```
 
 ### Fetch Products
 
 ```swift
 let productIds = ["dev.hyo.premium", "dev.hyo.coins"]
-let products = try await IapModule.shared.fetchProducts(skus: productIds)
+let products = try await OpenIapModule.shared.fetchProducts(skus: productIds)
 
 for product in products {
     print("\(product.title): \(product.displayPrice)")
@@ -82,125 +98,142 @@ for product in products {
 
 ```swift
 do {
-    let transaction = try await IapModule.shared.requestPurchase(
+    let transaction = try await OpenIapModule.shared.requestPurchase(
         sku: "dev.hyo.premium",
         andDangerouslyFinishTransactionAutomatically: true
     )
-    print("Purchase successful: \(transaction?.transactionIdentifier ?? "")")
+    print("✅ Purchase successful!")
 } catch {
-    print("Purchase failed: \(error)")
+    print("❌ Purchase failed: \(error)")
 }
 ```
 
-### Restore Purchases
+### Listen to Purchase Events
 
 ```swift
-let restoredPurchases = try await IapModule.shared.getAvailablePurchases()
-print("Restored \(restoredPurchases.count) purchases")
-```
-
-### Observe Transactions (Event Listeners)
-
-```swift
-// Add purchase updated listener
-IapModule.shared.addPurchaseUpdatedListener { purchase in
-    print("New purchase: \(purchase.productId)")
+// Listen for successful purchases
+OpenIapModule.shared.addPurchaseUpdatedListener { purchase in
+    print("🎉 New purchase: \(purchase.productId)")
 }
 
-// Add purchase error listener
-IapModule.shared.addPurchaseErrorListener { error in
-    print("Purchase failed: \(error)")
+// Handle purchase errors
+OpenIapModule.shared.addPurchaseErrorListener { error in
+    print("💥 Purchase error: \(error.localizedDescription)")
 }
 ```
 
-### Get Purchase History
+## 📱 Example App
 
-```swift
-let purchases = try await IapModule.shared.getAvailablePurchases()
-for purchase in purchases {
-    print("Product: \(purchase.productId), Date: \(purchase.purchaseTime)")
-}
+The repository includes a complete **SwiftUI example app** demonstrating all OpenIAP features:
+
+- **Product catalog** with real-time pricing
+- **Purchase flow** with loading states and error handling  
+- **Subscription management** with renewal tracking
+- **Purchase history** and transaction details
+- **Event logging** for debugging and monitoring
+
+Run the example:
+
+```bash
+cd Example
+open Martie.xcodeproj
 ```
 
-### Receipt Validation
+## 🧪 Testing
 
-```swift
-let receiptData = try await IapModule.shared.getReceiptDataIOS()
-print("Receipt data: \(receiptData)")
+### Run Tests
+
+```bash
+# Via Swift Package Manager
+swift test
+
+# Via Xcode
+⌘U (Product → Test)
 ```
 
-## Data Models
+### Test with Sandbox
 
-### IapProductData
+1. Configure your products in **App Store Connect**
+2. Create a **Sandbox Apple ID**
+3. Use test card: `4242 4242 4242 4242`
+4. Monitor purchase events in the Example app logs
+
+## 📚 Data Models
+
+### OpenIapProductData
 
 ```swift
-struct IapProductData {
+struct OpenIapProductData {
     let id: String
     let title: String
     let description: String
-    let type: String
+    let price: Decimal
     let displayPrice: String
-    let price: Double
-    let currency: String
+    let type: String
     let platform: String
-    // ... additional properties
 }
 ```
 
-### IapPurchase
+### OpenIapPurchase
 
 ```swift
-struct IapPurchase {
+struct OpenIapPurchase {
     let productId: String
     let transactionId: String
-    let originalTransactionId: String?
-    let purchaseTime: Double
-    let originalPurchaseTime: Double?
-    let platform: String
+    let purchaseTime: Date
+    let purchaseState: PurchaseState
+    let isAutoRenewing: Bool
+    
+    // iOS-specific StoreKit 2 properties
+    let environmentIOS: String?
+    let storefrontCountryCodeIOS: String?
     // ... additional properties
 }
 ```
 
-## Error Handling
+## ⚡ Error Handling
 
-The library provides comprehensive error handling through the `IapError` enum:
+OpenIAP provides comprehensive error handling:
 
 ```swift
-enum IapError: LocalizedError {
+enum OpenIapError: LocalizedError {
     case purchaseFailed(reason: String)
     case purchaseCancelled
     case purchaseDeferred
-    case storeKitError(error: Error)
+    case productNotFound(productId: String)
     case verificationFailed(reason: String)
-    case unknownError
+    case storeKitError(error: Error)
     case notSupported
-    // ... additional cases
 }
 ```
 
-## Example App
+## 🔗 OpenIAP Ecosystem
 
-Check the `Example` folder for a complete SwiftUI example application demonstrating all features.
+| Platform | Repository | Status |
+|----------|------------|---------|
+| **Specification** | [openiap.dev](https://github.com/hyodotdev/openiap.dev) | ✅ Active |
+| **Apple** | [openiap-apple](https://github.com/hyodotdev/openiap-apple) | ✅ Active |
+| **React Native** | Coming Soon | 🚧 Planned |
+| **Flutter** | Coming Soon | 🚧 Planned |
+| **Unity** | Coming Soon | 🚧 Planned |
 
-## Testing
+## 🤝 Contributing
 
-Run the tests using:
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-```bash
-swift test
-```
+## 📄 License
 
-Or through Xcode:
-1. Product → Test (⌘U)
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-## License
+## 💬 Support
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- 📖 **Documentation**: [openiap.dev](https://openiap.dev)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/hyodotdev/openiap-apple/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/hyodotdev/openiap-apple/discussions)
+- 💬 **Community**: [Discord](https://discord.gg/openiap) (Coming Soon)
 
-## Contributing
+---
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Support
-
-For issues and feature requests, please use the [GitHub Issues](https://github.com/hyodotdev/openiap-apple/issues) page.
+<div align="center">
+  <strong>Built with ❤️ for the OpenIAP community</strong>
+</div>
