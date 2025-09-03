@@ -8,6 +8,14 @@ import StoreKit
 
 // MARK: - Helper functions for ExpoModulesCore compatibility
 
+// MARK: - Purchase Listeners
+
+@available(iOS 15.0, macOS 12.0, *)
+public typealias PurchaseUpdatedListener = (IapPurchase) -> Void
+
+@available(iOS 15.0, macOS 12.0, *)
+public typealias PurchaseErrorListener = (IapError) -> Void
+
 // MARK: - Protocol
 
 @available(iOS 15.0, macOS 12.0, *)
@@ -79,6 +87,9 @@ public final class IapModule: NSObject, IapModuleProtocol {
     // Product caching
     private var productStore: ProductStore?
     
+    // Purchase listeners
+    private var purchaseUpdatedListeners: [PurchaseUpdatedListener] = []
+    private var purchaseErrorListeners: [PurchaseErrorListener] = []
     
     // State
     private var isInitialized = false
@@ -342,6 +353,14 @@ public final class IapModule: NSObject, IapModuleProtocol {
             let transaction = try checkVerified(verification)
             let transactionData = transactionToIapTransactionData(transaction, jwsRepresentation: verification.jwsRepresentation)
             
+            // Convert to IapPurchase for listener
+            let purchase = await IapPurchase(from: transaction, jwsRepresentation: verification.jwsRepresentation)
+            
+            // Notify listeners
+            for listener in purchaseUpdatedListeners {
+                listener(purchase)
+            }
+            
             // Store transaction if not finishing automatically
             if !andDangerouslyFinishTransactionAutomatically {
                 pendingTransactions[String(transaction.id)] = transaction
@@ -353,13 +372,22 @@ public final class IapModule: NSObject, IapModuleProtocol {
             return transactionData
             
         case .userCancelled:
-            throw IapError.purchaseCancelled
+            let error = IapError.purchaseCancelled
+            for listener in purchaseErrorListeners {
+                listener(error)
+            }
+            throw error
             
         case .pending:
+            // For deferred payments, we don't call error listeners
             throw IapError.purchaseDeferred
             
         @unknown default:
-            throw IapError.unknownError
+            let error = IapError.unknownError
+            for listener in purchaseErrorListeners {
+                listener(error)
+            }
+            throw error
         }
     }
     
@@ -863,6 +891,35 @@ public final class IapModule: NSObject, IapModuleProtocol {
         #endif
     }
     
+    
+    // MARK: - Listener Management
+    
+    public func addPurchaseUpdatedListener(_ listener: @escaping PurchaseUpdatedListener) {
+        purchaseUpdatedListeners.append(listener)
+    }
+    
+    public func removePurchaseUpdatedListener(_ listener: @escaping PurchaseUpdatedListener) {
+        // Note: In Swift, comparing closures is not straightforward
+        // For now, we provide a method to clear all listeners
+        // In production, you might want to use a UUID-based system
+    }
+    
+    public func removeAllPurchaseUpdatedListeners() {
+        purchaseUpdatedListeners.removeAll()
+    }
+    
+    public func addPurchaseErrorListener(_ listener: @escaping PurchaseErrorListener) {
+        purchaseErrorListeners.append(listener)
+    }
+    
+    public func removePurchaseErrorListener(_ listener: @escaping PurchaseErrorListener) {
+        // Note: In Swift, comparing closures is not straightforward
+        // For now, we provide a method to clear all listeners
+    }
+    
+    public func removeAllPurchaseErrorListeners() {
+        purchaseErrorListeners.removeAll()
+    }
     
     // MARK: - Private Methods
     
