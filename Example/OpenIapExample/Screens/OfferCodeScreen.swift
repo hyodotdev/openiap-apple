@@ -1,5 +1,5 @@
 import SwiftUI
-import IosIAP
+import OpenIAP
 
 @available(iOS 15.0, *)
 struct OfferCodeScreen: View {

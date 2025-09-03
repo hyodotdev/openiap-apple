@@ -1,5 +1,5 @@
 import SwiftUI
-import IosIAP
+import OpenIAP
 
 @available(iOS 15.0, *)
 struct HomeScreen: View {
@@ -16,7 +16,7 @@ struct HomeScreen: View {
                                 .foregroundColor(AppColors.primary)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("iOS IAP Example")
+                                Text("OpenIAP Example")
                                     .font(.headline)
                                 
                                 Text("iOS")
@@ -82,7 +82,7 @@ struct HomeScreen: View {
             }
         }
         .background(AppColors.background)
-        .navigationTitle("IAP Features")
+        .navigationTitle("OpenIAP Features")
         .navigationBarTitleDisplayMode(.large)
     }
 }

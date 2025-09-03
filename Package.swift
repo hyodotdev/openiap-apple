@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "IosIAP",
+    name: "OpenIAP",
     platforms: [
         .iOS(.v13),
         .macOS(.v10_15),
@@ -12,18 +12,18 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "IosIAP",
-            targets: ["IosIAP"]),
+            name: "OpenIAP",
+            targets: ["OpenIAP"]),
     ],
     dependencies: [],
     targets: [
         .target(
-            name: "IosIAP",
+            name: "OpenIAP",
             dependencies: [],
             path: "Sources"),
         .testTarget(
-            name: "IosIapTests",
-            dependencies: ["IosIAP"],
+            name: "OpenIAPTests",
+            dependencies: ["OpenIAP"],
             path: "Tests"),
     ],
     swiftLanguageVersions: [.v5]

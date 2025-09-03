@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C0E1F5E92C8F1A9400123456 /* IosIapExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5E82C8F1A9400123456 /* IosIapExampleApp.swift */; };
+		C0E1F5E92C8F1A9400123456 /* OpenIapExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */; };
 		C0E1F5EB2C8F1A9400123456 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5EA2C8F1A9400123456 /* ContentView.swift */; };
 		C0E1F5ED2C8F1A9500123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */; };
 		C0E1F5F02C8F1A9500123456 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EF2C8F1A9500123456 /* Preview Assets.xcassets */; };
@@ -18,12 +18,12 @@
 		C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */; };
 		C0E1F6022C8F1AC000123456 /* StoreViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F6012C8F1AC000123456 /* StoreViewModel.swift */; };
 		C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F6032C8F1AC500123456 /* AppColors.swift */; };
-		C0E1F6072C8F1AD000123456 /* IosIAP in Frameworks */ = {isa = PBXBuildFile; productRef = C0E1F6062C8F1AD000123456 /* IosIAP */; };
+		C0E1F6072C8F1AD000123456 /* OpenIAP in Frameworks */ = {isa = PBXBuildFile; productRef = C0E1F6062C8F1AD000123456 /* OpenIAP */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		C0E1F5E52C8F1A9400123456 /* IosIapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IosIapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C0E1F5E82C8F1A9400123456 /* IosIapExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IosIapExampleApp.swift; sourceTree = "<group>"; };
+		C0E1F5E52C8F1A9400123456 /* OpenIapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenIapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenIapExampleApp.swift; sourceTree = "<group>"; };
 		C0E1F5EA2C8F1A9400123456 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C0E1F5EF2C8F1A9500123456 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -41,7 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C0E1F6072C8F1AD000123456 /* IosIAP in Frameworks */,
+				C0E1F6072C8F1AD000123456 /* OpenIAP in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -51,7 +51,7 @@
 		C0E1F5DC2C8F1A9400123456 = {
 			isa = PBXGroup;
 			children = (
-				C0E1F5E72C8F1A9400123456 /* IosIapExample */,
+				C0E1F5E72C8F1A9400123456 /* OpenIapExample */,
 				C0E1F5E62C8F1A9400123456 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,23 +59,23 @@
 		C0E1F5E62C8F1A9400123456 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C0E1F5E52C8F1A9400123456 /* IosIapExample.app */,
+				C0E1F5E52C8F1A9400123456 /* OpenIapExample.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		C0E1F5E72C8F1A9400123456 /* IosIapExample */ = {
+		C0E1F5E72C8F1A9400123456 /* OpenIapExample */ = {
 			isa = PBXGroup;
 			children = (
 				C0E1F6082C8F1AD500123456 /* Screens */,
 				C0E1F6092C8F1ADB00123456 /* ViewModels */,
 				C0E1F60A2C8F1AE000123456 /* Models */,
-				C0E1F5E82C8F1A9400123456 /* IosIapExampleApp.swift */,
+				C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */,
 				C0E1F5EA2C8F1A9400123456 /* ContentView.swift */,
 				C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */,
 				C0E1F5EE2C8F1A9500123456 /* Preview Content */,
 			);
-			path = IosIapExample;
+			path = OpenIapExample;
 			sourceTree = "<group>";
 		};
 		C0E1F5EE2C8F1A9500123456 /* Preview Content */ = {
@@ -117,9 +117,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		C0E1F5E42C8F1A9400123456 /* IosIapExample */ = {
+		C0E1F5E42C8F1A9400123456 /* OpenIapExample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C0E1F5F32C8F1A9500123456 /* Build configuration list for PBXNativeTarget "IosIapExample" */;
+			buildConfigurationList = C0E1F5F32C8F1A9500123456 /* Build configuration list for PBXNativeTarget "OpenIapExample" */;
 			buildPhases = (
 				C0E1F5E12C8F1A9400123456 /* Sources */,
 				C0E1F5E22C8F1A9400123456 /* Frameworks */,
@@ -129,12 +129,12 @@
 			);
 			dependencies = (
 			);
-			name = IosIapExample;
+			name = OpenIapExample;
 			packageProductDependencies = (
-				C0E1F6062C8F1AD000123456 /* IosIAP */,
+				C0E1F6062C8F1AD000123456 /* OpenIAP */,
 			);
-			productName = IosIapExample;
-			productReference = C0E1F5E52C8F1A9400123456 /* IosIapExample.app */;
+			productName = OpenIapExample;
+			productReference = C0E1F5E52C8F1A9400123456 /* OpenIapExample.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -152,7 +152,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "IosIapExample" */;
+			buildConfigurationList = C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "OpenIapExample" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -168,7 +168,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C0E1F5E42C8F1A9400123456 /* IosIapExample */,
+				C0E1F5E42C8F1A9400123456 /* OpenIapExample */,
 			);
 		};
 /* End PBXProject section */
@@ -198,7 +198,7 @@
 				C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */,
 				C0E1F6022C8F1AC000123456 /* StoreViewModel.swift in Sources */,
 				C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */,
-				C0E1F5E92C8F1A9400123456 /* IosIapExampleApp.swift in Sources */,
+				C0E1F5E92C8F1A9400123456 /* OpenIapExampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,11 +331,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"IosIapExample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"OpenIapExample/Preview Content\"";
 				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "IosIAP Example";
+				INFOPLIST_KEY_CFBundleDisplayName = "OpenIAP Example";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -362,11 +362,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"IosIapExample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"OpenIapExample/Preview Content\"";
 				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "IosIAP Example";
+				INFOPLIST_KEY_CFBundleDisplayName = "OpenIAP Example";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -389,7 +389,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "IosIapExample" */ = {
+		C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "OpenIapExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0E1F5F12C8F1A9500123456 /* Debug */,
@@ -398,7 +398,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C0E1F5F32C8F1A9500123456 /* Build configuration list for PBXNativeTarget "IosIapExample" */ = {
+		C0E1F5F32C8F1A9500123456 /* Build configuration list for PBXNativeTarget "OpenIapExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0E1F5F42C8F1A9500123456 /* Debug */,
@@ -417,10 +417,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		C0E1F6062C8F1AD000123456 /* IosIAP */ = {
+		C0E1F6062C8F1AD000123456 /* OpenIAP */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C0E1F6052C8F1AD000123456 /* XCLocalSwiftPackageReference ".." */;
-			productName = IosIAP;
+			productName = OpenIAP;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,6 +1,6 @@
-# Contributing to IosIAP
+# Contributing to OpenIAP
 
-Thank you for your interest in contributing! We love your input and appreciate your efforts to make IosIAP better.
+Thank you for your interest in contributing! We love your input and appreciate your efforts to make OpenIAP better.
 
 ## Quick Start
 
@@ -16,8 +16,8 @@ Thank you for your interest in contributing! We love your input and appreciate y
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/ios-iap.git
-cd ios-iap
+git clone https://github.com/YOUR_USERNAME/openiap-apple.git
+cd openiap-apple
 
 # Open in Xcode
 open Package.swift
@@ -35,7 +35,7 @@ swift test
 
 ### Naming Conventions
 
-- **Acronyms**: Use Pascal case when at beginning/middle (`IapModule`, `IosIapTests`)
+- **Acronyms**: Use Pascal case when at beginning/middle (`IapModule`, `OpenIapTests`)
 - **Acronyms as suffix**: Use all caps (`ProductIAP`, `ManagerIOS`)
 - See [CLAUDE.md](CLAUDE.md) for detailed naming rules
 

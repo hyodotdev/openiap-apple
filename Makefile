@@ -11,16 +11,16 @@ clean:
 	rm -rf .build
 
 example:
-	cd Example && xcodebuild -scheme IosIAPExample -destination 'platform=iOS Simulator,name=iPhone 15' build
+	cd Example && xcodebuild -scheme OpenIapExample -destination 'platform=iOS Simulator,name=iPhone 15' build
 
 test-example:
-	cd Example && xcodebuild -scheme IosIAPExample -destination 'platform=iOS Simulator,name=iPhone 15' test
+	cd Example && xcodebuild -scheme OpenIapExample -destination 'platform=iOS Simulator,name=iPhone 15' test
 
 open:
 	open Package.swift
 
 open-example:
-	open Example/IosIAPExample.xcodeproj
+	open Example/Martie.xcodeproj
 
 open-workspace:
-	open IosIAP.xcworkspace
+	open OpenIAP.xcworkspace

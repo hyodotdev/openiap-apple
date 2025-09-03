@@ -1,11 +1,11 @@
 import XCTest
-@testable import IosIAP
+@testable import OpenIAP
 
-final class IapTests: XCTestCase {
+final class OpenIapTests: XCTestCase {
     
     func testProductModel() {
         let product = IapProduct(
-            productId: "com.example.premium",
+            productId: "dev.hyo.premium",
             productType: .autoRenewableSubscription,
             localizedTitle: "Premium Subscription",
             localizedDescription: "Get access to all premium features",
@@ -24,7 +24,7 @@ final class IapTests: XCTestCase {
             discounts: nil
         )
         
-        XCTAssertEqual(product.productId, "com.example.premium")
+        XCTAssertEqual(product.productId, "dev.hyo.premium")
         XCTAssertEqual(product.productType, .autoRenewableSubscription)
         XCTAssertEqual(product.price, 9.99)
         XCTAssertNotNil(product.subscriptionPeriod)
@@ -34,7 +34,7 @@ final class IapTests: XCTestCase {
     
     func testPurchaseModel() {
         let purchase = IapPurchase(
-            productId: "com.example.premium",
+            productId: "dev.hyo.premium",
             purchaseToken: "token123",
             transactionId: "trans123",
             originalTransactionId: "original123",
@@ -51,7 +51,7 @@ final class IapTests: XCTestCase {
             appAccountToken: nil
         )
         
-        XCTAssertEqual(purchase.productId, "com.example.premium")
+        XCTAssertEqual(purchase.productId, "dev.hyo.premium")
         XCTAssertEqual(purchase.purchaseState, .purchased)
         XCTAssertEqual(purchase.acknowledgementState, .acknowledged)
         XCTAssertTrue(purchase.isAutoRenewing)
@@ -117,7 +117,7 @@ final class IapTests: XCTestCase {
         ]
         
         let receipt = IapReceipt(
-            bundleId: "com.example.app",
+            bundleId: "dev.hyo.app",
             applicationVersion: "1.0.0",
             originalApplicationVersion: "1.0.0",
             creationDate: Date(),
@@ -125,7 +125,7 @@ final class IapTests: XCTestCase {
             inAppPurchases: purchases
         )
         
-        XCTAssertEqual(receipt.bundleId, "com.example.app")
+        XCTAssertEqual(receipt.bundleId, "dev.hyo.app")
         XCTAssertEqual(receipt.applicationVersion, "1.0.0")
         XCTAssertEqual(receipt.inAppPurchases.count, 1)
         XCTAssertEqual(receipt.inAppPurchases.first?.productId, "product1")

@@ -7,16 +7,16 @@
       {
         "basedOn" : null,
         "packageRef" : {
-          "identity" : "ios-iap",
+          "identity" : "openiap-apple",
           "kind" : "fileSystem",
-          "location" : "/Users/hyo/Github/hyochan/ios-iap",
-          "name" : "IosIAP"
+          "location" : "/Users/hyo/Github/hyodotdev/openiap-apple",
+          "name" : "OpenIAP"
         },
         "state" : {
           "name" : "fileSystem",
-          "path" : "/Users/hyo/Github/hyochan/ios-iap"
+          "path" : "/Users/hyo/Github/hyodotdev/openiap-apple"
         },
-        "subpath" : "ios-iap"
+        "subpath" : "openiap-apple"
       }
     ],
     "prebuilts" : [

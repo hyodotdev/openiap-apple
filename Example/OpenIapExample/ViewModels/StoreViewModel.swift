@@ -1,5 +1,5 @@
 import SwiftUI
-import IosIAP
+import OpenIAP
 
 @MainActor
 @available(iOS 15.0, *)

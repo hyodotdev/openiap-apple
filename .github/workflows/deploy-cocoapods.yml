@@ -28,7 +28,7 @@ jobs:
     
     - name: Validate Podspec
       run: |
-        pod lib lint IosIAP.podspec --allow-warnings
+        pod lib lint openiap.podspec --allow-warnings
     
     - name: Deploy to CocoaPods Trunk
       if: github.event_name == 'release'
@@ -36,4 +36,4 @@ jobs:
         COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         COCOAPODS_VALIDATOR_SKIP_XCODEBUILD: 1
       run: |
-        pod trunk push IosIAP.podspec --allow-warnings
+        pod trunk push openiap.podspec --allow-warnings
