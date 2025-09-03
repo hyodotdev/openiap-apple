@@ -45,7 +45,7 @@ Or add it through Xcode:
 Add the following to your `Podfile`:
 
 ```ruby
-pod 'open-iap', '~> 1.0.0'
+pod 'openiap', '~> 1.0.0'
 ```
 
 Then run:

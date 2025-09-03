@@ -1,14 +1,14 @@
 Pod::Spec.new do |s|
   s.name             = 'IosIAP'
   s.version          = '1.0.0'
-  s.summary          = '[DEPRECATED] Use open-iap instead'
+  s.summary          = '[DEPRECATED] Use openiap instead'
   s.deprecated       = true
-  s.deprecated_in_favor_of = 'open-iap'
+  s.deprecated_in_favor_of = 'openiap'
   s.description      = <<-DESC
-    [DEPRECATED] This pod has been renamed to 'open-iap'.
-    Please update your Podfile to use 'open-iap' instead of 'IosIAP'.
+    [DEPRECATED] This pod has been renamed to 'openiap'.
+    Please update your Podfile to use 'openiap' instead of 'IosIAP'.
     
-    pod 'open-iap', '~> 1.0.0'
+    pod 'openiap', '~> 1.0.0'
     
     IosIAP is now OpenIAP - a modern Swift library for handling in-app purchases using StoreKit 2.
   DESC

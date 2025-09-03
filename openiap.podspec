@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'open-iap'
+  s.name             = 'openiap'
   s.version          = '1.0.0'
   s.summary          = 'Cross-platform In-App Purchase library using StoreKit 2'
   s.description      = <<-DESC
