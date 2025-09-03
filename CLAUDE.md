@@ -1,4 +1,4 @@
-# Claude Development Guidelines for ios-iap
+# Claude Development Guidelines for OpenIAP
 
 ## Swift Naming Conventions for Acronyms
 
@@ -6,27 +6,27 @@
 
 - **Acronyms should be ALL CAPS only when they appear as a suffix**
 - **When acronyms appear at the beginning or middle, use Pascal case (first letter caps, rest lowercase)**
-- **Package/Module names follow the same rule: `IosIAP` (iOS at beginning = `Ios`, IAP as suffix = `IAP`)**
+- **Package/Module names follow the same rule: `OpenIAP` (Open at beginning = `Open`, IAP as suffix = `IAP`)**
 
 ### Examples
 
 #### ✅ Correct
 
-- `IosIAP` (Package name: iOS at beginning, IAP as suffix)
+- `OpenIAP` (Package name: Open at beginning, IAP as suffix)
 - `IapManager` (IAP at beginning)
 - `IapPurchase` (IAP at beginning)
 - `IapError` (IAP at beginning)
-- `IosIapTests` (both iOS and IAP at beginning/middle)
+- `OpenIapTests` (both Open and IAP at beginning/middle)
 - `ProductIAP` (IAP as suffix)
 - `ManagerIAP` (IAP as suffix)
 
 #### ❌ Incorrect
 
-- `IosIap` (should be `IosIAP` - IAP is suffix)
+- `OpenIap` (should be `OpenIAP` - IAP is suffix)
 - `IAPManager` (should be `IapManager`)
 - `IAPPurchase` (should be `IapPurchase`)
 - `IAPError` (should be `IapError`)
-- `IosIAPTests` (should be `IosIapTests` - IAP is in middle, not suffix)
+- `OpenIAPTests` (should be `OpenIapTests` - IAP is in middle, not suffix)
 
 ### Specific Cases
 

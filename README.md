@@ -1,6 +1,6 @@
-# IosIAP
+# OpenIAP
 
-A comprehensive iOS In-App Purchase library following the OpenIAP specification. Simplifies the integration of in-app purchases in iOS applications with a clean, modern API.
+A comprehensive cross-platform In-App Purchase library following the OpenIAP specification. Simplifies the integration of in-app purchases in iOS/macOS/tvOS/watchOS applications with a clean, modern API.
 
 ## Features
 
@@ -31,13 +31,13 @@ Add the following to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/hyochan/ios-iap.git", from: "1.0.0")
+    .package(url: "https://github.com/hyodotdev/openiap-ios.git", from: "1.0.0")
 ]
 ```
 
 Or add it through Xcode:
 1. File → Add Package Dependencies
-2. Enter the repository URL: `https://github.com/hyochan/ios-iap.git`
+2. Enter the repository URL: `https://github.com/hyodotdev/openiap-ios.git`
 3. Select the version and add to your target
 
 ### CocoaPods
@@ -45,7 +45,7 @@ Or add it through Xcode:
 Add the following to your `Podfile`:
 
 ```ruby
-pod 'IosIAP', '~> 1.0.0'
+pod 'open-iap', '~> 1.0.0'
 ```
 
 Then run:
@@ -59,22 +59,22 @@ pod install
 ### Initialize the IAP Manager
 
 ```swift
-import IosIAP
+import OpenIAP
 
 // For iOS 15+
 if #available(iOS 15.0, *) {
-    try await IAPManager.shared.initialize()
+    try await IapModule.shared.initConnection()
 }
 ```
 
 ### Fetch Products
 
 ```swift
-let productIds: Set<String> = ["com.example.premium", "com.example.coins"]
-let products = try await IAPManager.shared.getProducts(productIds: productIds)
+let productIds = ["com.example.premium", "com.example.coins"]
+let products = try await IapModule.shared.fetchProducts(skus: productIds)
 
 for product in products {
-    print("\(product.localizedTitle): \(product.localizedPrice)")
+    print("\(product.title): \(product.displayPrice)")
 }
 ```
 
@@ -82,8 +82,11 @@ for product in products {
 
 ```swift
 do {
-    let purchase = try await IAPManager.shared.purchase(productId: "com.example.premium")
-    print("Purchase successful: \(purchase.transactionId)")
+    let transaction = try await IapModule.shared.requestPurchase(
+        sku: "com.example.premium",
+        andDangerouslyFinishTransactionAutomatically: true
+    )
+    print("Purchase successful: \(transaction?.transactionIdentifier ?? "")")
 } catch {
     print("Purchase failed: \(error)")
 }
@@ -92,104 +95,86 @@ do {
 ### Restore Purchases
 
 ```swift
-let restoredPurchases = try await IAPManager.shared.restorePurchases()
+let restoredPurchases = try await IapModule.shared.getAvailablePurchases()
 print("Restored \(restoredPurchases.count) purchases")
 ```
 
-### Observe Transactions
+### Observe Transactions (Event Listeners)
 
 ```swift
-Task {
-    for await update in IAPManager.shared.observeTransactions() {
-        switch update.event {
-        case .purchased:
-            print("New purchase: \(update.transaction.productId)")
-        case .restored:
-            print("Restored: \(update.transaction.productId)")
-        case .failed(let error):
-            print("Transaction failed: \(error)")
-        case .pending:
-            print("Transaction pending")
-        case .revoked:
-            print("Transaction revoked")
-        }
-    }
+// Add purchase updated listener
+IapModule.shared.addPurchaseUpdatedListener { purchase in
+    print("New purchase: \(purchase.productId)")
+}
+
+// Add purchase error listener
+IapModule.shared.addPurchaseErrorListener { error in
+    print("Purchase failed: \(error)")
 }
 ```
 
 ### Get Purchase History
 
 ```swift
-let purchases = try await IAPManager.shared.getPurchaseHistory()
+let purchases = try await IapModule.shared.getAvailablePurchases()
 for purchase in purchases {
     print("Product: \(purchase.productId), Date: \(purchase.purchaseTime)")
 }
 ```
 
-### Verify Receipt
+### Receipt Validation
 
 ```swift
-let receipt = try await IAPManager.shared.verifyReceipt(receiptData: nil)
-print("Bundle ID: \(receipt.bundleId)")
-print("Purchases: \(receipt.inAppPurchases.count)")
+let receiptData = try await IapModule.shared.getReceiptDataIOS()
+print("Receipt data: \(receiptData)")
 ```
 
 ## Data Models
 
-### IAPProduct
+### IapProductData
 
 ```swift
-struct IAPProduct {
-    let productId: String
-    let productType: ProductType
-    let localizedTitle: String
-    let localizedDescription: String
-    let price: Decimal
-    let localizedPrice: String
-    let currencyCode: String?
-    let countryCode: String?
-    let subscriptionPeriod: SubscriptionPeriod?
-    let introductoryPrice: IntroductoryOffer?
-    let discounts: [Discount]?
+struct IapProductData {
+    let id: String
+    let title: String
+    let description: String
+    let type: String
+    let displayPrice: String
+    let price: Double
+    let currency: String
+    let platform: String
+    // ... additional properties
 }
 ```
 
-### IAPPurchase
+### IapPurchase
 
 ```swift
-struct IAPPurchase {
+struct IapPurchase {
     let productId: String
-    let purchaseToken: String
     let transactionId: String
     let originalTransactionId: String?
-    let purchaseTime: Date
-    let originalPurchaseTime: Date?
-    let expiryTime: Date?
-    let isAutoRenewing: Bool
-    let purchaseState: PurchaseState
-    let developerPayload: String?
-    let acknowledgementState: AcknowledgementState
-    let quantity: Int
+    let purchaseTime: Double
+    let originalPurchaseTime: Double?
+    let platform: String
+    // ... additional properties
 }
 ```
 
 ## Error Handling
 
-The library provides comprehensive error handling through the `IAPError` enum:
+The library provides comprehensive error handling through the `IapError` enum:
 
 ```swift
-enum IAPError: LocalizedError {
-    case productNotFound(productId: String)
+enum IapError: LocalizedError {
     case purchaseFailed(reason: String)
     case purchaseCancelled
     case purchaseDeferred
-    case paymentNotAllowed
     case storeKitError(error: Error)
-    case invalidReceipt
-    case networkError(error: Error)
     case verificationFailed(reason: String)
-    case restoreFailed(reason: String)
     case unknownError
+    case notSupported
+    // ... additional cases
 }
 ```
 
@@ -218,4 +203,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/hyochan/ios-iap/issues) page.
+For issues and feature requests, please use the [GitHub Issues](https://github.com/hyodotdev/openiap-ios/issues) page.
