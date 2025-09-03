@@ -35,6 +35,10 @@ public struct OpenIapProduct: Codable, Equatable {
         return localizedTitle
     }
     
+    public var displayName: String {
+        return localizedTitle
+    }
+    
     public var displayPrice: String {
         return localizedPrice
     }
