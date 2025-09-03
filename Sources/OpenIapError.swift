@@ -1,7 +1,7 @@
 import Foundation
 
 public enum OpenIapError: LocalizedError {
-    case productNotFound(productId: String)
+    case productNotFound(id: String)
     case purchaseFailed(reason: String)
     case purchaseCancelled
     case purchaseDeferred
@@ -16,8 +16,8 @@ public enum OpenIapError: LocalizedError {
     
     public var errorDescription: String? {
         switch self {
-        case .productNotFound(let productId):
-            return "Product not found: \(productId)"
+        case .productNotFound(let id):
+            return "Product not found: \(id)"
         case .purchaseFailed(let reason):
             return "Purchase failed: \(reason)"
         case .purchaseCancelled:

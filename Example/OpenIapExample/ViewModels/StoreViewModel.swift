@@ -50,7 +50,7 @@ class StoreViewModel: ObservableObject {
         iapModule.addPurchaseUpdatedListener { [weak self] purchase in
             Task { @MainActor in
                 print("🎯 Purchase Updated Event Received:")
-                print("  • Product ID: \(purchase.productId)")
+                print("  • Product ID: \(purchase.id)")
                 print("  • Transaction ID: \(purchase.transactionId)")
                 print("  • Purchase State: \(purchase.purchaseState)")
                 print("  • Purchase Time: \(purchase.purchaseTime)")
@@ -76,20 +76,20 @@ class StoreViewModel: ObservableObject {
     }
     
     private func handlePurchaseUpdated(_ purchase: OpenIapPurchase) {
-        print("🔄 Processing purchase update for: \(purchase.productId)")
+        print("🔄 Processing purchase update for: \(purchase.id)")
         
         switch purchase.purchaseState {
         case .purchased:
-            handlePurchaseSuccess(purchase.productId)
+            handlePurchaseSuccess(purchase.id)
         case .failed:
-            handlePurchaseError(OpenIapError.purchaseFailed(reason: "Purchase failed"), productId: purchase.productId)
+            handlePurchaseError(OpenIapError.purchaseFailed(reason: "Purchase failed"), productId: purchase.id)
         case .pending:
-            print("⏳ Purchase pending for: \(purchase.productId)")
+            print("⏳ Purchase pending for: \(purchase.id)")
         case .restored:
-            print("♻️ Purchase restored for: \(purchase.productId)")
-            handlePurchaseSuccess(purchase.productId)
+            print("♻️ Purchase restored for: \(purchase.id)")
+            handlePurchaseSuccess(purchase.id)
         case .deferred:
-            print("⏸️ Purchase deferred for: \(purchase.productId)")
+            print("⏸️ Purchase deferred for: \(purchase.id)")
         }
     }
     
@@ -100,7 +100,7 @@ class StoreViewModel: ObservableObject {
         purchasingProductIds.remove(productId)
         
         // Find the purchased product
-        if let purchasedProduct = products.first(where: { $0.productId == productId }) {
+        if let purchasedProduct = products.first(where: { $0.id == productId }) {
             lastPurchasedProduct = purchasedProduct
             showPurchaseSuccess = true
             print("🎉 Purchase success dialog will show for: \(purchasedProduct.localizedTitle)")
@@ -175,10 +175,10 @@ class StoreViewModel: ObservableObject {
     
     func purchaseProduct(_ product: OpenIapProduct) {
         // Start loading state for this specific product
-        purchasingProductIds.insert(product.productId)
+        purchasingProductIds.insert(product.id)
         
         print("🛒 Purchase Process Started:")
-        print("  • Product ID: \(product.productId)")
+        print("  • Product ID: \(product.id)")
         print("  • Product Title: \(product.localizedTitle)")
         print("  • Product Price: \(product.localizedPrice)")
         print("  • Product Type: \(product.productType.rawValue)")
@@ -187,7 +187,7 @@ class StoreViewModel: ObservableObject {
             do {
                 print("🔄 Calling requestPurchase API...")
                 let transactionData = try await iapModule.requestPurchase(
-                    sku: product.productId,
+                    sku: product.id,
                     andDangerouslyFinishTransactionAutomatically: true,
                     appAccountToken: nil,
                     quantity: 1,
@@ -197,17 +197,17 @@ class StoreViewModel: ObservableObject {
                 print("📦 Purchase API Response:")
                 if let transaction = transactionData {
                     print("  • Transaction received: \(transaction.transactionId)")
-                    print("  • Product ID: \(transaction.productId)")
+                    print("  • Product ID: \(transaction.id)")
                     print("  • Purchase State: \(transaction.purchaseState)")
                     print("✅ Purchase successful via API: \(product.localizedTitle)")
                     await MainActor.run {
-                        handlePurchaseSuccess(product.productId)
+                        handlePurchaseSuccess(product.id)
                     }
                 } else {
                     print("  • No transaction data received")
                     print("❌ Purchase failed: No transaction data")
                     await MainActor.run {
-                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "No transaction data received"), productId: product.productId)
+                        handlePurchaseError(OpenIapError.purchaseFailed(reason: "No transaction data received"), productId: product.id)
                     }
                 }
             } catch {

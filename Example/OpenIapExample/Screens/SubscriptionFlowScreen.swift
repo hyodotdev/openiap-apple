@@ -53,7 +53,7 @@ struct SubscriptionFlowScreen: View {
                     } else {
                         ForEach(subscriptionProducts, id: \.id) { product in
                             let isSubscribed = store.purchases.contains { purchase in
-                                purchase.productId == product.id &&
+                                purchase.id == product.id &&
                                 purchase.purchaseState == .purchased &&
                                 (purchase.isAutoRenewing || (purchase.expiryTime != nil && purchase.expiryTime! > Date()))
                             }
@@ -146,7 +146,7 @@ struct SubscriptionCard: View {
                         }
                     }
                     
-                    Text(product.productId)
+                    Text(product.id)
                         .font(.caption)
                         .font(.system(.body, design: .monospaced))
                         .foregroundColor(.secondary)

@@ -126,7 +126,7 @@ struct ProductCard: View {
                 .lineLimit(nil)
             
             // Product ID (for testing)
-            Text("ID: \(product.productId)")
+            Text("ID: \(product.id)")
                 .font(.caption)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundColor(AppColors.secondaryText)
@@ -233,7 +233,7 @@ struct RecentPurchaseRow: View {
                 .frame(width: 16, height: 16)
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(purchase.productId)
+                Text(purchase.id)
                     .font(.subheadline)
                     .fontWeight(.medium)
                 
@@ -430,7 +430,7 @@ struct ProductsContentView: View {
             ForEach(consumableProducts, id: \.id) { product in
                 ProductCard(
                     product: product,
-                    isLoading: store.purchasingProductIds.contains(product.productId)
+                    isLoading: store.purchasingProductIds.contains(product.id)
                 ) {
                     store.purchaseProduct(product)
                 }

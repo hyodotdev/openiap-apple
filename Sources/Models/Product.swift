@@ -3,7 +3,7 @@ import StoreKit
 
 public struct OpenIapProduct: Codable, Equatable {
     // Core properties (mapped from StoreKit)
-    public let productId: String
+    public let id: String
     public let productType: ProductType
     public let localizedTitle: String
     public let localizedDescription: String
@@ -30,9 +30,6 @@ public struct OpenIapProduct: Codable, Equatable {
     public let priceIOS: Double
     
     // Computed properties for convenience
-    public var id: String {
-        return productId
-    }
     
     public var title: String {
         return localizedTitle
@@ -112,7 +109,7 @@ public struct OpenIapProduct: Codable, Equatable {
 @available(iOS 15.0, macOS 12.0, *)
 extension OpenIapProduct {
     init(from product: Product) async {
-        self.productId = product.id
+        self.id = product.id
         self.localizedTitle = product.displayName
         self.localizedDescription = product.description
         self.price = product.price

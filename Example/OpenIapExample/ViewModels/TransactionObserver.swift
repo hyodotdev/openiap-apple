@@ -37,7 +37,7 @@ class TransactionObserver: ObservableObject {
     }
     
     private func handlePurchaseUpdated(_ purchase: OpenIapPurchase) {
-        print("✅ Purchase successful: \(purchase.productId)")
+        print("✅ Purchase successful: \(purchase.id)")
         latestPurchase = purchase
         isPending = false
         errorMessage = nil
@@ -67,7 +67,7 @@ struct TransactionObserverExampleView: View {
                 VStack(alignment: .leading) {
                     Text("Latest Purchase:")
                         .font(.headline)
-                    Text("Product: \(purchase.productId)")
+                    Text("Product: \(purchase.id)")
                     Text("Date: \(Date(timeIntervalSince1970: purchase.purchaseTime / 1000), formatter: dateFormatter)")
                 }
                 .padding()

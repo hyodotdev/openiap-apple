@@ -5,7 +5,7 @@ final class OpenIapTests: XCTestCase {
     
     func testProductModel() {
         let product = OpenIapProduct(
-            productId: "dev.hyo.premium",
+            id: "dev.hyo.premium",
             productType: .autoRenewableSubscription,
             localizedTitle: "Premium Subscription",
             localizedDescription: "Get access to all premium features",
@@ -35,7 +35,7 @@ final class OpenIapTests: XCTestCase {
             priceIOS: 9.99
         )
         
-        XCTAssertEqual(product.productId, "dev.hyo.premium")
+        XCTAssertEqual(product.id, "dev.hyo.premium")
         XCTAssertEqual(product.productType, .autoRenewableSubscription)
         XCTAssertEqual(product.price, 9.99)
         XCTAssertNotNil(product.subscriptionPeriod)
@@ -45,7 +45,7 @@ final class OpenIapTests: XCTestCase {
     
     func testPurchaseModel() {
         let purchase = OpenIapPurchase(
-            productId: "dev.hyo.premium",
+            id: "dev.hyo.premium",
             purchaseToken: "token123",
             transactionId: "trans123",
             originalTransactionId: "original123",
@@ -81,7 +81,7 @@ final class OpenIapTests: XCTestCase {
             countryCodeIOS: "US"
         )
         
-        XCTAssertEqual(purchase.productId, "dev.hyo.premium")
+        XCTAssertEqual(purchase.id, "dev.hyo.premium")
         XCTAssertEqual(purchase.purchaseState, .purchased)
         XCTAssertEqual(purchase.acknowledgementState, .acknowledged)
         XCTAssertTrue(purchase.isAutoRenewing)
@@ -89,7 +89,7 @@ final class OpenIapTests: XCTestCase {
     }
     
     func testOpenIapError() {
-        let error1 = OpenIapError.productNotFound(productId: "test.product")
+        let error1 = OpenIapError.productNotFound(id: "test.product")
         XCTAssertNotNil(error1.errorDescription)
         XCTAssertTrue(error1.errorDescription?.contains("test.product") ?? false)
         
@@ -129,7 +129,7 @@ final class OpenIapTests: XCTestCase {
     func testReceipt() {
         let purchases = [
             OpenIapPurchase(
-                productId: "product1",
+                id: "product1",
                 purchaseToken: "token1",
                 transactionId: "trans1",
                 originalTransactionId: nil,
@@ -178,6 +178,6 @@ final class OpenIapTests: XCTestCase {
         XCTAssertEqual(receipt.bundleId, "dev.hyo.app")
         XCTAssertEqual(receipt.applicationVersion, "1.0.0")
         XCTAssertEqual(receipt.inAppPurchases.count, 1)
-        XCTAssertEqual(receipt.inAppPurchases.first?.productId, "product1")
+        XCTAssertEqual(receipt.inAppPurchases.first?.id, "product1")
     }
 }

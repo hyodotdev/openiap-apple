@@ -57,9 +57,9 @@ struct AvailablePurchasesScreen: View {
             // Show unconsumed consumables and active subscriptions
             purchase.purchaseState == .purchased && (
                 // Unconsumed consumables
-                (!purchase.productId.contains("premium") && purchase.acknowledgementState != .acknowledged) ||
+                (!purchase.id.contains("premium") && purchase.acknowledgementState != .acknowledged) ||
                 // Active subscriptions
-                (purchase.productId.contains("premium") && (purchase.isAutoRenewing || 
+                (purchase.id.contains("premium") && (purchase.isAutoRenewing || 
                     (purchase.expiryTime != nil && purchase.expiryTime! > Date())))
             )
         }
@@ -69,11 +69,11 @@ struct AvailablePurchasesScreen: View {
         var seenSubscriptions: Set<String> = []
         
         for purchase in allActivePurchases.sorted(by: { $0.purchaseTime > $1.purchaseTime }) {
-            if purchase.productId.contains("premium") {
+            if purchase.id.contains("premium") {
                 // For subscriptions, only add if we haven't seen this productId yet
-                if !seenSubscriptions.contains(purchase.productId) {
+                if !seenSubscriptions.contains(purchase.id) {
                     uniquePurchases.append(purchase)
-                    seenSubscriptions.insert(purchase.productId)
+                    seenSubscriptions.insert(purchase.id)
                 }
             } else {
                 // For consumables, add all unconsumed items
@@ -144,7 +144,7 @@ struct ActivePurchaseCard: View {
     let onConsume: () -> Void
     
     private var isSubscription: Bool {
-        purchase.productId.contains("premium") || purchase.isAutoRenewing
+        purchase.id.contains("premium") || purchase.isAutoRenewing
     }
     
     var body: some View {
@@ -159,7 +159,7 @@ struct ActivePurchaseCard: View {
             
             // Purchase Info
             VStack(alignment: .leading, spacing: 4) {
-                Text(purchase.productId)
+                Text(purchase.id)
                     .font(.headline)
                     .fontWeight(.semibold)
                 
@@ -235,7 +235,7 @@ struct PurchaseHistoryCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(purchase.productId)
+                    Text(purchase.id)
                         .font(.headline)
                         .fontWeight(.semibold)
                     
@@ -289,7 +289,7 @@ struct PurchaseCard: View {
     let onConsume: () -> Void
     
     private var isSubscription: Bool {
-        purchase.productId.contains("premium")
+        purchase.id.contains("premium")
     }
     
     private var statusColor: Color {
@@ -326,7 +326,7 @@ struct PurchaseCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(purchase.productId)
+                    Text(purchase.id)
                         .font(.headline)
                         .font(.system(.body, design: .monospaced))
                     
@@ -499,11 +499,11 @@ struct ProductListCard: View {
     }
     
     private var productIcon: String {
-        if product.productId.contains("10bulbs") {
+        if product.id.contains("10bulbs") {
             return "lightbulb"
-        } else if product.productId.contains("30bulbs") {
+        } else if product.id.contains("30bulbs") {
             return "lightbulb.fill"
-        } else if product.productId.contains("premium") {
+        } else if product.id.contains("premium") {
             return "crown"
         } else {
             return "bag"
@@ -511,11 +511,11 @@ struct ProductListCard: View {
     }
     
     private var productTitle: String {
-        if product.productId.contains("10bulbs") {
+        if product.id.contains("10bulbs") {
             return "10 Bulbs Pack"
-        } else if product.productId.contains("30bulbs") {
+        } else if product.id.contains("30bulbs") {
             return "30 Bulbs Pack"
-        } else if product.productId.contains("premium") {
+        } else if product.id.contains("premium") {
             return "Premium Subscription"
         } else {
             return product.localizedTitle
@@ -579,11 +579,11 @@ struct ProductGridCard: View {
     }
     
     private var productIcon: String {
-        if product.productId.contains("10bulbs") {
+        if product.id.contains("10bulbs") {
             return "lightbulb"
-        } else if product.productId.contains("30bulbs") {
+        } else if product.id.contains("30bulbs") {
             return "lightbulb.fill"
-        } else if product.productId.contains("premium") {
+        } else if product.id.contains("premium") {
             return "crown"
         } else {
             return "bag"
@@ -591,11 +591,11 @@ struct ProductGridCard: View {
     }
     
     private var productTitle: String {
-        if product.productId.contains("10bulbs") {
+        if product.id.contains("10bulbs") {
             return "10 Bulbs"
-        } else if product.productId.contains("30bulbs") {
+        } else if product.id.contains("30bulbs") {
             return "30 Bulbs"
-        } else if product.productId.contains("premium") {
+        } else if product.id.contains("premium") {
             return "Premium"
         } else {
             return product.localizedTitle

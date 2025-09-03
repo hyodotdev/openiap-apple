@@ -3,7 +3,7 @@ import StoreKit
 
 public struct OpenIapPurchase: Codable, Equatable {
     // Core identification (PurchaseCommon required fields)
-    public let productId: String
+    public let id: String
     public let purchaseToken: String
     public let transactionId: String
     public let originalTransactionId: String?
@@ -68,10 +68,6 @@ public struct OpenIapPurchase: Codable, Equatable {
     }
     
     // Computed properties for TypeScript type compatibility
-    public var id: String {
-        return transactionId
-    }
-    
     public var transactionDate: TimeInterval {
         return purchaseTime.timeIntervalSince1970 * 1000
     }
@@ -109,7 +105,7 @@ public struct PurchaseOptions: Codable {
 extension OpenIapPurchase {
     init(from transaction: Transaction, jwsRepresentation: String? = nil) async {
         // Core identification
-        self.productId = transaction.productID
+        self.id = transaction.productID
         self.transactionId = String(transaction.id)
         self.originalTransactionId = transaction.originalID != 0 ? String(transaction.originalID) : nil
         self.purchaseToken = jwsRepresentation ?? String(transaction.id)

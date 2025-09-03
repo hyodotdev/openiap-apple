@@ -313,7 +313,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            throw OpenIapError.productNotFound(productId: sku)
+            throw OpenIapError.productNotFound(id: sku)
         }
         
         // Build purchase options
@@ -544,7 +544,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let result = await product.latestTransaction else {
-            throw OpenIapError.productNotFound(productId: productId)
+            throw OpenIapError.productNotFound(id: productId)
         }
         
         return result.jwsRepresentation
@@ -714,7 +714,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let subscription = product.subscription else {
-            throw OpenIapError.productNotFound(productId: sku)
+            throw OpenIapError.productNotFound(id: sku)
         }
         
         do {
@@ -756,7 +756,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            throw OpenIapError.productNotFound(productId: sku)
+            throw OpenIapError.productNotFound(id: sku)
         }
         
         if let result = await product.currentEntitlement {
@@ -781,7 +781,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            throw OpenIapError.productNotFound(productId: sku)
+            throw OpenIapError.productNotFound(id: sku)
         }
         
         if let result = await product.latestTransaction {
@@ -807,7 +807,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let result = await product.latestTransaction else {
-            throw OpenIapError.productNotFound(productId: sku)
+            throw OpenIapError.productNotFound(id: sku)
         }
         
         do {
