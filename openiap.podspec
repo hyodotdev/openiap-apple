@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'OpenIAP'
+  s.name             = 'openiap'
   s.version          = '1.1.0'
   s.summary          = 'OpenIAP - Modern Swift library for in-app purchases'
   s.description      = <<-DESC
