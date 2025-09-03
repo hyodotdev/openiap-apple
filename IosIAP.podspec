@@ -1,26 +1,25 @@
-Pod::Spec.new do |spec|
-  spec.name         = "IosIAP"
-  spec.version      = "1.0.0"
-  spec.summary      = "iOS In-App Purchase library following OpenIAP specification"
-  spec.description  = <<-DESC
-    A comprehensive iOS In-App Purchase library that follows the OpenIAP specification.
-    Simplifies the integration of in-app purchases in iOS applications with a clean API.
+Pod::Spec.new do |s|
+  s.name             = 'IosIAP'
+  s.version          = '1.0.0'
+  s.summary          = 'iOS In-App Purchase library using StoreKit 2'
+  s.description      = <<-DESC
+    IosIAP is a modern Swift library for handling iOS in-app purchases using StoreKit 2.
+    It provides a clean, async/await based API for managing products, purchases, and subscriptions.
   DESC
+
+  s.homepage         = 'https://github.com/hyodotdev/ios-iap'
+  s.license          = { :type => 'MIT', :file => 'LICENSE' }
+  s.author           = { 'hyodotdev' => 'hyo@hyo.dev' }
+  s.source           = { :git => 'https://github.com/hyodotdev/ios-iap.git', :tag => s.version.to_s }
+
+  s.ios.deployment_target = '13.0'
+  s.osx.deployment_target = '10.15'
+  s.tvos.deployment_target = '13.0'
+  s.watchos.deployment_target = '6.0'
+
+  s.swift_version = '5.0'
+  s.source_files = 'Sources/**/*.swift'
   
-  spec.homepage     = "https://github.com/hyochan/ios-iap"
-  spec.license      = { :type => "MIT", :file => "LICENSE" }
-  spec.author       = { "hyochan" => "your-email@example.com" }
-  
-  spec.ios.deployment_target = "13.0"
-  spec.osx.deployment_target = "10.15"
-  spec.tvos.deployment_target = "13.0"
-  spec.watchos.deployment_target = "6.0"
-  
-  spec.source       = { :git => "https://github.com/hyochan/ios-iap.git", :tag => "#{spec.version}" }
-  spec.source_files = "Sources/IosIAP/**/*.swift"
-  
-  spec.swift_version = "5.9"
-  spec.frameworks = "StoreKit"
-  
-  spec.requires_arc = true
+  s.frameworks = 'StoreKit'
+  s.requires_arc = true
 end
