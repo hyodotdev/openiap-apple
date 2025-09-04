@@ -45,7 +45,8 @@ final class OpenIapTests: XCTestCase {
     
     func testPurchaseModel() {
         let purchase = OpenIapPurchase(
-            id: "dev.hyo.premium",
+            id: "trans123",
+            productId: "dev.hyo.premium",
             purchaseToken: "token123",
             transactionId: "trans123",
             originalTransactionId: "original123",
@@ -81,7 +82,7 @@ final class OpenIapTests: XCTestCase {
             countryCodeIOS: "US"
         )
         
-        XCTAssertEqual(purchase.id, "dev.hyo.premium")
+        XCTAssertEqual(purchase.id, "trans123")
         XCTAssertEqual(purchase.purchaseState, .purchased)
         XCTAssertEqual(purchase.acknowledgementState, .acknowledged)
         XCTAssertTrue(purchase.isAutoRenewing)
@@ -129,7 +130,8 @@ final class OpenIapTests: XCTestCase {
     func testReceipt() {
         let purchases = [
             OpenIapPurchase(
-                id: "product1",
+                id: "trans1",
+                productId: "product1",
                 purchaseToken: "token1",
                 transactionId: "trans1",
                 originalTransactionId: nil,
@@ -178,6 +180,6 @@ final class OpenIapTests: XCTestCase {
         XCTAssertEqual(receipt.bundleId, "dev.hyo.app")
         XCTAssertEqual(receipt.applicationVersion, "1.0.0")
         XCTAssertEqual(receipt.inAppPurchases.count, 1)
-        XCTAssertEqual(receipt.inAppPurchases.first?.id, "product1")
+        XCTAssertEqual(receipt.inAppPurchases.first?.id, "trans1")
     }
 }

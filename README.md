@@ -89,7 +89,7 @@ let productIds = ["dev.hyo.premium", "dev.hyo.coins"]
 let products = try await OpenIapModule.shared.fetchProducts(skus: productIds)
 
 for product in products {
-    print("\(product.title): \(product.displayPrice)")
+    print("\(product.localizedTitle): \(product.localizedPrice)")
 }
 ```
 
@@ -159,16 +159,20 @@ swift test
 
 ## 📚 Data Models
 
-### OpenIapProductData
+### OpenIapProduct
 
 ```swift
-struct OpenIapProductData {
+struct OpenIapProduct {
     let id: String
-    let title: String
-    let description: String
+    let productType: ProductType
+    let localizedTitle: String
+    let localizedDescription: String
     let price: Decimal
-    let displayPrice: String
-    let type: String
+    let localizedPrice: String
+    let currencyCode: String?
+    let countryCode: String?
+    let subscriptionPeriod: SubscriptionPeriod?
+    let introductoryPrice: IntroductoryOffer?
     let platform: String
 }
 ```
@@ -177,15 +181,19 @@ struct OpenIapProductData {
 
 ```swift
 struct OpenIapPurchase {
+    let id: String  // Transaction ID
     let productId: String
     let transactionId: String
     let purchaseTime: Date
     let purchaseState: PurchaseState
+    let acknowledgementState: AcknowledgementState
     let isAutoRenewing: Bool
+    let quantity: Int
     
     // iOS-specific StoreKit 2 properties
     let environmentIOS: String?
     let storefrontCountryCodeIOS: String?
+    let jwsRepresentation: String?
     // ... additional properties
 }
 ```
