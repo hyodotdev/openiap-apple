@@ -1,199 +1,291 @@
 import Foundation
 import StoreKit
 
+/// Product type for categorizing products
+/// Maps to literal strings: "inapp", "subs"
+public enum ProductType: String, Codable {
+    case inapp = "inapp"
+    case subs = "subs"
+}
+
 public struct OpenIapProduct: Codable, Equatable {
-    // Core properties (mapped from StoreKit)
+    // MARK: - ProductCommon fields
     public let id: String
-    public let productType: ProductType
-    public let localizedTitle: String
-    public let localizedDescription: String
-    public let price: Decimal
-    public let localizedPrice: String
-    public let currencyCode: String?
-    public let countryCode: String?
-    public let subscriptionPeriod: SubscriptionPeriod?
-    public let introductoryPrice: IntroductoryOffer?
-    public let discounts: [Discount]?
-    public let subscriptionGroupId: String?
+    public let title: String
+    public let description: String
+    public let type: String  // "inapp" or "subs" for Android compatibility
+    public let displayName: String?
+    public let displayPrice: String
+    public let currency: String
+    public let price: Double?
+    public let debugDescription: String?
+    public let platform: String  // Always "ios"
     
-    // iOS StoreKit 2 properties
-    public let platform: String
-    public let isFamilyShareable: Bool?
-    public let jsonRepresentation: String?
-    
-    // Additional fields for type compatibility
+    // MARK: - ProductIOS specific fields
     public let displayNameIOS: String
     public let isFamilyShareableIOS: Bool
     public let jsonRepresentationIOS: String
-    public let descriptionIOS: String
-    public let displayPriceIOS: String
-    public let priceIOS: Double
+    public let subscriptionInfoIOS: SubscriptionInfo?
+    public let typeIOS: ProductTypeIOS  // Detailed iOS product type
     
-    // Computed properties for convenience
+    // MARK: - ProductSubscriptionIOS specific fields (when type == "subs")
+    public let discountsIOS: [Discount]?
+    public let introductoryPriceIOS: String?
+    public let introductoryPriceAsAmountIOS: String?
+    public let introductoryPricePaymentModeIOS: String?  // PaymentMode as String
+    public let introductoryPriceNumberOfPeriodsIOS: String?
+    public let introductoryPriceSubscriptionPeriodIOS: String?  // SubscriptionIosPeriod as String
+    public let subscriptionPeriodNumberIOS: String?
+    public let subscriptionPeriodUnitIOS: String?  // SubscriptionIosPeriod as String
     
-    public var title: String {
-        return localizedTitle
+    // Discount structure for ProductSubscriptionIOS
+    public struct Discount: Codable, Equatable {
+        /// Discount identifier
+        public let identifier: String
+        
+        /// Discount type (introductory, subscription)
+        public let type: String
+        
+        /// Number of billing periods
+        public let numberOfPeriods: Int
+        
+        /// Formatted discount price
+        public let price: String
+        
+        /// Raw discount price value
+        public let priceAmount: Double
+        
+        /// Payment mode (payAsYouGo, payUpFront, freeTrial)
+        public let paymentMode: String
+        
+        /// Subscription period for discount
+        public let subscriptionPeriod: String
     }
     
-    public var displayName: String {
-        return localizedTitle
+    // SubscriptionInfo matching OpenIAP spec
+    public struct SubscriptionInfo: Codable, Equatable {
+        public let introductoryOffer: SubscriptionOffer?
+        public let promotionalOffers: [SubscriptionOffer]?
+        public let subscriptionGroupId: String
+        public let subscriptionPeriod: SubscriptionPeriod
     }
     
-    public var displayPrice: String {
-        return localizedPrice
-    }
-    
-    public var description: String {
-        return localizedDescription
-    }
-    
-    public var type: String {
-        switch productType {
-        case .consumable, .nonConsumable, .nonRenewingSubscription:
-            return "inapp"
-        case .autoRenewableSubscription:
-            return "subs"
+    public struct SubscriptionOffer: Codable, Equatable {
+        public let displayPrice: String
+        public let id: String
+        public let paymentMode: PaymentMode
+        public let period: SubscriptionPeriod
+        public let periodCount: Int
+        public let price: Double
+        public let type: OfferType
+        
+        public enum PaymentMode: String, Codable, Equatable {
+            case unknown = ""
+            case freeTrial = "FREETRIAL"
+            case payAsYouGo = "PAYASYOUGO"
+            case payUpFront = "PAYUPFRONT"
         }
-    }
-    
-    public var formattedPrice: String {
-        return localizedPrice
-    }
-    
-    public enum ProductType: String, Codable {
-        case consumable
-        case nonConsumable
-        case autoRenewableSubscription
-        case nonRenewingSubscription
+        
+        public enum OfferType: String, Codable, Equatable {
+            case introductory = "introductory"
+            case promotional = "promotional"
+        }
     }
     
     public struct SubscriptionPeriod: Codable, Equatable {
         public let unit: PeriodUnit
         public let value: Int
         
-        public enum PeriodUnit: String, Codable {
-            case day
-            case week
-            case month
-            case year
+        public enum PeriodUnit: String, Codable, Equatable {
+            case unknown = ""
+            case day = "DAY"
+            case week = "WEEK"
+            case month = "MONTH"
+            case year = "YEAR"
         }
     }
     
-    public struct IntroductoryOffer: Codable, Equatable {
-        public let id: String?
-        public let price: Decimal
-        public let localizedPrice: String
-        public let period: SubscriptionPeriod
-        public let numberOfPeriods: Int
-        public let paymentMode: PaymentMode
-        
-        public enum PaymentMode: String, Codable {
-            case payAsYouGo
-            case payUpFront
-            case freeTrial
+    /// Get the type as ProductType enum
+    public var productType: ProductType {
+        return ProductType(rawValue: type) ?? .inapp
+    }
+}
+
+// MARK: - iOS Product Type Enum (Detailed)
+public enum ProductTypeIOS: String, Codable, CaseIterable {
+    case consumable
+    case nonConsumable
+    case autoRenewableSubscription
+    case nonRenewingSubscription
+    
+    public var isSubs: Bool {
+        switch self {
+        case .autoRenewableSubscription:
+            return true
+        case .consumable, .nonConsumable, .nonRenewingSubscription:
+            return false
         }
     }
     
-    public struct Discount: Codable, Equatable {
-        public let identifier: String
-        public let type: DiscountType
-        public let price: Decimal
-        public let localizedPrice: String
-        public let period: SubscriptionPeriod?
-        public let numberOfPeriods: Int
-        public let paymentMode: String
-        
-        public enum DiscountType: String, Codable {
-            case introductory
-            case subscription
+    // Convert to common type for Android compatibility
+    public var commonType: String {
+        switch self {
+        case .autoRenewableSubscription:
+            return "subs"
+        case .consumable, .nonConsumable, .nonRenewingSubscription:
+            return "inapp"
         }
     }
 }
 
+
 @available(iOS 15.0, macOS 12.0, *)
 extension OpenIapProduct {
     init(from product: Product) async {
-        self.id = product.id
-        self.localizedTitle = product.displayName
-        self.localizedDescription = product.description
-        self.price = product.price
-        self.localizedPrice = product.displayPrice
-        self.currencyCode = product.priceFormatStyle.currencyCode
-        self.countryCode = nil
-        self.platform = "ios"
-        self.isFamilyShareable = product.isFamilyShareable
-        self.jsonRepresentation = String(data: product.jsonRepresentation, encoding: .utf8)
         
-        // iOS-specific fields for TypeScript type compatibility
+        // Core ProductCommon properties
+        self.id = product.id
+        self.title = product.displayName
+        self.description = product.description
+        self.displayName = product.displayName
+        self.displayPrice = product.displayPrice
+        self.currency = product.priceFormatStyle.currencyCode
+        self.price = NSDecimalNumber(decimal: product.price).doubleValue
+        self.debugDescription = nil
+        self.platform = "ios"
+        
+        // iOS-specific required fields
         self.displayNameIOS = product.displayName
         self.isFamilyShareableIOS = product.isFamilyShareable
         self.jsonRepresentationIOS = String(data: product.jsonRepresentation, encoding: .utf8) ?? ""
-        self.descriptionIOS = product.description
-        self.displayPriceIOS = product.displayPrice
-        self.priceIOS = NSDecimalNumber(decimal: product.price).doubleValue
         
+        // Set detailed iOS product type
+        let detailedType: ProductTypeIOS
         switch product.type {
         case .consumable:
-            self.productType = .consumable
+            detailedType = .consumable
         case .nonConsumable:
-            self.productType = .nonConsumable
-        case .autoRenewable:
-            self.productType = .autoRenewableSubscription
+            detailedType = .nonConsumable
         case .nonRenewable:
-            self.productType = .nonRenewingSubscription
+            detailedType = .nonRenewingSubscription
+        case .autoRenewable:
+            detailedType = .autoRenewableSubscription
         default:
-            self.productType = .nonConsumable
+            detailedType = .consumable
         }
         
+        self.typeIOS = detailedType
+        self.type = detailedType.commonType  // Set common type for Android compatibility
+        
+        // Handle subscription info and ProductSubscriptionIOS fields
         if let subscription = product.subscription {
-            self.subscriptionGroupId = subscription.subscriptionGroupID
-            self.subscriptionPeriod = SubscriptionPeriod(
-                unit: subscription.subscriptionPeriod.unit.toPeriodUnit(),
-                value: subscription.subscriptionPeriod.value
-            )
+            var introOffer: SubscriptionOffer? = nil
             
-            if let introOffer = subscription.introductoryOffer {
-                self.introductoryPrice = IntroductoryOffer(
-                    id: introOffer.id,
-                    price: introOffer.price,
-                    localizedPrice: introOffer.displayPrice,
+            if let intro = subscription.introductoryOffer {
+                introOffer = SubscriptionOffer(
+                    displayPrice: intro.displayPrice,
+                    id: intro.id ?? "",
+                    paymentMode: intro.paymentMode.toOpenIapPaymentMode(),
                     period: SubscriptionPeriod(
-                        unit: introOffer.period.unit.toPeriodUnit(),
-                        value: introOffer.period.value
+                        unit: intro.period.unit.toOpenIapPeriodUnit(),
+                        value: intro.period.value
                     ),
-                    numberOfPeriods: introOffer.periodCount,
-                    paymentMode: introOffer.paymentMode.toPaymentMode()
+                    periodCount: intro.periodCount,
+                    price: NSDecimalNumber(decimal: intro.price).doubleValue,
+                    type: .introductory
                 )
-            } else {
-                self.introductoryPrice = nil
             }
             
-            self.discounts = subscription.promotionalOffers.map { offer in
-                Discount(
-                    identifier: offer.id ?? "",
-                    type: .subscription,
-                    price: offer.price,
-                    localizedPrice: offer.displayPrice,
+            let promoOffers = subscription.promotionalOffers.map { offer in
+                SubscriptionOffer(
+                    displayPrice: offer.displayPrice,
+                    id: offer.id ?? "",
+                    paymentMode: offer.paymentMode.toOpenIapPaymentMode(),
                     period: SubscriptionPeriod(
-                        unit: offer.period.unit.toPeriodUnit(),
+                        unit: offer.period.unit.toOpenIapPeriodUnit(),
                         value: offer.period.value
                     ),
-                    numberOfPeriods: offer.periodCount,
-                    paymentMode: offer.paymentMode.toPaymentMode().rawValue
+                    periodCount: offer.periodCount,
+                    price: NSDecimalNumber(decimal: offer.price).doubleValue,
+                    type: .promotional
                 )
             }
+            
+            let subInfo = SubscriptionInfo(
+                introductoryOffer: introOffer,
+                promotionalOffers: promoOffers.isEmpty ? nil : promoOffers,
+                subscriptionGroupId: subscription.subscriptionGroupID,
+                subscriptionPeriod: SubscriptionPeriod(
+                    unit: subscription.subscriptionPeriod.unit.toOpenIapPeriodUnit(),
+                    value: subscription.subscriptionPeriod.value
+                )
+            )
+            
+            self.subscriptionInfoIOS = subInfo
+            
+            // ProductSubscriptionIOS specific fields
+            if let intro = subscription.introductoryOffer {
+                self.introductoryPriceIOS = intro.displayPrice
+                self.introductoryPriceAsAmountIOS = String(NSDecimalNumber(decimal: intro.price).doubleValue)
+                self.introductoryPricePaymentModeIOS = intro.paymentMode.toOpenIapPaymentMode().rawValue
+                self.introductoryPriceNumberOfPeriodsIOS = String(intro.periodCount)
+                self.introductoryPriceSubscriptionPeriodIOS = intro.period.unit.toOpenIapPeriodUnit().rawValue
+            } else {
+                self.introductoryPriceIOS = nil
+                self.introductoryPriceAsAmountIOS = nil
+                self.introductoryPricePaymentModeIOS = nil
+                self.introductoryPriceNumberOfPeriodsIOS = nil
+                self.introductoryPriceSubscriptionPeriodIOS = nil
+            }
+            
+            self.subscriptionPeriodNumberIOS = String(subscription.subscriptionPeriod.value)
+            self.subscriptionPeriodUnitIOS = subscription.subscriptionPeriod.unit.toOpenIapPeriodUnit().rawValue
+            
+            // Build discounts array from all offers
+            var discounts: [Discount] = []
+            
+            if let intro = subscription.introductoryOffer {
+                discounts.append(Discount(
+                    identifier: intro.id ?? "",
+                    type: "introductory",
+                    numberOfPeriods: intro.periodCount,
+                    price: intro.displayPrice,
+                    priceAmount: NSDecimalNumber(decimal: intro.price).doubleValue,
+                    paymentMode: intro.paymentMode.toOpenIapPaymentMode().rawValue,
+                    subscriptionPeriod: intro.period.toISO8601Period()
+                ))
+            }
+            
+            for offer in subscription.promotionalOffers {
+                discounts.append(Discount(
+                    identifier: offer.id ?? "",
+                    type: "promotional",
+                    numberOfPeriods: offer.periodCount,
+                    price: offer.displayPrice,
+                    priceAmount: NSDecimalNumber(decimal: offer.price).doubleValue,
+                    paymentMode: offer.paymentMode.toOpenIapPaymentMode().rawValue,
+                    subscriptionPeriod: offer.period.toISO8601Period()
+                ))
+            }
+            
+            self.discountsIOS = discounts.isEmpty ? nil : discounts
         } else {
-            self.subscriptionGroupId = nil
-            self.subscriptionPeriod = nil
-            self.introductoryPrice = nil
-            self.discounts = nil
+            self.subscriptionInfoIOS = nil
+            self.discountsIOS = nil
+            self.introductoryPriceIOS = nil
+            self.introductoryPriceAsAmountIOS = nil
+            self.introductoryPricePaymentModeIOS = nil
+            self.introductoryPriceNumberOfPeriodsIOS = nil
+            self.introductoryPriceSubscriptionPeriodIOS = nil
+            self.subscriptionPeriodNumberIOS = nil
+            self.subscriptionPeriodUnitIOS = nil
         }
     }
 }
 
 @available(iOS 15.0, macOS 12.0, *)
 extension Product.SubscriptionPeriod.Unit {
-    func toPeriodUnit() -> OpenIapProduct.SubscriptionPeriod.PeriodUnit {
+    func toOpenIapPeriodUnit() -> OpenIapProduct.SubscriptionPeriod.PeriodUnit {
         switch self {
         case .day:
             return .day
@@ -204,14 +296,14 @@ extension Product.SubscriptionPeriod.Unit {
         case .year:
             return .year
         @unknown default:
-            return .month
+            return .unknown
         }
     }
 }
 
 @available(iOS 15.0, macOS 12.0, *)
 extension Product.SubscriptionOffer.PaymentMode {
-    func toPaymentMode() -> OpenIapProduct.IntroductoryOffer.PaymentMode {
+    func toOpenIapPaymentMode() -> OpenIapProduct.SubscriptionOffer.PaymentMode {
         switch self {
         case .payAsYouGo:
             return .payAsYouGo
@@ -220,7 +312,28 @@ extension Product.SubscriptionOffer.PaymentMode {
         case .freeTrial:
             return .freeTrial
         default:
-            return .payAsYouGo
+            return .unknown
+        }
+    }
+}
+
+// MARK: - ISO 8601 Period Conversion
+
+@available(iOS 15.0, macOS 12.0, *)
+extension Product.SubscriptionPeriod {
+    /// Convert to ISO 8601 duration format (P1M, P3M, P1Y, etc.)
+    func toISO8601Period() -> String {
+        switch unit {
+        case .day:
+            return "P\(value)D"
+        case .week:
+            return "P\(value)W"
+        case .month:
+            return "P\(value)M"
+        case .year:
+            return "P\(value)Y"
+        @unknown default:
+            return "P0D"
         }
     }
 }

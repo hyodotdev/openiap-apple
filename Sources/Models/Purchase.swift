@@ -2,37 +2,24 @@ import Foundation
 import StoreKit
 
 public struct OpenIapPurchase: Codable, Equatable {
-    // Core identification (PurchaseCommon required fields)
-    public let id: String
-    public let productId: String
-    public let purchaseToken: String
-    public let transactionId: String
-    public let originalTransactionId: String?
+    // MARK: - PurchaseCommon fields
+    public let id: String                      // Transaction ID (primary identifier)
+    public let productId: String               // Product identifier
+    public let ids: [String]?                  // Common field for both platforms
+    public let transactionDate: Double         // Unix timestamp in milliseconds
+    public let transactionReceipt: String      // Purchase receipt/token
+    public let purchaseToken: String?          // Purchase token
+    public let platform: String                // Always "ios"
+    public let quantity: Int                   // Purchase quantity (common field, defaults to 1)
+    public let purchaseState: PurchaseState    // Purchase state (common field)
+    public let isAutoRenewing: Bool            // Auto-renewable subscription flag (common field)
     
-    // Platform identification
-    public let platform: String
-    
-    // Multiple product IDs support
-    public let ids: [String]?
-    
-    // Timing information
-    public let purchaseTime: Date
-    public let originalPurchaseTime: Date?
-    public let expiryTime: Date?
-    
-    // Purchase state
-    public let isAutoRenewing: Bool
-    public let purchaseState: PurchaseState
-    public let acknowledgementState: AcknowledgementState
-    public let quantity: Int
-    
-    // Legacy compatibility
-    public let developerPayload: String?
-    public let jwsRepresentation: String?
-    public let jsonRepresentation: String?
+    // MARK: - PurchaseIOS specific fields
+    public let quantityIOS: Int?
+    public let originalTransactionDateIOS: Double?
+    public let originalTransactionIdentifierIOS: String?
     public let appAccountToken: String?
-    
-    // iOS StoreKit 2 additional properties
+    public let expirationDateIOS: Double?
     public let webOrderLineItemIdIOS: Int?
     public let environmentIOS: String?
     public let storefrontCountryCodeIOS: String?
@@ -43,42 +30,16 @@ public struct OpenIapPurchase: Codable, Equatable {
     public let ownershipTypeIOS: String?
     public let reasonIOS: String?
     public let reasonStringRepresentationIOS: String?
-    public let transactionReasonIOS: String?
-    public let revocationDateIOS: Date?
+    public let transactionReasonIOS: String?  // 'PURCHASE' | 'RENEWAL' | string
+    public let revocationDateIOS: Double?
     public let revocationReasonIOS: String?
-    
-    // Offer information
     public let offerIOS: PurchaseOffer?
-    
-    // Price locale information
     public let currencyCodeIOS: String?
     public let currencySymbolIOS: String?
     public let countryCodeIOS: String?
-    
-    public enum PurchaseState: String, Codable {
-        case pending
-        case purchased
-        case failed
-        case restored
-        case deferred
-    }
-    
-    public enum AcknowledgementState: String, Codable {
-        case notAcknowledged
-        case acknowledged
-    }
-    
-    // Computed properties for TypeScript type compatibility
-    public var transactionDate: TimeInterval {
-        return purchaseTime.timeIntervalSince1970 * 1000
-    }
-    
-    public var transactionReceipt: String {
-        return purchaseToken
-    }
 }
 
-// Support structures
+// MARK: - Support structures
 public struct PurchaseOffer: Codable, Equatable {
     public let id: String
     public let type: String
@@ -91,48 +52,35 @@ public struct PurchaseOffer: Codable, Equatable {
     }
 }
 
-// Options for purchase queries
-public struct PurchaseOptions: Codable {
-    public let alsoPublishToEventListener: Bool?
-    public let onlyIncludeActiveItems: Bool?
-    
-    public init(alsoPublishToEventListener: Bool? = false, onlyIncludeActiveItems: Bool? = false) {
-        self.alsoPublishToEventListener = alsoPublishToEventListener
-        self.onlyIncludeActiveItems = onlyIncludeActiveItems
-    }
-}
-
+// MARK: - StoreKit 2 Integration
 @available(iOS 15.0, macOS 14.0, *)
 extension OpenIapPurchase {
     init(from transaction: Transaction, jwsRepresentation: String? = nil) async {
-        // Core identification
-        self.id = String(transaction.id)
+        // PurchaseCommon fields
+        self.id = String(transaction.id)  // Transaction ID is the primary identifier
         self.productId = transaction.productID
-        self.transactionId = String(transaction.id)
-        self.originalTransactionId = transaction.originalID != 0 ? String(transaction.originalID) : nil
-        self.purchaseToken = jwsRepresentation ?? String(transaction.id)
-        
-        // Platform and IDs
-        self.platform = "ios"
         self.ids = nil // Single product purchase
-        
-        // Timing information
-        self.purchaseTime = transaction.purchaseDate
-        self.originalPurchaseTime = transaction.originalPurchaseDate
-        self.expiryTime = transaction.expirationDate
-        
-        // Purchase state
-        self.isAutoRenewing = transaction.isUpgraded == false
+        self.transactionDate = transaction.purchaseDate.timeIntervalSince1970 * 1000  // Unix timestamp in milliseconds
+        self.transactionReceipt = jwsRepresentation ?? String(transaction.id)
+        self.purchaseToken = jwsRepresentation ?? String(transaction.id)
+        self.platform = "ios"
         self.quantity = transaction.purchasedQuantity
-        self.acknowledgementState = .acknowledged
+        self.purchaseState = .purchased  // StoreKit 2 transactions are verified and purchased
         
-        // Legacy compatibility
-        self.developerPayload = transaction.appAccountToken?.uuidString
-        self.jwsRepresentation = jwsRepresentation
-        self.jsonRepresentation = String(data: transaction.jsonRepresentation, encoding: .utf8)
+        // Check if it's an auto-renewable subscription
+        switch transaction.productType {
+        case .autoRenewable:
+            self.isAutoRenewing = true
+        default:
+            self.isAutoRenewing = false
+        }
+        
+        // PurchaseIOS specific fields
+        self.quantityIOS = transaction.purchasedQuantity
+        self.originalTransactionDateIOS = transaction.originalPurchaseDate.timeIntervalSince1970 * 1000
+        self.originalTransactionIdentifierIOS = transaction.originalID != 0 ? String(transaction.originalID) : nil
         self.appAccountToken = transaction.appAccountToken?.uuidString
-        
-        // iOS StoreKit 2 additional properties  
+        self.expirationDateIOS = transaction.expirationDate.map { $0.timeIntervalSince1970 * 1000 }
         self.webOrderLineItemIdIOS = Int(transaction.webOrderLineItemID ?? "0")
         
         // Environment (iOS 16.0+)
@@ -141,11 +89,11 @@ extension OpenIapPurchase {
         } else {
             self.environmentIOS = nil
         }
+        
         self.storefrontCountryCodeIOS = transaction.storefrontCountryCode
         self.appBundleIdIOS = transaction.appBundleID
         self.subscriptionGroupIdIOS = transaction.subscriptionGroupID
         self.isUpgradedIOS = transaction.isUpgraded
-        self.revocationDateIOS = transaction.revocationDate
         
         // Product type
         switch transaction.productType {
@@ -164,17 +112,14 @@ extension OpenIapPurchase {
         // Ownership type
         switch transaction.ownershipType {
         case .purchased:
-            self.purchaseState = .purchased
             self.ownershipTypeIOS = "purchased"
         case .familyShared:
-            self.purchaseState = .restored
             self.ownershipTypeIOS = "family_shared"
         default:
-            self.purchaseState = .purchased
             self.ownershipTypeIOS = "purchased"
         }
         
-        // Reason and revocation (iOS 17.0+)
+        // Reason (iOS 17.0+)
         if #available(iOS 17.0, macOS 14.0, *) {
             switch transaction.reason {
             case .purchase:
@@ -194,6 +139,8 @@ extension OpenIapPurchase {
         
         self.reasonStringRepresentationIOS = self.reasonIOS
         
+        // Revocation
+        self.revocationDateIOS = transaction.revocationDate.map { $0.timeIntervalSince1970 * 1000 }
         if let revocationReason = transaction.revocationReason {
             self.revocationReasonIOS = revocationReason.rawValue.description
         } else {
@@ -215,18 +162,49 @@ extension OpenIapPurchase {
             self.offerIOS = nil
         }
         
-        // Price locale information - would need to get from Product if available
+        // Currency and country (not directly available from Transaction)
         self.currencyCodeIOS = nil
         self.currencySymbolIOS = nil
         self.countryCodeIOS = transaction.storefrontCountryCode
     }
 }
 
-public struct OpenIapReceipt: Codable {
-    public let bundleId: String
-    public let applicationVersion: String
-    public let originalApplicationVersion: String?
-    public let creationDate: Date
-    public let expirationDate: Date?
-    public let inAppPurchases: [OpenIapPurchase]
+// MARK: - Purchase State Enum (Common)
+public enum PurchaseState: String, Codable, CaseIterable {
+    case pending = "pending"
+    case purchased = "purchased" 
+    case failed = "failed"
+    case restored = "restored"
+    case deferred = "deferred"
+    case unknown = "unknown"
+    
+    public var isActive: Bool {
+        switch self {
+        case .purchased, .restored:
+            return true
+        case .pending, .failed, .deferred, .unknown:
+            return false
+        }
+    }
+    
+    public var isAcknowledged: Bool {
+        switch self {
+        case .purchased, .restored:
+            return true
+        case .pending, .failed, .deferred, .unknown:
+            return false
+        }
+    }
+}
+
+// MARK: - Purchase Options
+// Options for purchase queries following OpenIAP spec
+public struct PurchaseOptions: Codable {
+    public let alsoPublishToEventListenerIOS: Bool?
+    public let onlyIncludeActiveItemsIOS: Bool?
+    
+    public init(alsoPublishToEventListenerIOS: Bool? = false, onlyIncludeActiveItemsIOS: Bool? = false) {
+        self.alsoPublishToEventListenerIOS = alsoPublishToEventListenerIOS
+        self.onlyIncludeActiveItemsIOS = onlyIncludeActiveItemsIOS
+    }
 }

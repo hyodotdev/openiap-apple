@@ -92,10 +92,3 @@ public struct OpenIapPriceLocale: Codable {
     public let currencySymbol: String
     public let countryCode: String
 }
-
-public struct OpenIapReceiptValidation: Codable {
-    public let isValid: Bool
-    public let receiptData: String
-    public let jwsRepresentation: String
-    public let latestTransaction: OpenIapPurchase?
-}

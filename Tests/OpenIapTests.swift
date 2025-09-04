@@ -4,65 +4,73 @@ import XCTest
 final class OpenIapTests: XCTestCase {
     
     func testProductModel() {
+        let subscriptionInfo = OpenIapProduct.SubscriptionInfo(
+            introductoryOffer: OpenIapProduct.SubscriptionOffer(
+                displayPrice: "Free",
+                id: "intro1",
+                paymentMode: .freeTrial,
+                period: OpenIapProduct.SubscriptionPeriod(unit: .week, value: 1),
+                periodCount: 1,
+                price: 0,
+                type: .introductory
+            ),
+            promotionalOffers: nil,
+            subscriptionGroupId: "group1",
+            subscriptionPeriod: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1)
+        )
+        
         let product = OpenIapProduct(
             id: "dev.hyo.premium",
-            productType: .autoRenewableSubscription,
-            localizedTitle: "Premium Subscription",
-            localizedDescription: "Get access to all premium features",
+            title: "Premium Subscription",
+            description: "Get access to all premium features",
+            type: "subs",
+            displayName: "Premium Subscription",
+            displayPrice: "$9.99",
+            currency: "USD",
             price: 9.99,
-            localizedPrice: "$9.99",
-            currencyCode: "USD",
-            countryCode: "US",
-            subscriptionPeriod: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
-            introductoryPrice: OpenIapProduct.IntroductoryOffer(
-                id: "intro1",
-                price: 0,
-                localizedPrice: "Free",
-                period: OpenIapProduct.SubscriptionPeriod(unit: .week, value: 1),
-                numberOfPeriods: 1,
-                paymentMode: .freeTrial
-            ),
-            discounts: nil,
-            subscriptionGroupId: "group1",
-            platform: "iOS",
-            isFamilyShareable: true,
-            jsonRepresentation: nil,
+            debugDescription: nil,
+            platform: "ios",
             displayNameIOS: "Premium Subscription",
             isFamilyShareableIOS: true,
             jsonRepresentationIOS: "{}",
-            descriptionIOS: "Get access to all premium features",
-            displayPriceIOS: "$9.99",
-            priceIOS: 9.99
+            subscriptionInfoIOS: subscriptionInfo,
+            typeIOS: .autoRenewableSubscription,
+            discountsIOS: nil,
+            introductoryPriceIOS: "Free",
+            introductoryPriceAsAmountIOS: "0",
+            introductoryPricePaymentModeIOS: "FREETRIAL",
+            introductoryPriceNumberOfPeriodsIOS: "1",
+            introductoryPriceSubscriptionPeriodIOS: "WEEK",
+            subscriptionPeriodNumberIOS: "1",
+            subscriptionPeriodUnitIOS: "MONTH"
         )
         
         XCTAssertEqual(product.id, "dev.hyo.premium")
-        XCTAssertEqual(product.productType, .autoRenewableSubscription)
+        XCTAssertEqual(product.type, "subs")
         XCTAssertEqual(product.price, 9.99)
-        XCTAssertNotNil(product.subscriptionPeriod)
-        XCTAssertNotNil(product.introductoryPrice)
-        XCTAssertEqual(product.introductoryPrice?.paymentMode, .freeTrial)
+        XCTAssertNotNil(product.subscriptionInfoIOS)
+        XCTAssertNotNil(product.subscriptionInfoIOS?.introductoryOffer)
+        XCTAssertEqual(product.subscriptionInfoIOS?.introductoryOffer?.paymentMode, .freeTrial)
     }
     
     func testPurchaseModel() {
+        let now = Date()
         let purchase = OpenIapPurchase(
             id: "trans123",
             productId: "dev.hyo.premium",
-            purchaseToken: "token123",
-            transactionId: "trans123",
-            originalTransactionId: "original123",
-            platform: "iOS",
             ids: ["trans123"],
-            purchaseTime: Date(),
-            originalPurchaseTime: Date(),
-            expiryTime: Date().addingTimeInterval(86400 * 30),
-            isAutoRenewing: true,
-            purchaseState: .purchased,
-            acknowledgementState: .acknowledged,
+            transactionDate: now.timeIntervalSince1970 * 1000,
+            transactionReceipt: "receipt_data",
+            purchaseToken: "token123",
+            platform: "ios",
             quantity: 1,
-            developerPayload: nil,
-            jwsRepresentation: nil,
-            jsonRepresentation: nil,
+            purchaseState: .purchased,
+            isAutoRenewing: true,
+            quantityIOS: 1,
+            originalTransactionDateIOS: now.timeIntervalSince1970 * 1000,
+            originalTransactionIdentifierIOS: "original123",
             appAccountToken: nil,
+            expirationDateIOS: (now.timeIntervalSince1970 + 86400 * 30) * 1000,
             webOrderLineItemIdIOS: nil,
             environmentIOS: "Production",
             storefrontCountryCodeIOS: "US",
@@ -83,10 +91,10 @@ final class OpenIapTests: XCTestCase {
         )
         
         XCTAssertEqual(purchase.id, "trans123")
-        XCTAssertEqual(purchase.purchaseState, .purchased)
-        XCTAssertEqual(purchase.acknowledgementState, .acknowledged)
-        XCTAssertTrue(purchase.isAutoRenewing)
-        XCTAssertEqual(purchase.quantity, 1)
+        XCTAssertEqual(purchase.productId, "dev.hyo.premium")
+        XCTAssertEqual(purchase.platform, "ios")
+        XCTAssertEqual(purchase.quantityIOS, 1)
+        XCTAssertEqual(purchase.transactionReasonIOS, "PURCHASE")
     }
     
     func testOpenIapError() {
@@ -112,42 +120,42 @@ final class OpenIapTests: XCTestCase {
         XCTAssertNotEqual(period1, period3)
     }
     
-    func testIntroductoryOffer() {
-        let offer = OpenIapProduct.IntroductoryOffer(
+    func testSubscriptionOffer() {
+        let offer = OpenIapProduct.SubscriptionOffer(
+            displayPrice: "$4.99",
             id: "intro2",
-            price: 4.99,
-            localizedPrice: "$4.99",
+            paymentMode: .payAsYouGo,
             period: OpenIapProduct.SubscriptionPeriod(unit: .month, value: 1),
-            numberOfPeriods: 3,
-            paymentMode: .payAsYouGo
+            periodCount: 3,
+            price: 4.99,
+            type: .introductory
         )
         
         XCTAssertEqual(offer.price, 4.99)
-        XCTAssertEqual(offer.numberOfPeriods, 3)
+        XCTAssertEqual(offer.periodCount, 3)
         XCTAssertEqual(offer.paymentMode, .payAsYouGo)
+        XCTAssertEqual(offer.type, .introductory)
     }
     
     func testReceipt() {
+        let now = Date()
         let purchases = [
             OpenIapPurchase(
                 id: "trans1",
                 productId: "product1",
-                purchaseToken: "token1",
-                transactionId: "trans1",
-                originalTransactionId: nil,
-                platform: "iOS",
                 ids: ["trans1"],
-                purchaseTime: Date(),
-                originalPurchaseTime: nil,
-                expiryTime: nil,
-                isAutoRenewing: false,
-                purchaseState: .purchased,
-                acknowledgementState: .acknowledged,
+                transactionDate: now.timeIntervalSince1970 * 1000,
+                transactionReceipt: "receipt_data",
+                purchaseToken: "token1",
+                platform: "ios",
                 quantity: 1,
-                developerPayload: nil,
-                jwsRepresentation: nil,
-                jsonRepresentation: nil,
+                purchaseState: .purchased,
+                isAutoRenewing: false,
+                quantityIOS: 1,
+                originalTransactionDateIOS: nil,
+                originalTransactionIdentifierIOS: nil,
                 appAccountToken: nil,
+                expirationDateIOS: nil,
                 webOrderLineItemIdIOS: nil,
                 environmentIOS: "Production",
                 storefrontCountryCodeIOS: "US",
