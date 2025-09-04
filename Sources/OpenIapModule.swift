@@ -4,8 +4,6 @@ import StoreKit
 import UIKit
 #endif
 
-import StoreKit
-
 // MARK: - Helper functions for ExpoModulesCore compatibility
 
 // MARK: - Event Listeners

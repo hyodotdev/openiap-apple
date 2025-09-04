@@ -22,10 +22,11 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 
 - ✅ **StoreKit 2** support with full iOS 15+ compatibility
 - ✅ **Cross-platform** support (iOS, macOS, tvOS, watchOS)
+- ✅ **Thread-safe** operations with MainActor isolation
 - ✅ **Unified API** following OpenIAP specification
 - ✅ **Product management** with intelligent caching
 - ✅ **Purchase handling** with automatic transaction verification
-- ✅ **Subscription management** and renewal tracking
+- ✅ **Subscription management** with cancel/reactivate support
 - ✅ **Receipt validation** and transaction security
 - ✅ **Event-driven** purchase observation
 - ✅ **Swift Package Manager** and **CocoaPods** support
@@ -33,12 +34,12 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 ## 📋 Requirements
 
 | Platform | Minimum Version |
-|----------|-----------------|
-| iOS | 15.0+ |
-| macOS | 14.0+ |
-| tvOS | 15.0+ |
-| watchOS | 8.0+ |
-| Swift | 5.9+ |
+| -------- | --------------- |
+| iOS      | 15.0+           |
+| macOS    | 14.0+           |
+| tvOS     | 15.0+           |
+| watchOS  | 8.0+            |
+| Swift    | 5.9+            |
 
 ## 📦 Installation
 
@@ -53,6 +54,7 @@ dependencies: [
 ```
 
 Or through Xcode:
+
 1. **File** → **Add Package Dependencies**
 2. Enter: `https://github.com/hyodotdev/openiap-apple.git`
 3. Select version and add to your target
@@ -78,7 +80,7 @@ pod install
 ```swift
 import OpenIAP
 
-// Initialize the IAP connection
+// Initialize the IAP connection (thread-safe with MainActor isolation)
 try await OpenIapModule.shared.initConnection()
 ```
 
@@ -126,10 +128,11 @@ OpenIapModule.shared.addPurchaseErrorListener { error in
 The repository includes a complete **SwiftUI example app** demonstrating all OpenIAP features:
 
 - **Product catalog** with real-time pricing
-- **Purchase flow** with loading states and error handling  
-- **Subscription management** with renewal tracking
+- **Purchase flow** with loading states and error handling
+- **Subscription management** with renewal tracking, cancel/reactivate support
 - **Purchase history** and transaction details
 - **Event logging** for debugging and monitoring
+- **Sandbox debug tools** integrated into My Purchases section
 
 Run the example:
 
@@ -157,23 +160,53 @@ swift test
 3. Use test card: `4242 4242 4242 4242`
 4. Monitor purchase events in the Example app logs
 
+### Server-Side Validation
+
+OpenIAP provides comprehensive transaction verification with server-side receipt validation examples:
+
+```swift
+// Transaction finishing with validation
+let transaction = try await OpenIapModule.shared.requestPurchase(
+    sku: "dev.hyo.premium",
+    andDangerouslyFinishTransactionAutomatically: false // Validate server-side first
+)
+
+// Validate on your server using jwsRepresentation
+// Then finish the transaction manually
+try await transaction.finish()
+```
+
 ## 📚 Data Models
 
 ### OpenIapProduct
 
 ```swift
 struct OpenIapProduct {
+    // Common properties
     let id: String
-    let productType: ProductType
-    let localizedTitle: String
-    let localizedDescription: String
-    let price: Decimal
-    let localizedPrice: String
-    let currencyCode: String?
-    let countryCode: String?
-    let subscriptionPeriod: SubscriptionPeriod?
-    let introductoryPrice: IntroductoryOffer?
+    let title: String
+    let description: String
+    let type: String  // "inapp" or "subs"
+    let displayPrice: String
+    let currency: String
+    let price: Double?
     let platform: String
+
+    // iOS-specific properties
+    let displayNameIOS: String
+    let typeIOS: ProductTypeIOS
+    let subscriptionInfoIOS: SubscriptionInfo?
+    let discountsIOS: [Discount]?
+    let isFamilyShareableIOS: Bool
+}
+
+enum ProductTypeIOS {
+    case consumable
+    case nonConsumable
+    case autoRenewableSubscription
+    case nonRenewingSubscription
+
+    var isSubs: Bool { /* returns true for autoRenewableSubscription */ }
 }
 ```
 
@@ -181,20 +214,41 @@ struct OpenIapProduct {
 
 ```swift
 struct OpenIapPurchase {
+    // Common properties
     let id: String  // Transaction ID
     let productId: String
-    let transactionId: String
-    let purchaseTime: Date
+    let transactionDate: Double  // Unix timestamp in milliseconds
+    let transactionReceipt: String
     let purchaseState: PurchaseState
-    let acknowledgementState: AcknowledgementState
     let isAutoRenewing: Bool
     let quantity: Int
-    
-    // iOS-specific StoreKit 2 properties
+    let platform: String
+
+    // iOS-specific properties
+    let appAccountToken: String?
     let environmentIOS: String?
     let storefrontCountryCodeIOS: String?
-    let jwsRepresentation: String?
+    let productTypeIOS: String?
+    let subscriptionGroupIdIOS: String?
+    let transactionReasonIOS: String?  // "PURCHASE" | "RENEWAL"
+    let offerIOS: PurchaseOffer?
     // ... additional properties
+}
+
+enum PurchaseState {
+    case pending, purchased, failed, restored, deferred, unknown
+}
+```
+
+### DiscountOffer
+
+```swift
+struct DiscountOffer {
+    let identifier: String
+    let keyIdentifier: String
+    let nonce: String
+    let signature: String
+    let timestamp: String
 }
 ```
 
@@ -213,16 +267,6 @@ enum OpenIapError: LocalizedError {
     case notSupported
 }
 ```
-
-## 🔗 OpenIAP Ecosystem
-
-| Platform | Repository | Status |
-|----------|------------|---------|
-| **Specification** | [openiap.dev](https://github.com/hyodotdev/openiap.dev) | ✅ Active |
-| **Apple** | [openiap-apple](https://github.com/hyodotdev/openiap-apple) | ✅ Active |
-| **React Native** | Coming Soon | 🚧 Planned |
-| **Flutter** | Coming Soon | 🚧 Planned |
-| **Unity** | Coming Soon | 🚧 Planned |
 
 ## 🤝 Contributing
 
