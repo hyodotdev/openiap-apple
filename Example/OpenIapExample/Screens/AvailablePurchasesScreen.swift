@@ -10,6 +10,11 @@ struct AvailablePurchasesScreen: View {
             VStack(spacing: 24) {
                 availablePurchasesSection
                 purchaseHistorySection
+                
+                // Debug section for Sandbox testing
+                #if DEBUG
+                sandboxToolsSection
+                #endif
             }
             .padding(.vertical)
         }
@@ -54,34 +59,32 @@ struct AvailablePurchasesScreen: View {
     
     private var uniqueActivePurchases: [OpenIapPurchase] {
         let allActivePurchases = store.purchases.filter { purchase in
-            // Show unconsumed consumables and active subscriptions
-            purchase.purchaseState == .purchased && (
-                // Unconsumed consumables
-                (!purchase.id.contains("premium") && purchase.acknowledgementState != .acknowledged) ||
-                // Active subscriptions
-                (purchase.id.contains("premium") && (purchase.isAutoRenewing || 
-                    (purchase.expiryTime != nil && purchase.expiryTime! > Date())))
-            )
-        }
-        
-        // Group by productId and take only the latest purchase for each subscription
-        var uniquePurchases: [OpenIapPurchase] = []
-        var seenSubscriptions: Set<String> = []
-        
-        for purchase in allActivePurchases.sorted(by: { $0.purchaseTime > $1.purchaseTime }) {
-            if purchase.id.contains("premium") {
-                // For subscriptions, only add if we haven't seen this productId yet
-                if !seenSubscriptions.contains(purchase.id) {
-                    uniquePurchases.append(purchase)
-                    seenSubscriptions.insert(purchase.id)
+            // Show active purchases (purchased or restored state)
+            purchase.purchaseState == .purchased || purchase.purchaseState == .restored
+        }.filter { purchase in
+            // Check product type if we can determine it
+            let isSubscription = purchase.productId.contains("premium") || 
+                                purchase.productId.contains("subscription")
+            
+            if isSubscription {
+                // Active subscriptions: check auto-renewing or expiry time
+                if purchase.isAutoRenewing {
+                    return true  // Always show auto-renewing subscriptions
                 }
+                // For non-auto-renewing, check expiry time
+                if let expiryTime = purchase.expirationDateIOS {
+                    let expiryDate = Date(timeIntervalSince1970: expiryTime / 1000)
+                    return expiryDate > Date()  // Only show if not expired
+                }
+                return true  // Show if no expiry info
             } else {
-                // For consumables, add all unconsumed items
-                uniquePurchases.append(purchase)
+                // Consumables: show if not acknowledged
+                return !purchase.purchaseState.isAcknowledged
             }
         }
         
-        return uniquePurchases
+        // Return sorted by date
+        return allActivePurchases.sorted(by: { $0.transactionDate > $1.transactionDate })
     }
     
     @ViewBuilder
@@ -94,7 +97,7 @@ struct AvailablePurchasesScreen: View {
             )
         } else {
             VStack(spacing: 12) {
-                ForEach(uniqueActivePurchases, id: \.transactionId) { purchase in
+                ForEach(uniqueActivePurchases, id: \.id) { purchase in
                     ActivePurchaseCard(purchase: purchase) {
                         Task {
                             await store.finishPurchase(purchase)
@@ -129,13 +132,142 @@ struct AvailablePurchasesScreen: View {
             )
         } else {
             VStack(spacing: 12) {
-                ForEach(store.purchases.sorted { $0.purchaseTime > $1.purchaseTime }, id: \.transactionId) { purchase in
+                ForEach(store.purchases.sorted { $0.transactionDate > $1.transactionDate }, id: \.id) { purchase in
                     PurchaseHistoryCard(purchase: purchase)
                 }
             }
             .padding(.horizontal)
         }
     }
+    
+    // MARK: - Sandbox Tools Section (Debug Only)
+    #if DEBUG
+    private var sandboxToolsSection: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "wrench.and.screwdriver.fill")
+                        .foregroundColor(AppColors.warning)
+                    Text("🧪 Sandbox Testing Tools")
+                        .font(.headline)
+                    Spacer()
+                }
+                
+                Text("Debug tools for testing in-app purchases in Sandbox environment")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(AppColors.warning.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(AppColors.warning.opacity(0.3), lineWidth: 1)
+            )
+            .cornerRadius(12)
+            .padding(.horizontal)
+            
+            VStack(spacing: 12) {
+                // Clear All Transactions
+                Button(action: {
+                    Task {
+                        await store.clearAllTransactions()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "trash")
+                        Text("Clear All Transactions")
+                        Spacer()
+                        Text("Reset")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding()
+                    .background(Color.red.opacity(0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+                
+                // Sync Subscription Status
+                Button(action: {
+                    Task {
+                        await store.syncSubscriptions()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Sync Subscription Status")
+                        Spacer()
+                        Text("Refresh")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+                
+                // Finish Pending Transactions
+                Button(action: {
+                    Task {
+                        await store.finishUnfinishedTransactions()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "checkmark.circle")
+                        Text("Finish Pending Transactions")
+                        Spacer()
+                        Text("Complete")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+            }
+            
+            // Testing Tips
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Testing Tips", systemImage: "lightbulb.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.warning)
+                    .padding(.bottom, 4)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text("Use real device for best results")
+                    }
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text("Sign in with Sandbox account in Settings > App Store")
+                    }
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text("Clear transactions resets local cache")
+                    }
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text("Subscriptions expire quickly (5 min = 1 month)")
+                    }
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(AppColors.warning.opacity(0.05))
+            .cornerRadius(8)
+            .padding(.horizontal)
+            
+            Spacer(minLength: 20)
+        }
+    }
+    #endif
 }
 
 // MARK: - Active Purchase Card (For Available Purchases)
@@ -144,7 +276,7 @@ struct ActivePurchaseCard: View {
     let onConsume: () -> Void
     
     private var isSubscription: Bool {
-        purchase.id.contains("premium") || purchase.isAutoRenewing
+        purchase.productId.contains("premium")
     }
     
     var body: some View {
@@ -169,7 +301,7 @@ struct ActivePurchaseCard: View {
                         .foregroundColor(AppColors.primary)
                 }
                 
-                if let expiryTime = purchase.expiryTime {
+                if let expiryTime = purchase.expirationDateIOS != nil ? Date(timeIntervalSince1970: purchase.expirationDateIOS! / 1000) : nil {
                     Text("Expires: \(expiryTime, style: .relative)")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -179,15 +311,19 @@ struct ActivePurchaseCard: View {
             Spacer()
             
             // Action Button
-            if !isSubscription && purchase.acknowledgementState != .acknowledged {
+            if !isSubscription && !purchase.purchaseState.isAcknowledged {
                 Button(action: onConsume) {
-                    Text("Consume")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(AppColors.primary)
-                        .cornerRadius(8)
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 12))
+                        Text("Finish")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(AppColors.primary)
+                    .cornerRadius(8)
                 }
             } else if isSubscription {
                 Text("Active")
@@ -213,21 +349,35 @@ struct PurchaseHistoryCard: View {
     
     private var statusColor: Color {
         switch purchase.purchaseState {
-        case .purchased: return AppColors.success
-        case .pending: return AppColors.warning
-        case .failed: return AppColors.error
-        case .restored: return AppColors.primary
-        case .deferred: return AppColors.secondary
+        case .purchased:
+            return AppColors.success
+        case .pending:
+            return AppColors.warning
+        case .failed:
+            return AppColors.error
+        case .restored:
+            return AppColors.primary
+        case .deferred:
+            return AppColors.secondary
+        case .unknown:
+            return AppColors.secondary
         }
     }
     
     private var statusText: String {
         switch purchase.purchaseState {
-        case .purchased: return "Purchased"
-        case .pending: return "Pending"
-        case .failed: return "Failed"
-        case .restored: return "Restored"
-        case .deferred: return "Deferred"
+        case .purchased:
+            return "Purchased"
+        case .pending:
+            return "Pending"
+        case .failed:
+            return "Failed"
+        case .restored:
+            return "Restored"
+        case .deferred:
+            return "Deferred"
+        case .unknown:
+            return "Unknown"
         }
     }
     
@@ -239,7 +389,7 @@ struct PurchaseHistoryCard: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                     
-                    Text("Transaction: \(String(purchase.transactionId.prefix(8)))...")
+                    Text("Transaction: \(String(purchase.id.prefix(8)))...")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -256,16 +406,16 @@ struct PurchaseHistoryCard: View {
                         .foregroundColor(statusColor)
                         .cornerRadius(4)
                     
-                    if purchase.acknowledgementState == .acknowledged {
-                        Label("Consumed", systemImage: "checkmark.circle.fill")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
+                    
+                    Label(purchase.purchaseState.isAcknowledged ? "Consumed" : "Pending", 
+                          systemImage: purchase.purchaseState.isAcknowledged ? "checkmark.circle.fill" : "clock")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
             }
             
             HStack(spacing: 16) {
-                Label("\(purchase.purchaseTime, style: .date)", systemImage: "calendar")
+                Label("\(Date(timeIntervalSince1970: purchase.transactionDate / 1000), style: .date)", systemImage: "calendar")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
@@ -304,6 +454,8 @@ struct PurchaseCard: View {
             return AppColors.primary
         case .deferred:
             return AppColors.secondary
+        case .unknown:
+            return AppColors.secondary
         }
     }
     
@@ -319,6 +471,8 @@ struct PurchaseCard: View {
             return "Restored"
         case .deferred:
             return "Deferred"
+        case .unknown:
+            return "Unknown"
         }
     }
     
@@ -330,7 +484,7 @@ struct PurchaseCard: View {
                         .font(.headline)
                         .font(.system(.body, design: .monospaced))
                     
-                    Text("Transaction: \\(purchase.transactionId)")
+                    Text("Transaction: \\(purchase.id)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -352,11 +506,11 @@ struct PurchaseCard: View {
                     Text("Purchased:")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(purchase.purchaseTime, style: .date)
+                    Text(Date(timeIntervalSince1970: purchase.transactionDate / 1000), style: .date)
                         .font(.caption)
                 }
                 
-                if let expiryTime = purchase.expiryTime {
+                if let expiryTime = purchase.expirationDateIOS != nil ? Date(timeIntervalSince1970: purchase.expirationDateIOS! / 1000) : nil {
                     HStack {
                         Text("Expires:")
                             .font(.caption)
@@ -367,15 +521,8 @@ struct PurchaseCard: View {
                     }
                 }
                 
-                HStack {
-                    Text("Quantity:")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("\\(purchase.quantity)")
-                        .font(.caption)
-                }
                 
-                if isSubscription && purchase.isAutoRenewing {
+                if isSubscription {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.caption)
@@ -386,7 +533,7 @@ struct PurchaseCard: View {
                 }
             }
             
-            if !isSubscription && purchase.acknowledgementState == .notAcknowledged {
+            if !isSubscription && !purchase.purchaseState.isAcknowledged {
                 Button(action: onConsume) {
                     HStack {
                         Image(systemName: "checkmark.circle")
@@ -398,7 +545,7 @@ struct PurchaseCard: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-            } else if purchase.acknowledgementState == .acknowledged {
+            } else {
                 HStack {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundColor(AppColors.success)
@@ -467,7 +614,7 @@ struct ProductListCard: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 
-                Text(product.localizedDescription)
+                Text(product.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
@@ -477,7 +624,7 @@ struct ProductListCard: View {
             
             // Price and Purchase Button
             VStack(spacing: 8) {
-                Text(product.localizedPrice)
+                Text(product.displayPrice)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(AppColors.primary)
                 
@@ -518,7 +665,7 @@ struct ProductListCard: View {
         } else if product.id.contains("premium") {
             return "Premium Subscription"
         } else {
-            return product.localizedTitle
+            return product.title
         }
     }
 }
@@ -543,7 +690,7 @@ struct ProductGridCard: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                 
-                Text(product.localizedDescription)
+                Text(product.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -553,7 +700,7 @@ struct ProductGridCard: View {
             Spacer()
             
             VStack(spacing: 8) {
-                Text(product.localizedPrice)
+                Text(product.displayPrice)
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primary)
@@ -598,7 +745,7 @@ struct ProductGridCard: View {
         } else if product.id.contains("premium") {
             return "Premium"
         } else {
-            return product.localizedTitle
+            return product.title
         }
     }
 }

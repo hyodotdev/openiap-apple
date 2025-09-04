@@ -67,7 +67,7 @@ struct ProductCard: View {
     let onPurchase: () -> Void
     
     private var productIcon: String {
-        switch product.productType {
+        switch product.typeIOS {
         case .consumable, .nonConsumable, .nonRenewingSubscription:
             return "bag.fill"
         case .autoRenewableSubscription:
@@ -76,7 +76,7 @@ struct ProductCard: View {
     }
     
     private var productTypeText: String {
-        switch product.productType {
+        switch product.typeIOS {
         case .consumable, .nonConsumable:
             return "In-App Purchase"
         case .autoRenewableSubscription:
@@ -96,7 +96,7 @@ struct ProductCard: View {
                     .frame(width: 32, height: 32)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(product.localizedTitle)
+                    Text(product.title)
                         .font(.headline)
                         .fontWeight(.semibold)
                     
@@ -111,7 +111,7 @@ struct ProductCard: View {
                         
                         Spacer()
                         
-                        Text(product.localizedPrice)
+                        Text(product.displayPrice)
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(AppColors.primary)
@@ -120,7 +120,7 @@ struct ProductCard: View {
             }
             
             // Product description
-            Text(product.localizedDescription)
+            Text(product.description)
                 .font(.subheadline)
                 .foregroundColor(AppColors.secondaryText)
                 .lineLimit(nil)
@@ -149,7 +149,7 @@ struct ProductCard: View {
                     Spacer()
                     
                     if !isLoading {
-                        Text(product.localizedPrice)
+                        Text(product.displayPrice)
                             .fontWeight(.semibold)
                     }
                 }
@@ -191,7 +191,7 @@ struct RecentPurchasesSection: View {
             }
             
             VStack(spacing: 12) {
-                ForEach(purchases.prefix(3), id: \.transactionId) { purchase in
+                ForEach(purchases.prefix(3), id: \.id) { purchase in
                     RecentPurchaseRow(purchase: purchase)
                 }
                 
@@ -237,7 +237,7 @@ struct RecentPurchaseRow: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                 
-                Text(purchase.purchaseTime, style: .relative)
+                Text(Date(timeIntervalSince1970: purchase.transactionDate / 1000), style: .relative)
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
             }
@@ -271,17 +271,22 @@ struct InstructionsCard: View {
                 
                 PurchaseInstructionRow(
                     number: "2",
-                    text: "Tap 'Purchase' on any product above to test the flow"
+                    text: "Tap 'Purchase' to buy → Receipt validation → Finish transaction"
                 )
                 
                 PurchaseInstructionRow(
                     number: "3",
-                    text: "Use test card 4242 4242 4242 4242 in sandbox"
+                    text: "Receipt is validated with server (see StoreViewModel example)"
                 )
                 
                 PurchaseInstructionRow(
                     number: "4",
-                    text: "Check Available Purchases screen for purchase history"
+                    text: "After validation, transaction is finished automatically"
+                )
+                
+                PurchaseInstructionRow(
+                    number: "5",
+                    text: "Check Available Purchases to manually finish if needed"
                 )
             }
         }
@@ -412,8 +417,8 @@ struct ProductsContentView: View {
     
     var consumableProducts: [OpenIapProduct] {
         store.products.filter { product in
-            // Filter out premium subscription products
-            !product.id.contains("premium") && product.type == "inapp"
+            // Filter out subscription products
+            !product.typeIOS.isSubs
         }
     }
     
