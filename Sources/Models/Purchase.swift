@@ -4,6 +4,7 @@ import StoreKit
 public struct OpenIapPurchase: Codable, Equatable {
     // Core identification (PurchaseCommon required fields)
     public let id: String
+    public let productId: String
     public let purchaseToken: String
     public let transactionId: String
     public let originalTransactionId: String?
@@ -105,7 +106,8 @@ public struct PurchaseOptions: Codable {
 extension OpenIapPurchase {
     init(from transaction: Transaction, jwsRepresentation: String? = nil) async {
         // Core identification
-        self.id = transaction.productID
+        self.id = String(transaction.id)
+        self.productId = transaction.productID
         self.transactionId = String(transaction.id)
         self.originalTransactionId = transaction.originalID != 0 ? String(transaction.originalID) : nil
         self.purchaseToken = jwsRepresentation ?? String(transaction.id)
