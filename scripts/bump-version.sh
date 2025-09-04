@@ -54,10 +54,23 @@ sed -i '' "s/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\
 git add VERSION openiap.podspec README.md
 git commit -m "Bump version to $NEW_VERSION"
 
-# Create and push tag
-git tag "$NEW_VERSION"
+# Push commits
 git push origin main
-git push origin "$NEW_VERSION"
+
+# Create and push tag (with check)
+if git rev-parse "refs/tags/$NEW_VERSION" >/dev/null 2>&1; then
+    echo "⚠️  Tag $NEW_VERSION already exists locally, deleting and recreating..."
+    git tag -d "$NEW_VERSION"
+fi
+
+git tag "$NEW_VERSION"
+
+# Try to push tag, ignore error if already exists
+if ! git push origin "$NEW_VERSION" 2>/dev/null; then
+    echo "ℹ️  Tag $NEW_VERSION already exists on remote (probably from CocoaPods release)"
+else
+    echo "✅ Tag $NEW_VERSION pushed successfully"
+fi
 
 echo "✅ Version bumped to $NEW_VERSION and pushed!"
 echo "📦 Ready to create a GitHub Release with tag $NEW_VERSION"

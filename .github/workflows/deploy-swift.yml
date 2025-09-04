@@ -26,10 +26,18 @@ jobs:
       if: github.event_name == 'workflow_dispatch'
       run: |
         VERSION=$(cat VERSION)
-        if ! git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
-          git config user.name hyodotdev
-          git config user.email hyo@hyo.dev
-          git tag $VERSION
+        git config user.name hyodotdev
+        git config user.email hyo@hyo.dev
+        
+        # Check if tag exists on remote
+        if git ls-remote --tags origin | grep -q "refs/tags/$VERSION"; then
+          echo "Tag $VERSION already exists on remote, skipping..."
+        else
+          # Create tag locally if not exists
+          if ! git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
+            git tag $VERSION
+          fi
+          # Push tag
           git push origin $VERSION
         fi
     
