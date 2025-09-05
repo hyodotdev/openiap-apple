@@ -274,38 +274,21 @@ class StoreViewModel: ObservableObject {
         }
         
         Task {
+            // Important: request* APIs are event-based. Do not rely on return values.
+            // Success/failure will be handled by purchaseUpdatedListener/purchaseErrorListener.
             do {
-                print("🔄 Calling requestPurchase API...")
+                print("🔄 Sending requestPurchase (event-based)...")
                 let props = RequestPurchaseProps(
                     sku: product.id,
-                    andDangerouslyFinishTransactionAutomatically: true,
+                    andDangerouslyFinishTransactionAutomatically: false,
                     appAccountToken: nil,
                     quantity: 1
                 )
-                let transaction = try await iapModule.requestPurchase(props)
-                
-                print("📦 Purchase API Response:")
-                print("  • Transaction received: \(transaction.id)")
-                print("  • Product ID: \(transaction.productId)")
-                print("  • Transaction Date: \(transaction.transactionDate)")
-                print("✅ Purchase successful via API: \(product.title)")
-                await MainActor.run {
-                    handlePurchaseSuccess(product.id)
-                }
+                _ = try await iapModule.requestPurchase(props)
+                // Do not call handlePurchaseSuccess here; wait for the event.
             } catch {
-                print("💥 Purchase API Error:")
-                print("  • Error Type: \(type(of: error))")
-                print("  • Error Description: \(error.localizedDescription)")
-                print("  • Product ID: \(product.id)")
-                await MainActor.run {
-                    let purchaseError: PurchaseError
-                    if let openIapError = error as? OpenIapError {
-                        purchaseError = PurchaseError(from: openIapError, productId: product.id)
-                    } else {
-                        purchaseError = PurchaseError(from: error, productId: product.id)
-                    }
-                    handlePurchaseError(purchaseError, productId: product.id)
-                }
+                // The module emits purchaseError events before throwing. Just log here.
+                print("💥 requestPurchase threw (event will handle UI): \(error.localizedDescription)")
             }
         }
     }
