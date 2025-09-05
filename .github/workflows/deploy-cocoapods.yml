@@ -31,7 +31,7 @@ jobs:
         pod lib lint openiap.podspec --allow-warnings
     
     - name: Deploy to CocoaPods Trunk
-      if: github.event_name == 'release'
+      if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
       env:
         COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         COCOAPODS_VALIDATOR_SKIP_XCODEBUILD: 1
