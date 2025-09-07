@@ -159,23 +159,25 @@ extension OpenIapProduct {
         self.isFamilyShareableIOS = product.isFamilyShareable
         self.jsonRepresentationIOS = String(data: product.jsonRepresentation, encoding: .utf8) ?? ""
         
-        // Set detailed iOS product type
-        let detailedType: ProductTypeIOS
+        // Map StoreKit type to cross-platform compatible string: "inapp" | "subs"
+        // and set detailed iOS product type
         switch product.type {
         case .consumable:
-            detailedType = .consumable
+            self.type = "inapp"
+            self.typeIOS = .consumable
         case .nonConsumable:
-            detailedType = .nonConsumable
-        case .nonRenewable:
-            detailedType = .nonRenewingSubscription
+            self.type = "inapp"
+            self.typeIOS = .nonConsumable
         case .autoRenewable:
-            detailedType = .autoRenewableSubscription
+            self.type = "subs"
+            self.typeIOS = .autoRenewableSubscription
+        case .nonRenewable:
+            self.type = "subs"
+            self.typeIOS = .nonRenewingSubscription
         default:
-            detailedType = .consumable
+            self.type = "inapp"  // fallback to inapp
+            self.typeIOS = .consumable
         }
-        
-        self.typeIOS = detailedType
-        self.type = detailedType.commonType  // Set common type for Android compatibility
         
         // Handle subscription info and ProductSubscriptionIOS fields
         if let subscription = product.subscription {

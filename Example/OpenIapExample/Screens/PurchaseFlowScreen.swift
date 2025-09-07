@@ -3,17 +3,30 @@ import OpenIAP
 
 @available(iOS 15.0, *)
 struct PurchaseFlowScreen: View {
-    @StateObject private var store = StoreViewModel()
+    @StateObject private var iapStore = OpenIapStore()
+    
+    // UI State
+    @State private var showPurchaseResult = false
+    @State private var purchaseResultMessage = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    // Product IDs configured in App Store Connect
+    private let productIds: [String] = [
+        "dev.hyo.martie.10bulbs",
+        "dev.hyo.martie.30bulbs",
+        "dev.hyo.martie.premium"
+    ]
     
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
                 HeaderCardView()
                 
-                ProductsContentView(store: store)
+                ProductsSection()
                 
-                if !store.purchases.isEmpty {
-                    RecentPurchasesSection(purchases: store.purchases)
+                if showPurchaseResult {
+                    PurchaseResultSection()
                 }
                 
                 InstructionsCard()
@@ -27,358 +40,27 @@ struct PurchaseFlowScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    Task {
-                        await store.loadProducts()
-                    }
-                }) {
+                Button(action: loadProducts) {
                     Image(systemName: "arrow.clockwise")
                 }
-                .disabled(store.isLoading)
+                .disabled(iapStore.status.isLoading)
             }
-        }
-        .alert("Purchase Successful", isPresented: $store.showPurchaseSuccess) {
-            Button("OK") {
-                store.showPurchaseSuccess = false
-                store.lastPurchasedProduct = nil
-            }
-        } message: {
-            if let product = store.lastPurchasedProduct {
-                Text("Successfully purchased \(product.title)")
-            }
-        }
-        .alert("Error", isPresented: $store.showError) {
-            Button("OK") {}
-        } message: {
-            Text(store.errorMessage)
         }
         .onAppear {
-            Task {
-                await store.loadProducts()
-                await store.loadPurchases()
-            }
+            setupIapProvider()
         }
-    }
-}
-
-struct ProductCard: View {
-    let product: OpenIapProduct
-    let isLoading: Bool
-    let onPurchase: () -> Void
-    
-    private var productIcon: String {
-        switch product.typeIOS {
-        case .consumable, .nonConsumable, .nonRenewingSubscription:
-            return "bag.fill"
-        case .autoRenewableSubscription:
-            return "repeat.circle.fill"
+        .onDisappear {
+            teardownConnection()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
         }
     }
     
-    private var productTypeText: String {
-        switch product.typeIOS {
-        case .consumable, .nonConsumable:
-            return "In-App Purchase"
-        case .autoRenewableSubscription:
-            return "Subscription"
-        case .nonRenewingSubscription:
-            return "Non-Renewing"
-        }
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Product header
-            HStack {
-                Image(systemName: productIcon)
-                    .font(.title2)
-                    .foregroundColor(AppColors.primary)
-                    .frame(width: 32, height: 32)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(product.title)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    HStack {
-                        Text(productTypeText)
-                            .font(.caption)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(AppColors.primary.opacity(0.1))
-                            .foregroundColor(AppColors.primary)
-                            .cornerRadius(4)
-                        
-                        Spacer()
-                        
-                        Text(product.displayPrice)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(AppColors.primary)
-                    }
-                }
-            }
-            
-            // Product description
-            Text(product.description)
-                .font(.subheadline)
-                .foregroundColor(AppColors.secondaryText)
-                .lineLimit(nil)
-            
-            // Product ID (for testing)
-            Text("ID: \(product.id)")
-                .font(.caption)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundColor(AppColors.secondaryText)
-                .opacity(0.7)
-            
-            // Purchase button
-            Button(action: onPurchase) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .tint(.white)
-                    } else {
-                        Image(systemName: "cart")
-                    }
-                    
-                    Text(isLoading ? "Processing..." : "Purchase")
-                        .fontWeight(.medium)
-                    
-                    Spacer()
-                    
-                    if !isLoading {
-                        Text(product.displayPrice)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .padding()
-                .background(isLoading ? AppColors.primary.opacity(0.7) : AppColors.primary)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-            }
-            .disabled(isLoading)
-        }
-        .padding()
-        .background(AppColors.cardBackground)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        .padding(.horizontal)
-    }
-}
-
-struct RecentPurchasesSection: View {
-    let purchases: [OpenIapPurchase]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(AppColors.success)
-                Text("Recent Purchases")
-                    .font(.headline)
-                Spacer()
-                
-                Text("\(purchases.count)")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(AppColors.success.opacity(0.2))
-                    .foregroundColor(AppColors.success)
-                    .cornerRadius(12)
-            }
-            
-            VStack(spacing: 12) {
-                ForEach(purchases.prefix(3), id: \.id) { purchase in
-                    RecentPurchaseRow(purchase: purchase)
-                }
-                
-                if purchases.count > 3 {
-                    NavigationLink(destination: AvailablePurchasesScreen()) {
-                        HStack {
-                            Text("View all \(purchases.count) purchases")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(AppColors.primary)
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(AppColors.success.opacity(0.05))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-}
-
-struct RecentPurchaseRow: View {
-    let purchase: OpenIapPurchase
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "bag.fill")
-                .font(.caption)
-                .foregroundColor(AppColors.success)
-                .frame(width: 16, height: 16)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(purchase.id)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                Text(Date(timeIntervalSince1970: purchase.transactionDate / 1000), style: .relative)
-                    .font(.caption)
-                    .foregroundColor(AppColors.secondaryText)
-            }
-            
-            Spacer()
-            
-            Text("Qty: \(purchase.quantity)")
-                .font(.caption)
-                .foregroundColor(AppColors.secondaryText)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct InstructionsCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "info.circle")
-                    .foregroundColor(AppColors.primary)
-                Text("Testing Instructions")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 12) {
-                PurchaseInstructionRow(
-                    number: "1",
-                    text: "Make sure you're signed in with a sandbox Apple ID"
-                )
-                
-                PurchaseInstructionRow(
-                    number: "2",
-                    text: "Tap 'Purchase' to buy → Receipt validation → Finish transaction"
-                )
-                
-                PurchaseInstructionRow(
-                    number: "3",
-                    text: "Receipt is validated with server (see StoreViewModel example)"
-                )
-                
-                PurchaseInstructionRow(
-                    number: "4",
-                    text: "After validation, transaction is finished automatically"
-                )
-                
-                PurchaseInstructionRow(
-                    number: "5",
-                    text: "Check Available Purchases to manually finish if needed"
-                )
-            }
-        }
-        .padding()
-        .background(AppColors.primary.opacity(0.05))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.primary.opacity(0.3), lineWidth: 1)
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-}
-
-struct PurchaseInstructionRow: View {
-    let number: String
-    let text: String
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(number)
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .frame(width: 20, height: 20)
-                .background(AppColors.primary)
-                .clipShape(Circle())
-            
-            Text(text)
-                .font(.subheadline)
-                .foregroundColor(AppColors.primaryText)
-                .multilineTextAlignment(.leading)
-            
-            Spacer()
-        }
-    }
-}
-
-struct LoadingCard: View {
-    let text: String
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-            
-            Text(text)
-                .font(.headline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-        .background(AppColors.cardBackground)
-        .cornerRadius(12)
-        .shadow(radius: 2)
-        .padding(.horizontal)
-    }
-}
-
-struct EmptyStateCard: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.secondary.opacity(0.6))
-            
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-        .background(AppColors.cardBackground)
-        .cornerRadius(12)
-        .shadow(radius: 2)
-        .padding(.horizontal)
-    }
-}
-
-struct HeaderCardView: View {
-    var body: some View {
+    @ViewBuilder
+    private func HeaderCardView() -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "cart.fill")
@@ -389,18 +71,15 @@ struct HeaderCardView: View {
                     Text("Purchase Flow")
                         .font(.headline)
                     
-                    Text("iOS")
+                    Text("Test product purchases")
                         .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(AppColors.secondary.opacity(0.2))
-                        .cornerRadius(4)
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
             }
             
-            Text("Test consumable in-app purchases with StoreKit integration.")
+            Text("Purchase consumable and non-consumable iapStore.products. Events are handled through OpenIapStore callbacks.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -410,36 +89,233 @@ struct HeaderCardView: View {
         .shadow(radius: 2)
         .padding(.horizontal)
     }
-}
-
-struct ProductsContentView: View {
-    @ObservedObject var store: StoreViewModel
     
-    var consumableProducts: [OpenIapProduct] {
-        store.products.filter { product in
-            // Filter out subscription products
-            !product.typeIOS.isSubs
+    @ViewBuilder
+    private func ProductsSection() -> some View {
+        LazyVStack(spacing: 16) {
+            ForEach(iapStore.products, id: \.id) { product in
+                ProductCard(
+                    product: product,
+                    isPurchasing: iapStore.status.isPurchasing(product.id)
+                ) {
+                    purchaseProduct(product)
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    // moved ProductCard to Screens/uis/ProductCard.swift
+    
+    @ViewBuilder
+    private func PurchaseResultSection() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(AppColors.success)
+                Text("Purchase Result")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button("Dismiss") {
+                    showPurchaseResult = false
+                    purchaseResultMessage = ""
+                }
+                .font(.caption)
+                .foregroundColor(AppColors.primary)
+            }
+            
+            Text(purchaseResultMessage)
+                .font(.system(.caption, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+        }
+        .padding()
+        .background(AppColors.cardBackground)
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private func InstructionsCard() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(AppColors.primary)
+                Text("Instructions")
+                    .font(.headline)
+                Spacer()
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                InstructionRow(
+                    number: "1",
+                    text: "Products are loaded from App Store Connect"
+                )
+                InstructionRow(
+                    number: "2", 
+                    text: "Tap Purchase to initiate transaction"
+                )
+                InstructionRow(
+                    number: "3",
+                    text: "Events are handled via OpenIapStore callbacks"
+                )
+                InstructionRow(
+                    number: "4",
+                    text: "Receipt validation should be done server-side"
+                )
+            }
+        }
+        .padding()
+        .background(AppColors.cardBackground)
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
+    }
+    
+    // using shared InstructionRow in Screens/uis/InstructionRow.swift
+    
+    // MARK: - OpenIapStore Setup
+    
+    private func setupIapProvider() {
+        print("🔷 [PurchaseFlow] Setting up OpenIapStore...")
+        
+        // Setup callbacks
+        iapStore.onPurchaseSuccess = { purchase in
+            Task { @MainActor in
+                self.handlePurchaseSuccess(purchase)
+            }
+        }
+        
+        iapStore.onPurchaseError = { error in
+            Task { @MainActor in
+                self.handlePurchaseError(error)
+            }
+        }
+        
+        Task {
+            do {
+                try await iapStore.initConnection()
+                print("✅ [PurchaseFlow] Connection initialized")
+                loadProducts()
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to initialize connection: \(error.localizedDescription)"
+                    showError = true
+                }
+            }
         }
     }
     
-    var body: some View {
-        if store.isLoading {
-            LoadingCard(text: "Loading products...")
-        } else if consumableProducts.isEmpty {
-            EmptyStateCard(
-                icon: "bag",
-                title: "No consumable products available",
-                subtitle: "Check your App Store Connect configuration"
-            )
-        } else {
-            ForEach(consumableProducts, id: \.id) { product in
-                ProductCard(
-                    product: product,
-                    isLoading: store.purchasingProductIds.contains(product.id)
-                ) {
-                    store.purchaseProduct(product)
+    private func teardownConnection() {
+        print("🔷 [PurchaseFlow] Tearing down connection...")
+        Task {
+            try await iapStore.endConnection()
+            print("✅ [PurchaseFlow] Connection ended")
+        }
+    }
+    
+    // MARK: - Product Loading
+    
+    private func loadProducts() {
+        Task {
+            do {
+                try await iapStore.fetchProducts(skus: productIds, type: .inapp)
+                await MainActor.run {
+                    if iapStore.products.isEmpty {
+                        errorMessage = "No products found. Please check your App Store Connect configuration."
+                        showError = true
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to load products: \(error.localizedDescription)"
+                    showError = true
                 }
             }
+        }
+    }
+    
+    // MARK: - Purchase Flow
+    
+    private func purchaseProduct(_ product: OpenIapProduct) {
+        print("🛒 [PurchaseFlow] Starting purchase for: \(product.id)")
+        
+        Task {
+            do {
+                let params = RequestPurchaseProps(
+                    sku: product.id,
+                    andDangerouslyFinishTransactionAutomatically: false,
+                    appAccountToken: nil,
+                    quantity: 1
+                )
+                _ = try await iapStore.requestPurchase(params)
+            } catch {
+                // Error is already handled by OpenIapStore internally
+                print("❌ [PurchaseFlow] Purchase failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    // MARK: - Event Handlers
+    
+    private func handlePurchaseSuccess(_ purchase: OpenIapPurchase) {
+        print("✅ [PurchaseFlow] Purchase successful: \(purchase.productId)")
+        
+        // Update UI state
+        let transactionDate = Date(timeIntervalSince1970: purchase.transactionDate / 1000)
+        purchaseResultMessage = """
+        ✅ Purchase successful
+        Product: \(purchase.productId)
+        Transaction ID: \(purchase.id)
+        Date: \(DateFormatter.localizedString(from: transactionDate, dateStyle: .short, timeStyle: .short))
+        """
+        showPurchaseResult = true
+        
+        // In production, validate receipt on your server before finishing
+        Task {
+            await finishPurchase(purchase)
+        }
+    }
+    
+    private func handlePurchaseError(_ error: PurchaseError) {
+        print("❌ [PurchaseFlow] Purchase error: \(error.message)")
+        
+        // Update UI state
+        purchaseResultMessage = "❌ Purchase failed: \(error.message)"
+        showPurchaseResult = true
+        
+        // Show error alert for non-cancellation errors
+        if error.code != PurchaseError.E_USER_CANCELLED {
+            errorMessage = error.message
+            showError = true
+        }
+    }
+    
+    private func finishPurchase(_ purchase: OpenIapPurchase) async {
+        do {
+            _ = try await iapStore.finishTransaction(purchase: purchase)
+            print("✅ [PurchaseFlow] Transaction finished: \(purchase.id)")
+        } catch {
+            print("❌ [PurchaseFlow] Failed to finish transaction: \(error)")
+            await MainActor.run {
+                errorMessage = "Failed to finish transaction: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+}
+
+#Preview {
+    NavigationView {
+        if #available(iOS 15.0, *) {
+            PurchaseFlowScreen()
+        } else {
+            Text("iOS 15.0+ Required")
         }
     }
 }

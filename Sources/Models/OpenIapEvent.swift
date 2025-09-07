@@ -9,12 +9,19 @@ public enum OpenIapEvent: String, Codable {
 }
 
 /// Subscription token for event listeners
-public struct Subscription {
+public class Subscription {
     public let id: UUID
     public let eventType: OpenIapEvent
+    internal var onRemove: (() -> Void)?
     
-    public init(eventType: OpenIapEvent) {
+    public init(eventType: OpenIapEvent, onRemove: (() -> Void)? = nil) {
         self.id = UUID()
         self.eventType = eventType
+        self.onRemove = onRemove
+    }
+    
+    deinit {
+        // Auto-cleanup when subscription is deallocated
+        onRemove?()
     }
 }

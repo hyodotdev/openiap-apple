@@ -6,67 +6,6 @@ import UIKit
 
 // MARK: - Helper functions for ExpoModulesCore compatibility
 
-// MARK: - Event Listeners
-
-@available(iOS 15.0, macOS 14.0, *)
-public typealias PurchaseUpdatedListener = (OpenIapPurchase) -> Void
-
-@available(iOS 15.0, macOS 14.0, *)
-public typealias PurchaseErrorListener = (PurchaseError) -> Void
-
-@available(iOS 15.0, macOS 14.0, *)
-public typealias PromotedProductListener = (String) -> Void
-
-// MARK: - Protocol
-
-@available(iOS 15.0, macOS 14.0, *)
-public protocol OpenIapModuleProtocol {
-    // Connection Management
-    func initConnection() async throws -> Bool
-    func endConnection() async throws -> Bool
-    
-    // Product Management
-    func fetchProducts(_ params: ProductRequest) async throws -> [OpenIapProduct]
-    func getAvailablePurchases(_ options: PurchaseOptions?) async throws -> [OpenIapPurchase]
-    
-    // Purchase Operations
-    func requestPurchase(_ props: RequestPurchaseProps) async throws -> OpenIapPurchase
-    
-    // Transaction Management
-    func finishTransaction(transactionIdentifier: String) async throws -> Bool
-    func getPendingTransactionsIOS() async throws -> [OpenIapPurchase]
-    func clearTransactionIOS() async throws
-    func isTransactionVerifiedIOS(sku: String) async -> Bool
-    
-    // Validation
-    func getReceiptDataIOS() async throws -> String?
-    func getTransactionJwsIOS(sku: String) async throws -> String?
-    func validateReceiptIOS(_ props: ReceiptValidationProps) async throws -> ReceiptValidationResult
-    
-    // Store Information
-    func getStorefrontIOS() async throws -> String
-    @available(iOS 16.0, macOS 14.0, *)
-    func getAppTransactionIOS() async throws -> OpenIapAppTransaction?
-    
-    // Subscription Management
-    func isEligibleForIntroOfferIOS(groupID: String) async -> Bool
-    func subscriptionStatusIOS(sku: String) async throws -> [OpenIapSubscriptionStatus]?
-    func currentEntitlementIOS(sku: String) async throws -> OpenIapPurchase?
-    func latestTransactionIOS(sku: String) async throws -> OpenIapPurchase?
-    
-    // Refunds (iOS 15+)
-    func beginRefundRequestIOS(sku: String) async throws -> String?
-    
-    // Promoted Products
-    func getPromotedProductIOS() async throws -> OpenIapPromotedProduct?
-    func requestPurchaseOnPromotedProductIOS() async throws
-    
-    // Legacy/Compatibility
-    func syncIOS() async throws -> Bool
-    func presentCodeRedemptionSheetIOS() async throws -> Bool
-    func showManageSubscriptionsIOS() async throws -> Bool
-}
-
 
 // MARK: - OpenIapModule Implementation
 
@@ -78,10 +17,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // Transaction management - all accessed on MainActor
     private var transactions: [String: Transaction] = [:]
     private var pendingTransactions: [String: Transaction] = [:]
+    private var processedTransactionIds: Set<String> = []  // Track already emitted transactions
     private var updateListenerTask: Task<Void, Error>?
     
     // Product caching - thread safe via actor
-    private var productStore: ProductStore?
+    private var productManager: ProductManager?
     
     // Event listeners - all accessed on MainActor
     private var purchaseUpdatedListeners: [(id: UUID, listener: PurchaseUpdatedListener)] = []
@@ -99,14 +39,40 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         updateListenerTask?.cancel()
     }
     
+    
     // MARK: - Connection Management
     
+    /// Ensure connection is initialized before operations
+    private func ensureConnection() throws {
+        guard isInitialized else {
+            let error = PurchaseError(
+                code: PurchaseError.E_INIT_CONNECTION,
+                message: "Connection not initialized. Call initConnection() first."
+            )
+            emitPurchaseError(error)
+            throw OpenIapError.purchaseFailed(reason: error.message)
+        }
+        
+        guard AppStore.canMakePayments else {
+            let error = PurchaseError(
+                code: PurchaseError.E_IAP_NOT_AVAILABLE,
+                message: "In-app purchases are not available on this device"
+            )
+            emitPurchaseError(error)
+            throw OpenIapError.paymentNotAllowed
+        }
+    }
+    
     public func initConnection() async throws -> Bool {
+        return try await initConnectionInternal()
+    }
+    
+    private func initConnectionInternal() async throws -> Bool {
         // Clean up any existing state first (important for hot reload)
         cleanupExistingState()
         
         // Initialize fresh state
-        self.productStore = ProductStore()
+        self.productManager = ProductManager()
         
         // Check if IAP is available
         guard AppStore.canMakePayments else {
@@ -130,6 +96,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
     
     public func endConnection() async throws -> Bool {
+        return try await endConnectionInternal()
+    }
+    
+    private func endConnectionInternal() async throws -> Bool {
         cleanupExistingState()
         return true
     }
@@ -142,12 +112,14 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         // Clear collections
         transactions.removeAll()
         
+        // NOTE: DO NOT call removeAllListeners() here as it removes externally registered listeners
+        // from ExpoIapModule or other consumers. Only clean up internal state.
         
-        // Clear product store
-        if let store = productStore {
-            store.removeAll()
+        // Clear product manager
+        if let manager = productManager {
+            manager.removeAll()
         }
-        productStore = nil
+        productManager = nil
         
         isInitialized = false
     }
@@ -165,14 +137,14 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         try ensureConnection()
         
-        let productStore = self.productStore!
+        let productManager = self.productManager!
         
         do {
             let fetchedProducts = try await Product.products(for: params.skus)
             fetchedProducts.forEach { product in
-                productStore.addProduct(product)
+                productManager.addProduct(product)
             }
-            let products = productStore.getAllProducts()
+            let products = productManager.getAllProducts()
             var openIapProducts = await withTaskGroup(of: OpenIapProduct.self) { group in
                 for product in products {
                     group.addTask {
@@ -252,32 +224,18 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         return purchasedItems
     }
     
-    @available(iOS 15.0, macOS 14.0, *)
-    public func getPurchaseHistories(alsoPublishToEventListener: Bool? = false, onlyIncludeActiveItems: Bool? = false) async throws -> [OpenIapPurchase] {
-        // iOS returns all purchase history
-        let options = PurchaseOptions(
-            alsoPublishToEventListenerIOS: alsoPublishToEventListener,
-            onlyIncludeActiveItemsIOS: false  // Always include all history
-        )
-        let purchases = try await getAvailablePurchases(options)
-        
-        return purchases
-    }
-    
     // MARK: - Purchase Operations
     
-    @available(iOS 15.0, macOS 14.0, *)
-    @available(iOS 15.0, macOS 14.0, *)
     public func requestPurchase(_ props: RequestPurchaseProps) async throws -> OpenIapPurchase {
         try ensureConnection()
         
         // Get product from cache or fetch
-        var product = productStore!.getProduct(productID: props.sku)
+        var product = productManager!.getProduct(productID: props.sku)
         if product == nil {
             let products = try await Product.products(for: [props.sku])
             product = products.first
             if let product = product {
-                productStore!.addProduct(product)
+                productManager!.addProduct(product)
             }
         }
         
@@ -317,15 +275,29 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             // Convert to OpenIapPurchase for listener and return
             let purchase = await OpenIapPurchase(from: transaction, jwsRepresentation: verification.jwsRepresentation)
             
-            // Emit purchase update event
-            emitPurchaseUpdate(purchase)
+            // Check if already processed by Transaction.updates
+            let transactionId = String(transaction.id)
+            
+            if processedTransactionIds.contains(transactionId) {
+                print("🔵 [requestPurchase] Transaction already processed by listener: \(transactionId)")
+                // Don't emit duplicate event, but still handle the transaction
+            } else {
+                // Mark this transaction as processed to avoid duplicate events
+                processedTransactionIds.insert(transactionId)
+                print("🔵 [requestPurchase] Processing transaction: \(transactionId)")
+                
+                // Emit purchase update event
+                // Note: This is necessary for consumables which don't always trigger Transaction.updates
+                print("🔵 [requestPurchase] Emitting event for: \(transactionId)")
+                emitPurchaseUpdate(purchase)
+            }
             
             // Store transaction if not finishing automatically
             if props.andDangerouslyFinishTransactionAutomatically == true {
                 await transaction.finish()
                 // Still return the transaction data even when finishing automatically
             } else {
-                pendingTransactions[String(transaction.id)] = transaction
+                pendingTransactions[transactionId] = transaction
             }
             
             return purchase
@@ -434,7 +406,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
     
     public func isTransactionVerifiedIOS(sku: String) async -> Bool {
-        guard let product = productStore!.getProduct(productID: sku) else {
+        guard let product = productManager!.getProduct(productID: sku) else {
             return false
         }
         
@@ -462,7 +434,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
     
     public func getTransactionJwsIOS(sku: String) async throws -> String? {
-        var product = productStore!.getProduct(productID: sku)
+        var product = productManager!.getProduct(productID: sku)
         if product == nil {
             product = try? await Product.products(for: [sku]).first
         }
@@ -483,7 +455,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         var jwsRepresentation: String = ""
         var latestTransaction: OpenIapPurchase? = nil
         
-        var product = productStore!.getProduct(productID: props.sku)
+        var product = productManager!.getProduct(productID: props.sku)
         if product == nil {
             product = try? await Product.products(for: [props.sku]).first
         }
@@ -572,6 +544,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     let subscription = ActiveSubscription(
                         productId: transaction.productID,
                         isActive: isActive,
+                        transactionId: String(transaction.id),
+                        purchaseToken: result.jwsRepresentation,
+                        transactionDate: transaction.purchaseDate.timeIntervalSince1970 * 1000,
                         expirationDateIOS: transaction.expirationDate,
                         autoRenewingAndroid: nil,
                         environmentIOS: environmentValue,
@@ -620,7 +595,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     public func subscriptionStatusIOS(sku: String) async throws -> [OpenIapSubscriptionStatus]? {
         try ensureConnection()
         
-        var product = productStore!.getProduct(productID: sku)
+        var product = productManager!.getProduct(productID: sku)
         if product == nil {
             product = try? await Product.products(for: [sku]).first
         }
@@ -663,7 +638,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     public func currentEntitlementIOS(sku: String) async throws -> OpenIapPurchase? {
         try ensureConnection()
         
-        var product = productStore!.getProduct(productID: sku)
+        var product = productManager!.getProduct(productID: sku)
         if product == nil {
             product = try? await Product.products(for: [sku]).first
         }
@@ -688,7 +663,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     public func latestTransactionIOS(sku: String) async throws -> OpenIapPurchase? {
         try ensureConnection()
         
-        var product = productStore!.getProduct(productID: sku)
+        var product = productManager!.getProduct(productID: sku)
         if product == nil {
             product = try? await Product.products(for: [sku]).first
         }
@@ -713,7 +688,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     public func beginRefundRequestIOS(sku: String) async throws -> String? {
         #if canImport(UIKit)
-        var product = productStore?.getProduct(productID: sku)
+        var product = productManager?.getProduct(productID: sku)
         if product == nil {
             product = try? await Product.products(for: [sku]).first
         }
@@ -804,15 +779,77 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         #endif
     }
     
-    public func showManageSubscriptionsIOS() async throws -> Bool {
+    public func showManageSubscriptionsIOS() async throws -> [[String: Any?]] {
+        #if !os(tvOS)
         #if canImport(UIKit)
         if #available(iOS 15.0, *) {
-            guard let scene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
                 throw OpenIapError.unknownError
             }
             
-            try await AppStore.showManageSubscriptions(in: scene)
-            return true
+            // Get current subscription statuses before showing UI
+            var beforeStatuses: [String: Bool] = [:]
+            let subscriptionSkus = await getAllSubscriptionProductIds()
+            
+            for sku in subscriptionSkus {
+                if let product = productManager?.getProduct(productID: sku),
+                   let status = try? await product.subscription?.status.first {
+                    var willAutoRenew = false
+                    if case .verified(let info) = status.renewalInfo {
+                        willAutoRenew = info.willAutoRenew
+                    }
+                    beforeStatuses[sku] = willAutoRenew
+                }
+            }
+            
+            // Show the management UI
+            try await AppStore.showManageSubscriptions(in: windowScene)
+            
+            // Wait a bit for changes to propagate
+            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+            
+            // Check for changes and return updated subscriptions
+            var updatedSubscriptions: [[String: Any?]] = []
+            
+            for sku in subscriptionSkus {
+                if let product = productManager?.getProduct(productID: sku),
+                   let status = try? await product.subscription?.status.first,
+                   let result = await product.latestTransaction {
+                    
+                    // Check current status
+                    var currentWillAutoRenew = false
+                    if case .verified(let info) = status.renewalInfo {
+                        currentWillAutoRenew = info.willAutoRenew
+                    }
+                    
+                    // Check if status changed
+                    let previousWillAutoRenew = beforeStatuses[sku] ?? false
+                    if previousWillAutoRenew != currentWillAutoRenew {
+                        // Status changed, include in result
+                        do {
+                            let transaction = try checkVerified(result) as Transaction
+                            var purchaseMap = await serializeTransaction(transaction, jwsRepresentationIOS: result.jwsRepresentation)
+                            
+                            // Add renewal info
+                            if case .verified(let renewalInfo) = status.renewalInfo {
+                                if let renewalInfoDict = serializeRenewalInfo(renewalInfo) {
+                                    purchaseMap["renewalInfo"] = renewalInfoDict
+                                }
+                            }
+                            
+                            // Add status change info
+                            purchaseMap["statusChanged"] = true
+                            purchaseMap["willAutoRenew"] = currentWillAutoRenew
+                            
+                            updatedSubscriptions.append(purchaseMap)
+                        } catch {
+                            // Skip if verification fails
+                        }
+                    }
+                }
+            }
+            
+            return updatedSubscriptions
         } else {
             // Fallback for older iOS versions
             guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else {
@@ -820,8 +857,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             }
             
             await UIApplication.shared.open(url, options: [:])
-            return true
+            return []
         }
+        #else
+        throw OpenIapError.notSupported
+        #endif
         #else
         throw OpenIapError.notSupported
         #endif
@@ -832,17 +872,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     // MARK: - Private Methods
     
-    private func ensureConnection() throws {
-        guard isInitialized else {
-            let error = PurchaseError(
-                code: PurchaseError.E_INIT_CONNECTION,
-                message: "Connection not initialized. Call initConnection() first."
-            )
-            emitPurchaseError(error)
-            throw OpenIapError.purchaseFailed(reason: error.message)
-        }
-    }
-    
     private func startTransactionListener() {
         updateListenerTask = Task { @MainActor [weak self] in
             guard let self = self else { return }
@@ -852,12 +881,32 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     let transaction = try self.checkVerified(result) as Transaction
                     let transactionId = String(transaction.id)
                     
+                    // Skip if already processed by requestPurchase
+                    if self.processedTransactionIds.contains(transactionId) {
+                        print("🟡 [Transaction.updates] Skipping already processed: \(transactionId)")
+                        // Remove from processed set for future updates (e.g., subscription renewals)
+                        self.processedTransactionIds.remove(transactionId)
+                        continue
+                    }
+                    
+                    print("🟢 [Transaction.updates] Processing new transaction: \(transactionId)")
+                    
+                    // Mark as processed to prevent duplicate from requestPurchase
+                    self.processedTransactionIds.insert(transactionId)
+                    
                     // Store pending transaction - already on MainActor
                     self.pendingTransactions[transactionId] = transaction
                     
                     // Emit purchase updated event for real-time updates
                     let purchase = await OpenIapPurchase(from: transaction, jwsRepresentation: result.jwsRepresentation)
+                    print("🟢 [Transaction.updates] Emitting event for: \(transactionId)")
                     self.emitPurchaseUpdate(purchase)
+                    
+                    // Clean up processed ID after a delay to allow for renewals
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                        self.processedTransactionIds.remove(transactionId)
+                    }
                     
                 } catch {
                     // Emit purchase error when transaction verification fails
@@ -922,6 +971,92 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
     
+    @available(iOS 15.0, macOS 14.0, *)
+    private func getAllSubscriptionProductIds() async -> [String] {
+        // Get all subscription product IDs from the product store
+        var subscriptionIds: [String] = []
+        
+        // Get all products and filter for subscriptions
+        if let products = productManager?.getAllProducts() {
+            for product in products {
+                if product.subscription != nil {
+                    subscriptionIds.append(product.id)
+                }
+            }
+        }
+        
+        return subscriptionIds
+    }
+    
+    @available(iOS 15.0, macOS 14.0, *)
+    private func serializeRenewalInfo(_ renewalInfo: Product.SubscriptionInfo.RenewalInfo) -> [String: Any?]? {
+        var renewalDict: [String: Any?] = [:]
+        
+        renewalDict["willAutoRenew"] = renewalInfo.willAutoRenew
+        renewalDict["autoRenewProductId"] = renewalInfo.autoRenewPreference
+        
+        if let expirationReason = renewalInfo.expirationReason {
+            renewalDict["expirationReason"] = "\(expirationReason)"
+        }
+        
+        if let gracePeriodExpirationDate = renewalInfo.gracePeriodExpirationDate {
+            renewalDict["gracePeriodExpirationDate"] = gracePeriodExpirationDate.timeIntervalSince1970 * 1000
+        }
+        
+        // priceIncreaseStatus is not optional in StoreKit 2
+        renewalDict["priceIncreaseStatus"] = "\(renewalInfo.priceIncreaseStatus)"
+        
+        return renewalDict
+    }
+    
+    @available(iOS 15.0, macOS 14.0, *)
+    private func serializeTransaction(_ transaction: Transaction, jwsRepresentationIOS: String?) async -> [String: Any?] {
+        let purchase = await OpenIapPurchase(from: transaction, jwsRepresentation: jwsRepresentationIOS)
+        
+        var dict: [String: Any?] = [
+            "id": purchase.id,
+            "productId": purchase.productId,
+            "transactionDate": purchase.transactionDate,
+            "transactionReceipt": purchase.transactionReceipt,
+            "purchaseToken": purchase.purchaseToken,
+            "quantity": purchase.quantity,
+            "purchaseState": purchase.purchaseState.rawValue,
+            "isAutoRenewing": purchase.isAutoRenewing,
+            "platform": purchase.platform
+        ]
+        
+        // Add iOS-specific fields
+        dict["quantityIOS"] = purchase.quantityIOS
+        dict["originalTransactionDateIOS"] = purchase.originalTransactionDateIOS
+        dict["originalTransactionIdentifierIOS"] = purchase.originalTransactionIdentifierIOS
+        dict["appAccountToken"] = purchase.appAccountToken
+        dict["expirationDateIOS"] = purchase.expirationDateIOS
+        dict["webOrderLineItemIdIOS"] = purchase.webOrderLineItemIdIOS
+        dict["environmentIOS"] = purchase.environmentIOS
+        dict["storefrontCountryCodeIOS"] = purchase.storefrontCountryCodeIOS
+        dict["appBundleIdIOS"] = purchase.appBundleIdIOS
+        dict["productTypeIOS"] = purchase.productTypeIOS
+        dict["subscriptionGroupIdIOS"] = purchase.subscriptionGroupIdIOS
+        dict["isUpgradedIOS"] = purchase.isUpgradedIOS
+        dict["ownershipTypeIOS"] = purchase.ownershipTypeIOS
+        dict["reasonIOS"] = purchase.reasonIOS
+        dict["transactionReasonIOS"] = purchase.transactionReasonIOS
+        dict["revocationDateIOS"] = purchase.revocationDateIOS
+        dict["revocationReasonIOS"] = purchase.revocationReasonIOS
+        dict["currencyCodeIOS"] = purchase.currencyCodeIOS
+        dict["countryCodeIOS"] = purchase.countryCodeIOS
+        
+        if let offer = purchase.offerIOS {
+            dict["offerIOS"] = [
+                "id": offer.id,
+                "type": offer.type,
+                "paymentMode": offer.paymentMode
+            ]
+        }
+        
+        return dict
+    }
+    
     // productToOpenIapProductData is deprecated - OpenIapProduct.init(from:) is used instead
     // This provides better type safety and includes all StoreKit 2 properties
     
@@ -961,6 +1096,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         case .PROMOTED_PRODUCT_IOS:
             promotedProductListeners.removeAll { $0.id == subscription.id }
         }
+        subscription.onRemove?() // Trigger release for auto-disconnect
     }
     
     /// Remove all listeners
@@ -973,7 +1109,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // MARK: - Event Emission (Private)
     
     private func emitPurchaseUpdate(_ purchase: OpenIapPurchase) {
-        for (_, listener) in purchaseUpdatedListeners {
+        print("🔵 [OpenIapModule] emitPurchaseUpdate called with \(purchaseUpdatedListeners.count) listeners")
+        for (index, (_, listener)) in purchaseUpdatedListeners.enumerated() {
+            print("  • Calling listener \(index + 1)")
             listener(purchase)
         }
     }
