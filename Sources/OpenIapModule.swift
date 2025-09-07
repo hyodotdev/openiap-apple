@@ -128,6 +128,8 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     /// Fetch products following OpenIAP specification
     public func fetchProducts(_ params: ProductRequest) async throws -> [OpenIapProduct] {
+        print("🔷 [OpenIapModule] fetchProducts called with skus: \(params.skus), type: \(params.requestType)")
+        
         // Check for empty SKU list
         guard !params.skus.isEmpty else {
             let error = PurchaseError.emptySkuList()
@@ -140,11 +142,17 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let productManager = self.productManager!
         
         do {
+            print("🔷 [OpenIapModule] Fetching products from StoreKit for SKUs: \(params.skus)")
             let fetchedProducts = try await Product.products(for: params.skus)
+            print("🔷 [OpenIapModule] StoreKit returned \(fetchedProducts.count) products")
+            
             fetchedProducts.forEach { product in
+                print("🔷 [OpenIapModule] Product from StoreKit: id=\(product.id), type=\(product.type)")
                 productManager.addProduct(product)
             }
             let products = productManager.getAllProducts()
+            print("🔷 [OpenIapModule] ProductManager has \(products.count) total products")
+            
             var openIapProducts = await withTaskGroup(of: OpenIapProduct.self) { group in
                 for product in products {
                     group.addTask {
@@ -159,21 +167,29 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return results
             }
             
+            print("🔷 [OpenIapModule] Created \(openIapProducts.count) OpenIapProduct objects")
+            
             // Filter by type using enum
             switch params.requestType {
             case .inapp:
+                print("🔷 [OpenIapModule] Filtering for inapp products")
                 openIapProducts = openIapProducts.filter { product in
-                    product.productType == .inapp
+                    let isInApp = product.productType == .inapp
+                    print("🔷 [OpenIapModule] Product \(product.id): productType=\(product.productType), isInApp=\(isInApp)")
+                    return isInApp
                 }
             case .subs:
+                print("🔷 [OpenIapModule] Filtering for subscription products")
                 openIapProducts = openIapProducts.filter { product in
                     product.productType == .subs
                 }
             case .all:
+                print("🔷 [OpenIapModule] Returning all products without filtering")
                 // Return all products without filtering
                 break
             }
             
+            print("🔷 [OpenIapModule] After filtering: \(openIapProducts.count) products")
             return openIapProducts
         } catch {
             let purchaseError = PurchaseError(

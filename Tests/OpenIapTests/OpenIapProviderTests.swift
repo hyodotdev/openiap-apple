@@ -6,29 +6,29 @@ final class OpenIapProviderTests: XCTestCase {
     
     @MainActor
     func testExplicitConnectionManagement() async throws {
-        // Test 1: Creating OpenIapProvider does not automatically initialize connection
-        let provider1 = OpenIapProvider()
+        // Test 1: Creating OpenIapStore does not automatically initialize connection
+        let store1 = OpenIapStore()
         
-        // The provider should NOT be connected yet
-        XCTAssertFalse(provider1.isConnected, "OpenIapProvider should not connect automatically")
+        // The store should NOT be connected yet
+        XCTAssertFalse(store1.isConnected, "OpenIapStore should not connect automatically")
         
         // Explicitly initialize connection
-        try await provider1.initConnection()
-        XCTAssertTrue(provider1.isConnected, "OpenIapProvider should be connected after initConnection")
+        try await store1.initConnection()
+        XCTAssertTrue(store1.isConnected, "OpenIapStore should be connected after initConnection")
         
-        // Test 2: Multiple providers can coexist with explicit connection
-        let provider2 = OpenIapProvider()
-        XCTAssertFalse(provider2.isConnected, "Second OpenIapProvider should not be connected automatically")
+        // Test 2: Multiple stores can coexist with explicit connection
+        let store2 = OpenIapStore()
+        XCTAssertFalse(store2.isConnected, "Second OpenIapStore should not be connected automatically")
         
-        try await provider2.initConnection()
-        XCTAssertTrue(provider2.isConnected, "Second OpenIapProvider should be connected after initConnection")
+        try await store2.initConnection()
+        XCTAssertTrue(store2.isConnected, "Second OpenIapStore should be connected after initConnection")
         
         // Clean up connections
-        try await provider1.endConnection()
-        try await provider2.endConnection()
+        try await store1.endConnection()
+        try await store2.endConnection()
         
-        XCTAssertFalse(provider1.isConnected, "Provider1 should be disconnected after endConnection")
-        XCTAssertFalse(provider2.isConnected, "Provider2 should be disconnected after endConnection")
+        XCTAssertFalse(store1.isConnected, "Store1 should be disconnected after endConnection")
+        XCTAssertFalse(store2.isConnected, "Store2 should be disconnected after endConnection")
     }
     
     @MainActor
