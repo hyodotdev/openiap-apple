@@ -273,7 +273,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         #if canImport(UIKit)
         if #available(iOS 17.0, *) {
-            guard let scene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
                 throw OpenIapError.purchaseFailed(reason: "Could not find window scene")
             }
             result = try await product.purchase(confirmIn: scene, options: options)
@@ -500,34 +500,25 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // MARK: - Store Information
     
     public func getStorefrontIOS() async throws -> String {
-        if #available(iOS 13.0, *) {
-            guard let storefront = await Storefront.current else {
-                throw OpenIapError.unknownError
-            }
-            return storefront.countryCode
-        } else {
-            throw OpenIapError.notSupported
+        guard let storefront = await Storefront.current else {
+            throw OpenIapError.unknownError
         }
+        return storefront.countryCode
     }
     
     @available(iOS 16.0, macOS 14.0, *)
     public func getAppTransactionIOS() async throws -> OpenIapAppTransaction? {
-        if #available(iOS 16.0, *) {
-            #if compiler(>=5.7)
-            let verificationResult = try await AppTransaction.shared
-            
-            switch verificationResult {
-            case .verified(let appTransaction):
-                return OpenIapAppTransaction(from: appTransaction)
-            case .unverified(_, _):
-                return nil
-            }
-            #else
-            throw OpenIapError.notSupported
-            #endif
-        } else {
-            throw OpenIapError.notSupported
+        #if compiler(>=5.7)
+        let verificationResult = try await AppTransaction.shared
+        switch verificationResult {
+        case .verified(let appTransaction):
+            return OpenIapAppTransaction(from: appTransaction)
+        case .unverified(_, _):
+            return nil
         }
+        #else
+        throw OpenIapError.notSupported
+        #endif
     }
     
     // MARK: - Subscription Management
@@ -587,21 +578,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     public func deepLinkToSubscriptions() async throws {
         #if canImport(UIKit)
-        if #available(iOS 15.0, *) {
-            // Open subscription management in App Store
-            guard let scene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-                throw OpenIapError.unknownError
-            }
-            
-            try await AppStore.showManageSubscriptions(in: scene)
-        } else {
-            // Fallback for older iOS versions
-            guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else {
-                throw OpenIapError.unknownError
-            }
-            
-            await UIApplication.shared.open(url, options: [:])
+        // Open subscription management in App Store
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            throw OpenIapError.unknownError
         }
+        try await AppStore.showManageSubscriptions(in: scene)
         #else
         throw OpenIapError.notSupported
         #endif
@@ -717,7 +698,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         do {
             let transaction = try checkVerified(result)
             
-            guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
                 throw OpenIapError.purchaseFailed(reason: "Cannot find window scene")
             }
             
@@ -782,14 +763,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     public func presentCodeRedemptionSheetIOS() async throws -> Bool {
         #if canImport(UIKit)
-        if #available(iOS 14.0, *) {
-            await MainActor.run {
-                SKPaymentQueue.default().presentCodeRedemptionSheet()
-            }
-            return true
-        } else {
-            throw OpenIapError.notSupported
+        await MainActor.run {
+            SKPaymentQueue.default().presentCodeRedemptionSheet()
         }
+        return true
         #else
         throw OpenIapError.notSupported
         #endif
@@ -798,8 +775,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     public func showManageSubscriptionsIOS() async throws -> [[String: Any?]] {
         #if !os(tvOS)
         #if canImport(UIKit)
-        if #available(iOS 15.0, *) {
-            guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
                 throw OpenIapError.unknownError
             }
             
@@ -866,15 +842,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             }
             
             return updatedSubscriptions
-        } else {
-            // Fallback for older iOS versions
-            guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else {
-                throw OpenIapError.unknownError
-            }
-            
-            await UIApplication.shared.open(url, options: [:])
-            return []
-        }
+        
         #else
         throw OpenIapError.notSupported
         #endif
@@ -899,7 +867,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     
                     // Skip if already processed by requestPurchase
                     if self.processedTransactionIds.contains(transactionId) {
-                        OpenIapLog.debug("🟡 [Transaction.updates] Skipping already processed: \(transactionId)")
+                    OpenIapLog.debug("🟡 [Transaction.updates] Skipping already processed: \(transactionId)")
                         // Remove from processed set for future updates (e.g., subscription renewals)
                         self.processedTransactionIds.remove(transactionId)
                         continue
