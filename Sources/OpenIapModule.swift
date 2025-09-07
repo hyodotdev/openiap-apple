@@ -128,7 +128,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     /// Fetch products following OpenIAP specification
     public func fetchProducts(_ params: ProductRequest) async throws -> [OpenIapProduct] {
-        print("🔷 [OpenIapModule] fetchProducts called with skus: \(params.skus), type: \(params.requestType)")
+        OpenIapLog.debug("🔷 [OpenIapModule] fetchProducts called with skus: \(params.skus), type: \(params.requestType)")
         
         // Check for empty SKU list
         guard !params.skus.isEmpty else {
@@ -142,16 +142,16 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let productManager = self.productManager!
         
         do {
-            print("🔷 [OpenIapModule] Fetching products from StoreKit for SKUs: \(params.skus)")
+            OpenIapLog.debug("🔷 [OpenIapModule] Fetching products from StoreKit for SKUs: \(params.skus)")
             let fetchedProducts = try await Product.products(for: params.skus)
-            print("🔷 [OpenIapModule] StoreKit returned \(fetchedProducts.count) products")
+            OpenIapLog.debug("🔷 [OpenIapModule] StoreKit returned \(fetchedProducts.count) products")
             
             fetchedProducts.forEach { product in
-                print("🔷 [OpenIapModule] Product from StoreKit: id=\(product.id), type=\(product.type)")
+                OpenIapLog.debug("🔷 [OpenIapModule] Product from StoreKit: id=\(product.id), type=\(product.type)")
                 productManager.addProduct(product)
             }
             let products = productManager.getAllProducts()
-            print("🔷 [OpenIapModule] ProductManager has \(products.count) total products")
+            OpenIapLog.debug("🔷 [OpenIapModule] ProductManager has \(products.count) total products")
             
             var openIapProducts = await withTaskGroup(of: OpenIapProduct.self) { group in
                 for product in products {
@@ -167,29 +167,29 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return results
             }
             
-            print("🔷 [OpenIapModule] Created \(openIapProducts.count) OpenIapProduct objects")
+            OpenIapLog.debug("🔷 [OpenIapModule] Created \(openIapProducts.count) OpenIapProduct objects")
             
             // Filter by type using enum
             switch params.requestType {
             case .inapp:
-                print("🔷 [OpenIapModule] Filtering for inapp products")
+                OpenIapLog.debug("🔷 [OpenIapModule] Filtering for inapp products")
                 openIapProducts = openIapProducts.filter { product in
                     let isInApp = product.productType == .inapp
-                    print("🔷 [OpenIapModule] Product \(product.id): productType=\(product.productType), isInApp=\(isInApp)")
+                    OpenIapLog.debug("🔷 [OpenIapModule] Product \(product.id): productType=\(product.productType), isInApp=\(isInApp)")
                     return isInApp
                 }
             case .subs:
-                print("🔷 [OpenIapModule] Filtering for subscription products")
+                OpenIapLog.debug("🔷 [OpenIapModule] Filtering for subscription products")
                 openIapProducts = openIapProducts.filter { product in
                     product.productType == .subs
                 }
             case .all:
-                print("🔷 [OpenIapModule] Returning all products without filtering")
+                OpenIapLog.debug("🔷 [OpenIapModule] Returning all products without filtering")
                 // Return all products without filtering
                 break
             }
             
-            print("🔷 [OpenIapModule] After filtering: \(openIapProducts.count) products")
+            OpenIapLog.debug("🔷 [OpenIapModule] After filtering: \(openIapProducts.count) products")
             return openIapProducts
         } catch {
             let purchaseError = PurchaseError(
@@ -295,16 +295,16 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             let transactionId = String(transaction.id)
             
             if processedTransactionIds.contains(transactionId) {
-                print("🔵 [requestPurchase] Transaction already processed by listener: \(transactionId)")
+                OpenIapLog.debug("🔵 [requestPurchase] Transaction already processed by listener: \(transactionId)")
                 // Don't emit duplicate event, but still handle the transaction
             } else {
                 // Mark this transaction as processed to avoid duplicate events
                 processedTransactionIds.insert(transactionId)
-                print("🔵 [requestPurchase] Processing transaction: \(transactionId)")
+                OpenIapLog.debug("🔵 [requestPurchase] Processing transaction: \(transactionId)")
                 
                 // Emit purchase update event
                 // Note: This is necessary for consumables which don't always trigger Transaction.updates
-                print("🔵 [requestPurchase] Emitting event for: \(transactionId)")
+                OpenIapLog.debug("🔵 [requestPurchase] Emitting event for: \(transactionId)")
                 emitPurchaseUpdate(purchase)
             }
             
@@ -899,13 +899,13 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     
                     // Skip if already processed by requestPurchase
                     if self.processedTransactionIds.contains(transactionId) {
-                        print("🟡 [Transaction.updates] Skipping already processed: \(transactionId)")
+                        OpenIapLog.debug("🟡 [Transaction.updates] Skipping already processed: \(transactionId)")
                         // Remove from processed set for future updates (e.g., subscription renewals)
                         self.processedTransactionIds.remove(transactionId)
                         continue
                     }
                     
-                    print("🟢 [Transaction.updates] Processing new transaction: \(transactionId)")
+                    OpenIapLog.debug("🟢 [Transaction.updates] Processing new transaction: \(transactionId)")
                     
                     // Mark as processed to prevent duplicate from requestPurchase
                     self.processedTransactionIds.insert(transactionId)
@@ -915,7 +915,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     
                     // Emit purchase updated event for real-time updates
                     let purchase = await OpenIapPurchase(from: transaction, jwsRepresentation: result.jwsRepresentation)
-                    print("🟢 [Transaction.updates] Emitting event for: \(transactionId)")
+                    OpenIapLog.debug("🟢 [Transaction.updates] Emitting event for: \(transactionId)")
                     self.emitPurchaseUpdate(purchase)
                     
                     // Clean up processed ID after a delay to allow for renewals
@@ -926,7 +926,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     
                 } catch {
                     // Emit purchase error when transaction verification fails
-                    print("⚠️ Transaction verification failed: \(error)")
+                    OpenIapLog.error("⚠️ Transaction verification failed: \(error)")
                     
                     let purchaseError: PurchaseError
                     if let openIapError = error as? OpenIapError {
@@ -959,7 +959,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     await transaction.finish()
                 }
             } catch {
-                print("⚠️ Failed to process unfinished transaction: \(error)")
+                OpenIapLog.error("⚠️ Failed to process unfinished transaction: \(error)")
                 
                 // Emit purchase error for unfinished transaction processing failure
                 let purchaseError: PurchaseError
@@ -1125,9 +1125,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // MARK: - Event Emission (Private)
     
     private func emitPurchaseUpdate(_ purchase: OpenIapPurchase) {
-        print("🔵 [OpenIapModule] emitPurchaseUpdate called with \(purchaseUpdatedListeners.count) listeners")
+        OpenIapLog.debug("🔵 [OpenIapModule] emitPurchaseUpdate called with \(purchaseUpdatedListeners.count) listeners")
         for (index, (_, listener)) in purchaseUpdatedListeners.enumerated() {
-            print("  • Calling listener \(index + 1)")
+            OpenIapLog.debug("  • Calling listener \(index + 1)")
             listener(purchase)
         }
     }

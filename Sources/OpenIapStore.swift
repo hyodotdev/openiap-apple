@@ -424,7 +424,7 @@ public final class OpenIapStore: ObservableObject {
         do {
             try await getAvailablePurchases()
         } catch {
-            print("Failed to refresh purchases: \(error)")
+            OpenIapLog.error("Failed to refresh purchases: \(error)")
         }
     }
 }
