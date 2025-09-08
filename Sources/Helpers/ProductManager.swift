@@ -1,39 +1,28 @@
 import Foundation
 import StoreKit
 
-/// Thread-safe product manager
+/// Thread-safe product manager backed by Swift actor
 @available(iOS 15.0, macOS 12.0, *)
-class ProductManager {
+actor ProductManager {
     private var products: [String: Product] = [:]
-    private let queue = DispatchQueue(label: "ProductManager", attributes: .concurrent)
     
     func addProduct(_ product: Product) {
-        queue.async(flags: .barrier) {
-            self.products[product.id] = product
-        }
+        products[product.id] = product
     }
     
     func getProduct(productID: String) -> Product? {
-        return queue.sync {
-            return products[productID]
-        }
+        return products[productID]
     }
     
     func getAllProducts() -> [Product] {
-        return queue.sync {
-            return Array(products.values)
-        }
+        return Array(products.values)
     }
     
     func removeAll() {
-        queue.async(flags: .barrier) {
-            self.products.removeAll()
-        }
+        products.removeAll()
     }
     
     func remove(productID: String) {
-        queue.async(flags: .barrier) {
-            self.products.removeValue(forKey: productID)
-        }
+        products.removeValue(forKey: productID)
     }
 }

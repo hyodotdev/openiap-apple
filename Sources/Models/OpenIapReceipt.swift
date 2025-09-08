@@ -25,3 +25,4 @@ public struct OpenIapReceipt: Codable, Equatable {
         self.inAppPurchases = inAppPurchases
     }
 }
+

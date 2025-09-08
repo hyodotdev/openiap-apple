@@ -2,7 +2,7 @@ import Foundation
 
 /// Represents an active subscription with platform-specific details
 /// Following OpenIAP ActiveSubscription specification
-public struct ActiveSubscription: Codable, Equatable {
+public struct OpenIapActiveSubscription: Codable, Equatable, Sendable {
     /// Product identifier
     public let productId: String
     
@@ -79,7 +79,7 @@ public struct ActiveSubscription: Codable, Equatable {
 import StoreKit
 
 @available(iOS 15.0, macOS 14.0, *)
-extension ActiveSubscription {
+extension OpenIapActiveSubscription {
     /// Create ActiveSubscription from StoreKit 2 Transaction and Status
     init(from transaction: Transaction, status: Product.SubscriptionInfo.Status, environment: String? = nil, jwsRepresentation: String? = nil) {
         self.productId = transaction.productID
@@ -110,3 +110,4 @@ extension ActiveSubscription {
         }
     }
 }
+

@@ -14,7 +14,7 @@ public final class OpenIapStore: ObservableObject {
     @Published public private(set) var availablePurchases: [OpenIapPurchase] = []
     @Published public private(set) var currentPurchase: OpenIapPurchase?
     @Published public private(set) var currentPurchaseError: PurchaseError?
-    @Published public private(set) var activeSubscriptions: [ActiveSubscription] = []
+    @Published public private(set) var activeSubscriptions: [OpenIapActiveSubscription] = []
     @Published public private(set) var promotedProduct: String?
     
     // MARK: - UI Status Management (Proposed OpenIAP Standard)
@@ -157,13 +157,13 @@ public final class OpenIapStore: ObservableObject {
     // MARK: - Public Methods
     
     /// Fetch products from the store
-    public func fetchProducts(skus: [String], type: RequestProductType = .all) async throws {
+    public func fetchProducts(skus: [String], type: OpenIapRequestProductType = .all) async throws {
         status.loadings.fetchProducts = true
         defer {
             status.loadings.fetchProducts = false
         }
         
-        let request = ProductRequest(skus: skus, type: type)
+        let request = OpenIapProductRequest(skus: skus, type: type)
         products = try await module.fetchProducts(request)
     }
     
@@ -173,7 +173,7 @@ public final class OpenIapStore: ObservableObject {
         defer {
             status.loadings.restorePurchases = false
         }
-        let options = PurchaseOptions(
+        let options = OpenIapGetAvailablePurchasesProps(
             alsoPublishToEventListenerIOS: false,
             onlyIncludeActiveItemsIOS: false
         )
@@ -217,7 +217,7 @@ public final class OpenIapStore: ObservableObject {
     }
     
     /// Get available purchases with options (restore purchases)
-    public func getAvailablePurchases(_ options: PurchaseOptions) async throws {
+    public func getAvailablePurchases(_ options: OpenIapGetAvailablePurchasesProps) async throws {
         let allPurchases = try await module.getAvailablePurchases(options)
         
         // Remove duplicates only for subscriptions by keeping the most recent active subscription for each productId
@@ -258,7 +258,7 @@ public final class OpenIapStore: ObservableObject {
     }
     
     /// Request a purchase
-    public func requestPurchase(_ params: RequestPurchaseProps) async throws -> OpenIapPurchase {
+    public func requestPurchase(_ params: OpenIapRequestPurchaseProps) async throws -> OpenIapPurchase {
         clearCurrentPurchase()
         clearCurrentPurchaseError()
         
@@ -295,25 +295,27 @@ public final class OpenIapStore: ObservableObject {
         return try await module.hasActiveSubscriptions(subscriptionIds: subscriptionIds)
     }
     
-    /// Restore purchases (sync with App Store)
-    public func restorePurchases() async throws {
-        status.loadings.restorePurchases = true
-        defer {
-            status.loadings.restorePurchases = false
+    /// Refresh purchases
+    /// - Parameter forceSync: when true, performs AppStore sync before fetching
+    public func refreshPurchases(forceSync: Bool = false) async throws {
+        if forceSync {
+            status.loadings.restorePurchases = true
+            defer { status.loadings.restorePurchases = false }
+            _ = try await module.syncIOS()
         }
-        
-        _ = try await module.syncIOS()
         try await getAvailablePurchases()
     }
+
+    
     
     /// Validate a receipt
-    public func validateReceipt(sku: String) async throws -> ReceiptValidationResult {
-        let props = ReceiptValidationProps(sku: sku)
+    public func validateReceipt(sku: String) async throws -> OpenIapReceiptValidationResult {
+        let props = OpenIapReceiptValidationProps(sku: sku)
         return try await module.validateReceiptIOS(props)
     }
     
     /// Validate a receipt with props (iOS only)
-    public func validateReceiptIOS(_ props: ReceiptValidationProps) async throws -> ReceiptValidationResult {
+    public func validateReceiptIOS(_ props: OpenIapReceiptValidationProps) async throws -> OpenIapReceiptValidationResult {
         return try await module.validateReceiptIOS(props)
     }
     
@@ -430,6 +432,145 @@ public final class OpenIapStore: ObservableObject {
 }
 
 // MARK: - SwiftUI View Extension
+
+// MARK: - Nested UI Status Types
+
+@available(iOS 15.0, macOS 14.0, *)
+public extension OpenIapStore {
+    /// Standard status management for OpenIAP (SwiftUI-facing)
+    struct IapStatus {
+        // MARK: - Loading States
+        public var loadings: LoadingStates = LoadingStates()
+
+        // MARK: - Data States
+        public var lastPurchaseResult: PurchaseResultData?
+        public var lastError: ErrorData?
+
+        // MARK: - Operation Tracking
+        public var currentOperation: IapOperation?
+        public var operationHistory: [IapOperation] = []
+
+        public init() {}
+
+        // Check if a specific product is being purchased
+        public func isPurchasing(_ productId: String) -> Bool {
+            return loadings.purchasing.contains(productId)
+        }
+
+        // Check if any loading operation is in progress
+        public var isLoading: Bool {
+            return loadings.initConnection ||
+                   loadings.fetchProducts ||
+                   loadings.restorePurchases ||
+                   !loadings.purchasing.isEmpty
+        }
+
+        // Add operation to history (maintains max 10 items)
+        public mutating func addToHistory(_ operation: IapOperation) {
+            operationHistory.insert(operation, at: 0)
+            if operationHistory.count > 10 {
+                operationHistory.removeLast()
+            }
+        }
+
+        // Reset all states to initial values
+        public mutating func reset() {
+            loadings = LoadingStates()
+            lastPurchaseResult = nil
+            lastError = nil
+            currentOperation = nil
+            operationHistory.removeAll()
+        }
+    }
+
+    /// Structured loading states for different IAP operations
+    struct LoadingStates {
+        public var initConnection: Bool = false
+        public var fetchProducts: Bool = false
+        public var restorePurchases: Bool = false
+        public var purchasing: Set<String> = []
+
+        public init() {}
+    }
+
+    /// Purchase result data
+    struct PurchaseResultData {
+        public let productId: String
+        public let transactionId: String
+        public let timestamp: Date
+        public let message: String
+
+        public init(
+            productId: String,
+            transactionId: String,
+            timestamp: Date = Date(),
+            message: String
+        ) {
+            self.productId = productId
+            self.transactionId = transactionId
+            self.timestamp = timestamp
+            self.message = message
+        }
+    }
+
+    /// Error data
+    struct ErrorData {
+        public let code: String
+        public let message: String
+        public let productId: String?
+        public let timestamp: Date
+
+        public init(
+            code: String,
+            message: String,
+            productId: String? = nil,
+            timestamp: Date = Date()
+        ) {
+            self.code = code
+            self.message = message
+            self.productId = productId
+            self.timestamp = timestamp
+        }
+    }
+
+    /// Represents an IAP operation for tracking
+    struct IapOperation: Identifiable, Equatable {
+        public let id = UUID()
+        public let type: IapOperationType
+        public let productId: String?
+        public let timestamp: Date
+        public let result: IapOperationResult?
+
+        public init(
+            type: IapOperationType,
+            productId: String? = nil,
+            result: IapOperationResult? = nil
+        ) {
+            self.type = type
+            self.productId = productId
+            self.timestamp = Date()
+            self.result = result
+        }
+    }
+
+    /// Types of IAP operations
+    enum IapOperationType: String, CaseIterable {
+        case initConnection = "init_connection"
+        case endConnection = "end_connection"
+        case fetchProducts = "fetch_products"
+        case requestPurchase = "request_purchase"
+        case finishTransaction = "finish_transaction"
+        case restorePurchases = "restore_purchases"
+        case validateReceipt = "validate_receipt"
+    }
+
+    /// Result of an IAP operation
+    enum IapOperationResult: Equatable {
+        case success
+        case failure(String)
+        case cancelled
+    }
+}
 
 #if canImport(SwiftUI)
 import SwiftUI

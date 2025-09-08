@@ -290,7 +290,7 @@ struct SubscriptionFlowScreen: View {
     
     private func restorePurchases() async {
         do {
-            try await iapStore.restorePurchases()
+            try await iapStore.refreshPurchases(forceSync: true)
             await MainActor.run {
                 print("✅ [SubscriptionFlow] Restored \(iapStore.availablePurchases.count) purchases")
             }

@@ -4,13 +4,13 @@ import StoreKit
 // MARK: - Event Listeners
 
 @available(iOS 15.0, macOS 14.0, *)
-public typealias PurchaseUpdatedListener = (OpenIapPurchase) -> Void
+public typealias PurchaseUpdatedListener = @Sendable (OpenIapPurchase) -> Void
 
 @available(iOS 15.0, macOS 14.0, *)
-public typealias PurchaseErrorListener = (PurchaseError) -> Void
+public typealias PurchaseErrorListener = @Sendable (PurchaseError) -> Void
 
 @available(iOS 15.0, macOS 14.0, *)
-public typealias PromotedProductListener = (String) -> Void
+public typealias PromotedProductListener = @Sendable (String) -> Void
 
 // MARK: - Protocol
 
@@ -21,11 +21,11 @@ public protocol OpenIapModuleProtocol {
     func endConnection() async throws -> Bool
     
     // Product Management
-    func fetchProducts(_ params: ProductRequest) async throws -> [OpenIapProduct]
-    func getAvailablePurchases(_ options: PurchaseOptions?) async throws -> [OpenIapPurchase]
+    func fetchProducts(_ params: OpenIapProductRequest) async throws -> [OpenIapProduct]
+    func getAvailablePurchases(_ options: OpenIapGetAvailablePurchasesProps?) async throws -> [OpenIapPurchase]
     
     // Purchase Operations
-    func requestPurchase(_ props: RequestPurchaseProps) async throws -> OpenIapPurchase
+    func requestPurchase(_ props: OpenIapRequestPurchaseProps) async throws -> OpenIapPurchase
     
     // Transaction Management
     func finishTransaction(transactionIdentifier: String) async throws -> Bool
@@ -36,7 +36,7 @@ public protocol OpenIapModuleProtocol {
     // Validation
     func getReceiptDataIOS() async throws -> String?
     func getTransactionJwsIOS(sku: String) async throws -> String?
-    func validateReceiptIOS(_ props: ReceiptValidationProps) async throws -> ReceiptValidationResult
+    func validateReceiptIOS(_ props: OpenIapReceiptValidationProps) async throws -> OpenIapReceiptValidationResult
     
     // Store Information
     func getStorefrontIOS() async throws -> String

@@ -6,11 +6,31 @@ import os
 public enum OpenIapLog {
     public enum Level: String { case debug, info, warn, error }
 
+    // Concurrency-safe storage via atomic-like helper
+    private final class State {
+        private var isEnabled: Bool = false
+        private var handler: ((Level, String) -> Void)? = nil
+        private let queue = DispatchQueue(label: "OpenIapLog.state", attributes: .concurrent)
+        
+        func getEnabled() -> Bool { queue.sync { isEnabled } }
+        func setEnabled(_ value: Bool) { queue.async(flags: .barrier) { self.isEnabled = value } }
+        
+        func getHandler() -> ((Level, String) -> Void)? { queue.sync { handler } }
+        func setHandler(_ h: ((Level, String) -> Void)?) { queue.async(flags: .barrier) { self.handler = h } }
+    }
+    private static let state = State()
+
     // Toggle to enable/disable logging from host app.
-    public static var isEnabled: Bool = false
+    public static var isEnabled: Bool {
+        get { state.getEnabled() }
+        set { state.setEnabled(newValue) }
+    }
 
     // Optional external handler to integrate with app logging frameworks.
-    public static var handler: ((Level, String) -> Void)? = nil
+    public static var handler: ((Level, String) -> Void)? {
+        get { state.getHandler() }
+        set { state.setHandler(newValue) }
+    }
 
     #if canImport(os)
     static let osLogger = Logger(subsystem: "openiap", category: "OpenIap")
@@ -64,4 +84,3 @@ public enum OpenIapLog {
         #endif
     }
 }
-

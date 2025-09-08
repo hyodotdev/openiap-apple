@@ -21,7 +21,9 @@ public class Subscription {
     }
     
     deinit {
-        // Auto-cleanup when subscription is deallocated
-        onRemove?()
+        // Auto-cleanup when subscription is deallocated (on main thread)
+        if let onRemove {
+            Task { await MainActor.run { onRemove() } }
+        }
     }
 }

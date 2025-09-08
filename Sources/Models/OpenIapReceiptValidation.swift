@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Receipt Validation Request
 
 /// Receipt validation properties following OpenIAP specification
-public struct ReceiptValidationProps: Codable, Equatable {
+public struct OpenIapReceiptValidationProps: Codable, Equatable {
     /// Product SKU to validate
     public let sku: String
     
@@ -15,7 +15,7 @@ public struct ReceiptValidationProps: Codable, Equatable {
 // MARK: - Receipt Validation Result
 
 /// Receipt Validation Result for iOS
-public struct ReceiptValidationResult: Codable, Equatable {
+public struct OpenIapReceiptValidationResult: Codable, Equatable {
     /// Whether the receipt is valid
     public let isValid: Bool
     
@@ -40,3 +40,8 @@ public struct ReceiptValidationResult: Codable, Equatable {
         self.latestTransaction = latestTransaction
     }
 }
+
+// Backward compatibility aliases
+public typealias ReceiptValidationProps = OpenIapReceiptValidationProps
+public typealias ReceiptValidationResult = OpenIapReceiptValidationResult
+
