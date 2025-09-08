@@ -2,7 +2,7 @@ import Foundation
 import StoreKit
 
 @available(iOS 16.0, macOS 13.0, *)
-public struct OpenIapAppTransaction: Codable {
+public struct OpenIapAppTransaction: Codable, Sendable {
     public let bundleId: String
     public let appVersion: String
     public let originalAppVersion: String
@@ -50,12 +50,12 @@ extension OpenIapAppTransaction {
     }
 }
 
-public struct OpenIapSubscriptionStatus: Codable {
+public struct OpenIapSubscriptionStatus: Codable, Sendable {
     public let state: String
     public let renewalInfo: OpenIapRenewalInfo?
 }
 
-public struct OpenIapRenewalInfo: Codable {
+public struct OpenIapRenewalInfo: Codable, Sendable {
     public let autoRenewStatus: Bool
     public let autoRenewPreference: String?
     public let expirationReason: Int?
@@ -64,7 +64,7 @@ public struct OpenIapRenewalInfo: Codable {
     public let gracePeriodExpirationDate: Date?
 }
 
-public struct OpenIapValidationResult: Codable {
+public struct OpenIapValidationResult: Codable, Sendable {
     public let isValid: Bool
     public let receiptData: String
     public let jwsRepresentation: String
@@ -79,7 +79,7 @@ public struct OpenIapValidationResult: Codable {
 // IapTransactionData is deprecated - use OpenIapPurchase instead
 // This type has been merged into OpenIapPurchase for better API consistency
 
-public struct OpenIapPromotedProduct: Codable {
+public struct OpenIapPromotedProduct: Codable, Sendable {
     public let productIdentifier: String
     public let localizedTitle: String
     public let localizedDescription: String
@@ -87,8 +87,9 @@ public struct OpenIapPromotedProduct: Codable {
     public let priceLocale: OpenIapPriceLocale
 }
 
-public struct OpenIapPriceLocale: Codable {
+public struct OpenIapPriceLocale: Codable, Sendable {
     public let currencyCode: String
     public let currencySymbol: String
     public let countryCode: String
 }
+

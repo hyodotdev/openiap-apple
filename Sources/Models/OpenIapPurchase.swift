@@ -1,7 +1,7 @@
 import Foundation
 import StoreKit
 
-public struct OpenIapPurchase: Codable, Equatable {
+public struct OpenIapPurchase: Codable, Equatable, Sendable {
     // MARK: - PurchaseCommon fields
     public let id: String                      // Transaction ID (primary identifier)
     public let productId: String               // Product identifier
@@ -11,7 +11,7 @@ public struct OpenIapPurchase: Codable, Equatable {
     public let purchaseToken: String?          // Purchase token
     public let platform: String                // Always "ios"
     public let quantity: Int                   // Purchase quantity (common field, defaults to 1)
-    public let purchaseState: PurchaseState    // Purchase state (common field)
+    public let purchaseState: OpenIapPurchaseState    // Purchase state (common field)
     public let isAutoRenewing: Bool            // Auto-renewable subscription flag (common field)
     
     // MARK: - PurchaseIOS specific fields
@@ -40,7 +40,7 @@ public struct OpenIapPurchase: Codable, Equatable {
 }
 
 // MARK: - Support structures
-public struct PurchaseOffer: Codable, Equatable {
+public struct OpenIapPurchaseOffer: Codable, Equatable, Sendable {
     public let id: String
     public let type: String
     public let paymentMode: String
@@ -170,7 +170,7 @@ extension OpenIapPurchase {
 }
 
 // MARK: - Purchase State Enum (Common)
-public enum PurchaseState: String, Codable, CaseIterable {
+public enum OpenIapPurchaseState: String, Codable, CaseIterable, Sendable {
     case pending = "pending"
     case purchased = "purchased" 
     case failed = "failed"
@@ -197,9 +197,9 @@ public enum PurchaseState: String, Codable, CaseIterable {
     }
 }
 
-// MARK: - Purchase Options
-// Options for purchase queries following OpenIAP spec
-public struct PurchaseOptions: Codable {
+// MARK: - GetAvailablePurchases Props
+// Options/props for getAvailablePurchases following OpenIAP spec
+public struct OpenIapGetAvailablePurchasesProps: Codable, Sendable {
     public let alsoPublishToEventListenerIOS: Bool?
     public let onlyIncludeActiveItemsIOS: Bool?
     
@@ -208,3 +208,9 @@ public struct PurchaseOptions: Codable {
         self.onlyIncludeActiveItemsIOS = onlyIncludeActiveItemsIOS
     }
 }
+
+// Backward compatibility aliases
+public typealias PurchaseOffer = OpenIapPurchaseOffer
+public typealias PurchaseState = OpenIapPurchaseState
+public typealias PurchaseOptions = OpenIapGetAvailablePurchasesProps
+public typealias OpenIapPurchaseOptions = OpenIapGetAvailablePurchasesProps

@@ -3,7 +3,7 @@ import StoreKit
 
 /// Product type for categorizing products
 /// Maps to literal strings: "inapp", "subs"
-public enum ProductType: String, Codable {
+public enum OpenIapProductType: String, Codable {
     case inapp = "inapp"
     case subs = "subs"
 }
@@ -26,7 +26,7 @@ public struct OpenIapProduct: Codable, Equatable {
     public let isFamilyShareableIOS: Bool
     public let jsonRepresentationIOS: String
     public let subscriptionInfoIOS: SubscriptionInfo?
-    public let typeIOS: ProductTypeIOS  // Detailed iOS product type
+    public let typeIOS: OpenIapProductTypeIOS  // Detailed iOS product type
     
     // MARK: - ProductSubscriptionIOS specific fields (when type == "subs")
     public let discountsIOS: [Discount]?
@@ -106,13 +106,13 @@ public struct OpenIapProduct: Codable, Equatable {
     }
     
     /// Get the type as ProductType enum
-    public var productType: ProductType {
-        return ProductType(rawValue: type) ?? .inapp
+    public var productType: OpenIapProductType {
+        return OpenIapProductType(rawValue: type) ?? .inapp
     }
 }
 
 // MARK: - iOS Product Type Enum (Detailed)
-public enum ProductTypeIOS: String, Codable, CaseIterable {
+public enum OpenIapProductTypeIOS: String, Codable, CaseIterable {
     case consumable
     case nonConsumable
     case autoRenewableSubscription
@@ -138,6 +138,10 @@ public enum ProductTypeIOS: String, Codable, CaseIterable {
     }
 }
 
+// Backward compatibility aliases
+public typealias ProductType = OpenIapProductType
+public typealias ProductTypeIOS = OpenIapProductTypeIOS
+
 
 @available(iOS 15.0, macOS 12.0, *)
 extension OpenIapProduct {
@@ -159,23 +163,25 @@ extension OpenIapProduct {
         self.isFamilyShareableIOS = product.isFamilyShareable
         self.jsonRepresentationIOS = String(data: product.jsonRepresentation, encoding: .utf8) ?? ""
         
-        // Set detailed iOS product type
-        let detailedType: ProductTypeIOS
+        // Map StoreKit type to cross-platform compatible string: "inapp" | "subs"
+        // and set detailed iOS product type
         switch product.type {
         case .consumable:
-            detailedType = .consumable
+            self.type = "inapp"
+            self.typeIOS = .consumable
         case .nonConsumable:
-            detailedType = .nonConsumable
-        case .nonRenewable:
-            detailedType = .nonRenewingSubscription
+            self.type = "inapp"
+            self.typeIOS = .nonConsumable
         case .autoRenewable:
-            detailedType = .autoRenewableSubscription
+            self.type = "subs"
+            self.typeIOS = .autoRenewableSubscription
+        case .nonRenewable:
+            self.type = "subs"
+            self.typeIOS = .nonRenewingSubscription
         default:
-            detailedType = .consumable
+            self.type = "inapp"  // fallback to inapp
+            self.typeIOS = .consumable
         }
-        
-        self.typeIOS = detailedType
-        self.type = detailedType.commonType  // Set common type for Android compatibility
         
         // Handle subscription info and ProductSubscriptionIOS fields
         if let subscription = product.subscription {
@@ -337,3 +343,4 @@ extension Product.SubscriptionPeriod {
         }
     }
 }
+

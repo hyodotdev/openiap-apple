@@ -2,7 +2,7 @@ import Foundation
 import StoreKit
 
 /// Purchase request parameters following OpenIAP specification
-public struct RequestPurchaseProps: Codable, Equatable {
+public struct OpenIapRequestPurchaseProps: Codable, Equatable, Sendable {
     /// Product SKU
     public let sku: String
     
@@ -16,14 +16,14 @@ public struct RequestPurchaseProps: Codable, Equatable {
     public let quantity: Int?
     
     /// Payment discount offer
-    public let withOffer: DiscountOffer?
+    public let withOffer: OpenIapDiscountOffer?
     
     public init(
         sku: String,
         andDangerouslyFinishTransactionAutomatically: Bool? = nil,
         appAccountToken: String? = nil,
         quantity: Int? = nil,
-        withOffer: DiscountOffer? = nil
+        withOffer: OpenIapDiscountOffer? = nil
     ) {
         self.sku = sku
         self.andDangerouslyFinishTransactionAutomatically = andDangerouslyFinishTransactionAutomatically
@@ -47,7 +47,7 @@ public struct RequestPurchaseProps: Codable, Equatable {
         
         // Convert legacy discountOffer to DiscountOffer
         if let discount = discountOffer {
-            self.withOffer = DiscountOffer(
+            self.withOffer = OpenIapDiscountOffer(
                 identifier: discount["identifier"] ?? "",
                 keyIdentifier: discount["keyIdentifier"] ?? "",
                 nonce: discount["nonce"] ?? "",
@@ -61,7 +61,7 @@ public struct RequestPurchaseProps: Codable, Equatable {
 }
 
 /// Discount offer structure for promotional offers
-public struct DiscountOffer: Codable, Equatable {
+public struct OpenIapDiscountOffer: Codable, Equatable, Sendable {
     /// Discount identifier
     public let identifier: String
     
@@ -110,7 +110,7 @@ public struct DiscountOffer: Codable, Equatable {
 // MARK: - StoreKit 2 Integration
 
 @available(iOS 15.0, macOS 14.0, *)
-extension DiscountOffer {
+extension OpenIapDiscountOffer {
     /// Convert to StoreKit 2 Product.PurchaseOption for promotional offers
     func toPurchaseOption() -> Product.PurchaseOption? {
         guard let nonceUUID = UUID(uuidString: nonce),
@@ -130,7 +130,7 @@ extension DiscountOffer {
 }
 
 @available(iOS 15.0, macOS 14.0, *)
-extension RequestPurchaseProps {
+extension OpenIapRequestPurchaseProps {
     /// Convert to StoreKit 2 purchase options
     func toPurchaseOptions() -> [Product.PurchaseOption] {
         var options: [Product.PurchaseOption] = []
@@ -152,3 +152,8 @@ extension RequestPurchaseProps {
         return options
     }
 }
+
+// Backward compatibility aliases
+public typealias RequestPurchaseProps = OpenIapRequestPurchaseProps
+public typealias DiscountOffer = OpenIapDiscountOffer
+

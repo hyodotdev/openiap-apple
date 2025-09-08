@@ -16,9 +16,23 @@
 		C0E1F5FC2C8F1AB000123456 /* SubscriptionFlowScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */; };
 		C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */; };
 		C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */; };
-		C0E1F6022C8F1AC000123456 /* StoreViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F6012C8F1AC000123456 /* StoreViewModel.swift */; };
 		C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F6032C8F1AC500123456 /* AppColors.swift */; };
 		C0E1F6072C8F1AD000123456 /* OpenIAP in Frameworks */ = {isa = PBXBuildFile; productRef = C0E1F6062C8F1AD000123456 /* OpenIAP */; };
+		C0UI00012D00000000000001 /* FeatureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10012D00000000000001 /* FeatureCard.swift */; };
+		C0UI00022D00000000000002 /* LoadingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10022D00000000000002 /* LoadingCard.swift */; };
+		C0UI00032D00000000000003 /* EmptyStateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10032D00000000000003 /* EmptyStateCard.swift */; };
+		C0UI00042D00000000000004 /* SectionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10042D00000000000004 /* SectionHeaderView.swift */; };
+		C0UI00052D00000000000005 /* ProductListCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10052D00000000000005 /* ProductListCard.swift */; };
+		C0UI00062D00000000000006 /* ProductGridCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10062D00000000000006 /* ProductGridCard.swift */; };
+		C0UI00072D00000000000007 /* ActivePurchaseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10072D00000000000007 /* ActivePurchaseCard.swift */; };
+		C0UI00082D00000000000008 /* InstructionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10082D00000000000008 /* InstructionRow.swift */; };
+		C0UI00092D00000000000009 /* ProductCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10092D00000000000009 /* ProductCard.swift */; };
+		C0UI000A2D0000000000000A /* SubscriptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100A2D0000000000000A /* SubscriptionCard.swift */; };
+		C0UI000B2D0000000000000B /* PurchaseHistoryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100B2D0000000000000B /* PurchaseHistoryCard.swift */; };
+		C0UI000C2D0000000000000C /* InstructionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100C2D0000000000000C /* InstructionCard.swift */; };
+		C0UI000D2D0000000000000D /* TestingNotesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100D2D0000000000000D /* TestingNotesCard.swift */; };
+		C0UI000E2D0000000000000E /* TestingNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100E2D0000000000000E /* TestingNote.swift */; };
+		C0UI000F2D0000000000000F /* PurchaseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI100F2D0000000000000F /* PurchaseCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,8 +46,22 @@
 		C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFlowScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailablePurchasesScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCodeScreen.swift; sourceTree = "<group>"; };
-		C0E1F6012C8F1AC000123456 /* StoreViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreViewModel.swift; sourceTree = "<group>"; };
 		C0E1F6032C8F1AC500123456 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		C0UI10012D00000000000001 /* FeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCard.swift; sourceTree = "<group>"; };
+		C0UI10022D00000000000002 /* LoadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingCard.swift; sourceTree = "<group>"; };
+		C0UI10032D00000000000003 /* EmptyStateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateCard.swift; sourceTree = "<group>"; };
+		C0UI10042D00000000000004 /* SectionHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeaderView.swift; sourceTree = "<group>"; };
+		C0UI10052D00000000000005 /* ProductListCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListCard.swift; sourceTree = "<group>"; };
+		C0UI10062D00000000000006 /* ProductGridCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductGridCard.swift; sourceTree = "<group>"; };
+		C0UI10072D00000000000007 /* ActivePurchaseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivePurchaseCard.swift; sourceTree = "<group>"; };
+		C0UI10082D00000000000008 /* InstructionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionRow.swift; sourceTree = "<group>"; };
+		C0UI10092D00000000000009 /* ProductCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductCard.swift; sourceTree = "<group>"; };
+		C0UI100A2D0000000000000A /* SubscriptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionCard.swift; sourceTree = "<group>"; };
+		C0UI100B2D0000000000000B /* PurchaseHistoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseHistoryCard.swift; sourceTree = "<group>"; };
+		C0UI100C2D0000000000000C /* InstructionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionCard.swift; sourceTree = "<group>"; };
+		C0UI100D2D0000000000000D /* TestingNotesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestingNotesCard.swift; sourceTree = "<group>"; };
+		C0UI100E2D0000000000000E /* TestingNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestingNote.swift; sourceTree = "<group>"; };
+		C0UI100F2D0000000000000F /* PurchaseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,9 +95,9 @@
 		C0E1F5E72C8F1A9400123456 /* OpenIapExample */ = {
 			isa = PBXGroup;
 			children = (
-				C0E1F6082C8F1AD500123456 /* Screens */,
 				C0E1F6092C8F1ADB00123456 /* ViewModels */,
 				C0E1F60A2C8F1AE000123456 /* Models */,
+				C0E1F6082C8F1AD500123456 /* Screens */,
 				C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */,
 				C0E1F5EA2C8F1A9400123456 /* ContentView.swift */,
 				C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */,
@@ -89,6 +117,7 @@
 		C0E1F6082C8F1AD500123456 /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				C0UI20012D00000000000001 /* uis */,
 				C0E1F5F72C8F1AA300123456 /* HomeScreen.swift */,
 				C0E1F5F92C8F1AAB00123456 /* PurchaseFlowScreen.swift */,
 				C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */,
@@ -101,7 +130,6 @@
 		C0E1F6092C8F1ADB00123456 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				C0E1F6012C8F1AC000123456 /* StoreViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -112,6 +140,28 @@
 				C0E1F6032C8F1AC500123456 /* AppColors.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		C0UI20012D00000000000001 /* uis */ = {
+			isa = PBXGroup;
+			children = (
+				C0UI10012D00000000000001 /* FeatureCard.swift */,
+				C0UI10022D00000000000002 /* LoadingCard.swift */,
+				C0UI10032D00000000000003 /* EmptyStateCard.swift */,
+				C0UI10042D00000000000004 /* SectionHeaderView.swift */,
+				C0UI10052D00000000000005 /* ProductListCard.swift */,
+				C0UI10062D00000000000006 /* ProductGridCard.swift */,
+				C0UI10072D00000000000007 /* ActivePurchaseCard.swift */,
+				C0UI10082D00000000000008 /* InstructionRow.swift */,
+				C0UI10092D00000000000009 /* ProductCard.swift */,
+				C0UI100A2D0000000000000A /* SubscriptionCard.swift */,
+				C0UI100B2D0000000000000B /* PurchaseHistoryCard.swift */,
+				C0UI100C2D0000000000000C /* InstructionCard.swift */,
+				C0UI100D2D0000000000000D /* TestingNotesCard.swift */,
+				C0UI100E2D0000000000000E /* TestingNote.swift */,
+				C0UI100F2D0000000000000F /* PurchaseCard.swift */,
+			);
+			path = uis;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -152,7 +202,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "OpenIapExample" */;
+			buildConfigurationList = C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "Martie" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -196,9 +246,23 @@
 				C0E1F5FC2C8F1AB000123456 /* SubscriptionFlowScreen.swift in Sources */,
 				C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */,
 				C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */,
-				C0E1F6022C8F1AC000123456 /* StoreViewModel.swift in Sources */,
 				C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */,
 				C0E1F5E92C8F1A9400123456 /* OpenIapExampleApp.swift in Sources */,
+				C0UI00012D00000000000001 /* FeatureCard.swift in Sources */,
+				C0UI00022D00000000000002 /* LoadingCard.swift in Sources */,
+				C0UI00032D00000000000003 /* EmptyStateCard.swift in Sources */,
+				C0UI00042D00000000000004 /* SectionHeaderView.swift in Sources */,
+				C0UI00052D00000000000005 /* ProductListCard.swift in Sources */,
+				C0UI00062D00000000000006 /* ProductGridCard.swift in Sources */,
+				C0UI00072D00000000000007 /* ActivePurchaseCard.swift in Sources */,
+				C0UI00082D00000000000008 /* InstructionRow.swift in Sources */,
+				C0UI00092D00000000000009 /* ProductCard.swift in Sources */,
+				C0UI000A2D0000000000000A /* SubscriptionCard.swift in Sources */,
+				C0UI000B2D0000000000000B /* PurchaseHistoryCard.swift in Sources */,
+				C0UI000C2D0000000000000C /* InstructionCard.swift in Sources */,
+				C0UI000D2D0000000000000D /* TestingNotesCard.swift in Sources */,
+				C0UI000E2D0000000000000E /* TestingNote.swift in Sources */,
+				C0UI000F2D0000000000000F /* PurchaseCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,7 +399,7 @@
 				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenIAP Example";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenIAP;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -366,7 +430,7 @@
 				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenIAP Example";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenIAP;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -389,7 +453,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "OpenIapExample" */ = {
+		C0E1F5E02C8F1A9400123456 /* Build configuration list for PBXProject "Martie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0E1F5F12C8F1A9500123456 /* Debug */,

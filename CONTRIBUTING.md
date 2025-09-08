@@ -39,6 +39,13 @@ swift test
 - **Acronyms as suffix**: Use all caps (`ProductIAP`, `ManagerIOS`)
 - See [CLAUDE.md](CLAUDE.md) for detailed naming rules
 
+#### OpenIap Prefix (Public Models)
+
+- Prefix all public model types with `OpenIap`.
+  - Examples: `OpenIapProduct`, `OpenIapPurchase`, `OpenIapProductRequest`, `OpenIapRequestPurchaseProps`, `OpenIapPurchaseOptions`, `OpenIapReceiptValidationProps`, `OpenIapReceiptValidationResult`, `OpenIapActiveSubscription`, `OpenIapPurchaseState`, `OpenIapPurchaseOffer`, `OpenIapProductType`, `OpenIapProductTypeIOS`.
+- Private/internal helper types do not need the prefix.
+- When renaming existing types, add a public `typealias` from the old name to the new name to preserve source compatibility, then migrate usages incrementally.
+
 ## Testing
 
 All new features must include tests:

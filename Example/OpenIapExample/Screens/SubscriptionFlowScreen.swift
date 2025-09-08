@@ -3,10 +3,19 @@ import OpenIAP
 
 @available(iOS 15.0, *)
 struct SubscriptionFlowScreen: View {
-    @StateObject private var store = StoreViewModel()
+    @StateObject private var iapStore = OpenIapStore()
+    
+    // UI State
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    // Product IDs for subscription testing
+    private let subscriptionIds: [String] = [
+        "dev.hyo.martie.premium"
+    ]
     
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
@@ -39,10 +48,10 @@ struct SubscriptionFlowScreen: View {
                 .shadow(radius: 2)
                 .padding(.horizontal)
                 
-                if store.isLoading {
+                if iapStore.status.isLoading {
                     LoadingCard(text: "Loading subscriptions...")
                 } else {
-                    let subscriptionProducts = store.products.filter { $0.typeIOS.isSubs }
+                    let subscriptionProducts = iapStore.products.filter { $0.typeIOS.isSubs }
                     
                     if subscriptionProducts.isEmpty {
                         EmptyStateCard(
@@ -52,25 +61,58 @@ struct SubscriptionFlowScreen: View {
                         )
                     } else {
                         ForEach(subscriptionProducts, id: \.id) { product in
-                            let activePurchase = store.purchases.first { purchase in
-                                purchase.productId == product.id
-                            }
-                            let isSubscribed = activePurchase != nil
-                            let isCancelled = activePurchase?.isAutoRenewing == false
-                            
                             SubscriptionCard(
                                 product: product,
-                                isSubscribed: isSubscribed,
-                                isCancelled: isCancelled,
-                                isLoading: store.purchasingProductIds.contains(product.id),
+                                purchase: iapStore.availablePurchases.first { $0.productId == product.id },
+                                isSubscribed: {
+                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                        if let expirationTime = purchase.expirationDateIOS {
+                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+                                            return expirationDate > Date.now
+                                        } else {
+                                            return purchase.isAutoRenewing
+                                        }
+                                    }
+                                    return false
+                                }(),
+                                isCancelled: {
+                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                        let isActive: Bool
+                                        if let expirationTime = purchase.expirationDateIOS {
+                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+                                            isActive = expirationDate > Date.now
+                                        } else {
+                                            isActive = purchase.isAutoRenewing
+                                        }
+                                        return purchase.isAutoRenewing == false && isActive
+                                    }
+                                    return false
+                                }(),
+                                isLoading: iapStore.status.isPurchasing(product.id),
                                 onSubscribe: {
-                                    if !isSubscribed || isCancelled {
-                                        store.purchaseProduct(product)
+                                    let isSubscribed = {
+                                        if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                            if let expirationTime = purchase.expirationDateIOS {
+                                                let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+                                                return expirationDate > Date.now
+                                            } else {
+                                                return purchase.isAutoRenewing
+                                            }
+                                        }
+                                        return false
+                                    }()
+                                    
+                                    if isSubscribed {
+                                        Task {
+                                            await manageSubscriptions()
+                                        }
+                                    } else {
+                                        purchaseProduct(product)
                                     }
                                 },
                                 onManage: {
                                     Task {
-                                        await store.manageSubscriptions()
+                                        await manageSubscriptions()
                                     }
                                 }
                             )
@@ -78,27 +120,16 @@ struct SubscriptionFlowScreen: View {
                     }
                 }
                 
-                // Instructions Card
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(AppColors.secondary)
-                        Text("Subscription Flow")
-                            .font(.headline)
-                    }
-                    .padding(.bottom, 8)
+                    Text("Notes")
+                        .font(.headline)
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Purchase → Auto receipt validation", systemImage: "1.circle.fill")
-                            .font(.subheadline)
-                        Label("Server validates receipt (see StoreViewModel)", systemImage: "2.circle.fill")
-                            .font(.subheadline)
-                        Label("Subscriptions auto-finish (no manual finish needed)", systemImage: "3.circle.fill")
-                            .font(.subheadline)
-                        Label("Re-subscriptions may take 10-30 seconds in Sandbox", systemImage: "4.circle.fill")
-                            .font(.subheadline)
+                        Text("• Subscriptions may take a moment to reflect")
+                        Text("• Use Sandbox account for testing")
+                        Text("• Restore purchases to sync status")
                     }
-                    .foregroundColor(AppColors.primaryText)
+                    .font(.caption)
                 }
                 .padding()
                 .background(AppColors.secondary.opacity(0.05))
@@ -111,7 +142,7 @@ struct SubscriptionFlowScreen: View {
                 
                 Button(action: {
                     Task {
-                        await store.restorePurchases()
+                        await restorePurchases()
                     }
                 }) {
                     HStack {
@@ -134,213 +165,168 @@ struct SubscriptionFlowScreen: View {
         .background(AppColors.background)
         .navigationTitle("Subscriptions")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    Task {
-                        await store.loadProducts()
-                    }
-                }) {
-                    Image(systemName: "arrow.clockwise")
+        .navigationBarItems(trailing: 
+            Button {
+                loadProducts()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .disabled(iapStore.status.isLoading)
+        )
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+        .onAppear {
+            setupIapProvider()
+        }
+        .onDisappear {
+            teardownConnection()
+        }
+    }
+    
+    // MARK: - OpenIapStore Setup
+    
+    private func setupIapProvider() {
+        print("🔷 [SubscriptionFlow] Setting up OpenIapStore...")
+        
+        // Setup callbacks
+        iapStore.onPurchaseSuccess = { purchase in
+            Task { @MainActor in
+                self.handlePurchaseSuccess(purchase)
+            }
+        }
+        
+        iapStore.onPurchaseError = { error in
+            Task { @MainActor in
+                self.handlePurchaseError(error)
+            }
+        }
+        
+        Task {
+            do {
+                try await iapStore.initConnection()
+                print("✅ [SubscriptionFlow] Connection initialized")
+                loadProducts()
+                await loadPurchases()
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to initialize connection: \(error.localizedDescription)"
+                    showError = true
                 }
             }
         }
-        .alert("Error", isPresented: $store.showError) {
-            Button("OK") {}
-        } message: {
-            Text(store.errorMessage)
+    }
+    
+    private func teardownConnection() {
+        print("🔷 [SubscriptionFlow] Tearing down connection...")
+        Task {
+            try await iapStore.endConnection()
+            print("✅ [SubscriptionFlow] Connection ended")
         }
-        .onAppear {
-            Task {
-                await store.loadProducts()
-                await store.loadPurchases()
+    }
+    
+    // MARK: - Product and Purchase Loading
+    
+    private func loadProducts() {
+        Task {
+            await MainActor.run {
+                // Loading state is managed internally
+            }
+            defer { 
+                Task { @MainActor in
+                    // Loading state is managed internally
+                }
+            }
+            
+            do {
+                try await iapStore.fetchProducts(skus: subscriptionIds, type: .subs)
+                await MainActor.run {
+                    if iapStore.products.isEmpty {
+                        errorMessage = "No subscription products found. Please check your App Store Connect configuration."
+                        showError = true
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to load products: \(error.localizedDescription)"
+                    showError = true
+                }
             }
         }
+    }
+    
+    private func loadPurchases() async {
+        do {
+            try await iapStore.getAvailablePurchases()
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to load purchases: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+    
+    // MARK: - Purchase Flow
+    
+    private func purchaseProduct(_ product: OpenIapProduct) {
+        
+        print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
+        
+        Task {
+            do {
+                let params = RequestPurchaseProps(
+                    sku: product.id,
+                    andDangerouslyFinishTransactionAutomatically: true
+                )
+                _ = try await iapStore.requestPurchase(params)
+            } catch {
+                // Error is already handled by OpenIapStore internally
+                print("❌ [SubscriptionFlow] Purchase failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func restorePurchases() async {
+        do {
+            try await iapStore.refreshPurchases(forceSync: true)
+            await MainActor.run {
+                print("✅ [SubscriptionFlow] Restored \(iapStore.availablePurchases.count) purchases")
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to restore purchases: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+    
+    private func manageSubscriptions() async {
+        do {
+            _ = try await iapStore.showManageSubscriptionsIOS()
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to open subscription management: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+    
+    // MARK: - Event Handlers
+    
+    private func handlePurchaseSuccess(_ purchase: OpenIapPurchase) {
+        print("✅ [SubscriptionFlow] Subscription successful: \(purchase.productId)")
+        
+        // Reload purchases to update UI
+        Task {
+            await loadPurchases()
+        }
+    }
+    
+    private func handlePurchaseError(_ error: PurchaseError) {
+        print("❌ [SubscriptionFlow] Subscription error: \(error.message)")
+        // Error status is already handled internally by OpenIapStore
     }
 }
 
-struct SubscriptionCard: View {
-    let product: OpenIapProduct
-    let isSubscribed: Bool
-    let isCancelled: Bool
-    let isLoading: Bool
-    let onSubscribe: () -> Void
-    let onManage: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(product.title)
-                            .font(.headline)
-                        
-                        if isSubscribed {
-                            Label("Subscribed", systemImage: "checkmark.seal.fill")
-                                .font(.caption)
-                                .foregroundColor(AppColors.success)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(AppColors.success.opacity(0.2))
-                                .cornerRadius(4)
-                        }
-                    }
-                    
-                    Text(product.id)
-                        .font(.caption)
-                        .font(.system(.body, design: .monospaced))
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(product.displayPrice)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(isSubscribed ? AppColors.success : AppColors.secondary)
-                    
-                    if product.typeIOS.isSubs {
-                        Text("per month")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            
-            Text(product.description)
-                .font(.body)
-                .foregroundColor(AppColors.primaryText)
-            
-            if product.typeIOS.isSubs {
-                HStack {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondary)
-                    
-                    Text("Auto-renewable subscription")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondary)
-                        .fontWeight(.medium)
-                }
-                .padding(.vertical, 4)
-            }
-            
-            if isSubscribed {
-                VStack(spacing: 12) {
-                    HStack {
-                        Image(systemName: isCancelled ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                            .foregroundColor(isCancelled ? AppColors.warning : AppColors.success)
-                        
-                        Text(isCancelled ? "Subscription Cancelled" : "Currently Subscribed")
-                            .fontWeight(.medium)
-                            .foregroundColor(isCancelled ? AppColors.warning : AppColors.success)
-                        
-                        Spacer()
-                        
-                        Text(isCancelled ? "Expires Soon" : "Active")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background((isCancelled ? AppColors.warning : AppColors.success).opacity(0.2))
-                            .foregroundColor(isCancelled ? AppColors.warning : AppColors.success)
-                            .cornerRadius(4)
-                    }
-                    .padding()
-                    .background((isCancelled ? AppColors.warning : AppColors.success).opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isCancelled ? AppColors.warning : AppColors.success, lineWidth: 1)
-                    )
-                    .cornerRadius(8)
-                    
-                    if isCancelled {
-                        // Re-subscribe button for cancelled subscriptions
-                        Button(action: onSubscribe) {
-                            HStack {
-                                if isLoading {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .tint(.white)
-                                } else {
-                                    Image(systemName: "arrow.clockwise.circle")
-                                }
-                                Text(isLoading ? "Reactivating..." : "Reactivate Subscription")
-                                    .fontWeight(.medium)
-                                Spacer()
-                                Text(product.displayPrice)
-                                    .fontWeight(.semibold)
-                            }
-                            .padding()
-                            .background(isLoading ? AppColors.secondary.opacity(0.7) : AppColors.secondary)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                        }
-                        .disabled(isLoading)
-                        
-                        Text("Subscription will remain active until expiry")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    } else {
-                        // Manage/Cancel Subscription Button
-                        Button(action: onManage) {
-                            HStack {
-                                Image(systemName: "gear")
-                                    .font(.system(size: 14))
-                                Text("Manage Subscription")
-                                    .fontWeight(.medium)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(Color.gray.opacity(0.15))
-                            .foregroundColor(AppColors.primaryText)
-                            .cornerRadius(8)
-                        }
-                        
-                        Text("Cancel anytime in Settings")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                }
-            } else {
-                Button(action: onSubscribe) {
-                    HStack {
-                        if isLoading {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "repeat.circle")
-                        }
-                        
-                        Text(isLoading ? "Processing..." : "Subscribe")
-                            .fontWeight(.medium)
-                        
-                        Spacer()
-                        
-                        if !isLoading {
-                            Text(product.displayPrice)
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .padding()
-                    .background(isLoading ? AppColors.secondary.opacity(0.7) : AppColors.secondary)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-                .disabled(isLoading)
-            }
-        }
-        .padding()
-        .background(AppColors.cardBackground)
-        .cornerRadius(12)
-        .shadow(radius: 2)
-        .padding(.horizontal)
-    }
-}

@@ -2,12 +2,21 @@ import Foundation
 
 /// Represents an active subscription with platform-specific details
 /// Following OpenIAP ActiveSubscription specification
-public struct ActiveSubscription: Codable, Equatable {
+public struct OpenIapActiveSubscription: Codable, Equatable, Sendable {
     /// Product identifier
     public let productId: String
     
     /// Always true for active subscriptions
     public let isActive: Bool
+    
+    /// Transaction identifier for backend validation
+    public let transactionId: String
+    
+    /// JWT token (iOS) or purchase token (Android) for backend validation
+    public let purchaseToken: String?
+    
+    /// Transaction timestamp (Unix timestamp in milliseconds)
+    public let transactionDate: Double
     
     /// Subscription expiration date (iOS only)
     public let expirationDateIOS: Date?
@@ -27,6 +36,9 @@ public struct ActiveSubscription: Codable, Equatable {
     public init(
         productId: String,
         isActive: Bool = true,  // Default to true for active subscriptions
+        transactionId: String,
+        purchaseToken: String? = nil,
+        transactionDate: Double,
         expirationDateIOS: Date? = nil,
         autoRenewingAndroid: Bool? = nil,
         environmentIOS: String? = nil,
@@ -35,6 +47,9 @@ public struct ActiveSubscription: Codable, Equatable {
     ) {
         self.productId = productId
         self.isActive = isActive
+        self.transactionId = transactionId
+        self.purchaseToken = purchaseToken
+        self.transactionDate = transactionDate
         self.expirationDateIOS = expirationDateIOS
         self.autoRenewingAndroid = autoRenewingAndroid  // Always nil for iOS
         self.environmentIOS = environmentIOS
@@ -64,11 +79,14 @@ public struct ActiveSubscription: Codable, Equatable {
 import StoreKit
 
 @available(iOS 15.0, macOS 14.0, *)
-extension ActiveSubscription {
+extension OpenIapActiveSubscription {
     /// Create ActiveSubscription from StoreKit 2 Transaction and Status
-    init(from transaction: Transaction, status: Product.SubscriptionInfo.Status, environment: String? = nil) {
+    init(from transaction: Transaction, status: Product.SubscriptionInfo.Status, environment: String? = nil, jwsRepresentation: String? = nil) {
         self.productId = transaction.productID
         self.isActive = true  // Only called for active subscriptions
+        self.transactionId = String(transaction.id)
+        self.purchaseToken = jwsRepresentation ?? String(transaction.id)
+        self.transactionDate = transaction.purchaseDate.timeIntervalSince1970 * 1000  // Unix timestamp in milliseconds
         self.expirationDateIOS = transaction.expirationDate
         self.autoRenewingAndroid = nil  // Android-only field
         
@@ -92,3 +110,4 @@ extension ActiveSubscription {
         }
     }
 }
+

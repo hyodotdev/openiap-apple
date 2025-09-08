@@ -2,14 +2,14 @@ import Foundation
 
 /// Request product type for filtering when fetching products
 /// Maps to literal strings: "inapp", "subs", "all"
-public enum RequestProductType: String, Codable {
+public enum OpenIapRequestProductType: String, Codable, Sendable {
     case inapp = "inapp"
     case subs = "subs"
     case all = "all"
 }
 
 /// Product request parameters following OpenIAP specification
-public struct ProductRequest: Codable, Equatable {
+public struct OpenIapProductRequest: Codable, Equatable, Sendable {
     /// Product SKUs to fetch
     public let skus: [String]
     
@@ -22,13 +22,18 @@ public struct ProductRequest: Codable, Equatable {
     }
     
     /// Convenience initializer with RequestProductType enum
-    public init(skus: [String], type: RequestProductType = .inapp) {
+    public init(skus: [String], type: OpenIapRequestProductType = .inapp) {
         self.skus = skus
         self.type = type.rawValue
     }
     
     /// Get the type as RequestProductType enum
-    public var requestType: RequestProductType {
-        return RequestProductType(rawValue: type) ?? .inapp
+    public var requestType: OpenIapRequestProductType {
+        return OpenIapRequestProductType(rawValue: type) ?? .inapp
     }
 }
+
+// Backward compatibility aliases
+public typealias RequestProductType = OpenIapRequestProductType
+public typealias ProductRequest = OpenIapProductRequest
+

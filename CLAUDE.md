@@ -1,5 +1,58 @@
 # Claude Development Guidelines for OpenIAP
 
+## Function Naming Conventions
+
+### Platform-Specific Functions
+
+- **iOS-specific functions MUST have `IOS` suffix**
+- **Android-specific functions MUST have `Android` suffix**
+- **Cross-platform functions have NO suffix**
+
+#### Examples
+
+##### ✅ Correct
+```swift
+// iOS-specific functions
+func presentCodeRedemptionSheetIOS()
+func showManageSubscriptionsIOS()
+func deepLinkToSubscriptionsIOS()
+func getPromotedProductIOS()
+func requestPurchaseOnPromotedProductIOS()
+func syncIOS()
+func getReceiptDataIOS()
+
+// Cross-platform functions
+func initConnection()
+func fetchProducts()
+func requestPurchase()
+func finishTransaction()
+```
+
+##### ❌ Incorrect
+```swift
+// Missing IOS suffix for iOS-specific
+func presentCodeRedemptionSheet()  // Should be presentCodeRedemptionSheetIOS()
+func showManageSubscriptions()     // Should be showManageSubscriptionsIOS()
+
+// Unnecessary suffix for cross-platform
+func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
+```
+
+### API Naming Alignment
+
+- **MUST match openiap.dev API naming**
+- **Use exact same function names as React Native OpenIAP**
+
+#### Standard API Names
+- `initConnection()` - Initialize IAP connection
+- `endConnection()` - End IAP connection  
+- `fetchProducts()` - Fetch products from store
+- `getProducts()` - Get cached products
+- `getAvailablePurchases()` - Get available/restored purchases
+- `requestPurchase()` - Request a purchase
+- `finishTransaction()` - Finish a transaction
+- `restorePurchases()` - Restore previous purchases
+
 ## Swift Naming Conventions for Acronyms
 
 ### General Rule
@@ -40,6 +93,34 @@
 - Run tests with: `swift test`
 - Build with: `swift build`
 - Use real product IDs: `dev.hyo.martie.10bulbs`, `dev.hyo.martie.30bulbs`
+
+## File Organization
+
+### Directory Structure
+
+- **Sources/Models/**: OpenIAP official types that match [openiap.dev/docs/types](https://www.openiap.dev/docs/types)
+  - `Product.swift` - OpenIapProduct and related types
+  - `Purchase.swift` - OpenIapPurchase and related types
+  - `ActiveSubscription.swift` - ActiveSubscription type
+  - `PurchaseError.swift` - PurchaseError type
+  - `Receipt.swift` - Receipt validation types
+  - etc.
+
+- **Sources/Helpers/**: Internal helper classes (NOT in OpenIAP official types)
+  - `ProductManager.swift` - Thread-safe product caching
+  - `IapStatus.swift` - UI status management for SwiftUI
+
+- **Sources/**: Main module files
+  - `OpenIapModule.swift` - Core implementation
+  - `OpenIapStore.swift` - SwiftUI-friendly store
+  - `OpenIapProtocol.swift` - API interface definitions
+  - `OpenIapError.swift` - Error definitions
+
+### Naming Rules
+
+- **Models**: Must match OpenIAP specification exactly
+- **Helpers**: Use descriptive names ending with purpose (Manager, Cache, Status, etc.)
+- **Avoid confusing names**: Don't use "Store" for caching classes (use Cache, Manager instead)
 
 ## Development Notes
 

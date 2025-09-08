@@ -24,8 +24,18 @@ public struct PurchaseError: Codable, Equatable {
     }
 }
 
+// Backward/forward compatible prefixed alias
+public typealias OpenIapPurchaseError = PurchaseError
+
 // MARK: - Error Codes (OpenIAP Specification)
 extension PurchaseError {
+    /// Create error for empty SKU list
+    public static func emptySkuList() -> PurchaseError {
+        return PurchaseError(
+            code: E_EMPTY_SKU_LIST,
+            message: "Empty SKU list provided"
+        )
+    }
     // MARK: User Action Errors
     public static let E_USER_CANCELLED = "E_USER_CANCELLED"
     public static let E_USER_ERROR = "E_USER_ERROR"
@@ -139,9 +149,11 @@ extension PurchaseError {
             )
         }
     }
-    
-    // MARK: - Retry Strategy
-    
+}
+
+// MARK: - Retry Strategy
+
+extension PurchaseError {
     /// Check if error can be retried
     public var canRetry: Bool {
         switch code {
@@ -177,143 +189,6 @@ extension PurchaseError {
             return TimeInterval(pow(2.0, Double(attempt)))
         default:
             return nil
-        }
-    }
-    
-    // MARK: - Convenience Factory Methods
-    
-    /// Create error for empty SKU list
-    public static func emptySkuList() -> PurchaseError {
-        return PurchaseError(
-            code: E_EMPTY_SKU_LIST,
-            message: "Empty SKU list provided"
-        )
-    }
-    
-    /// Create error for already owned item
-    public static func alreadyOwned(productId: String) -> PurchaseError {
-        return PurchaseError(
-            code: E_ALREADY_OWNED,
-            message: "Item already owned by user",
-            productId: productId
-        )
-    }
-    
-    /// Create error for item not owned
-    public static func itemNotOwned(productId: String) -> PurchaseError {
-        return PurchaseError(
-            code: E_ITEM_NOT_OWNED,
-            message: "Item not owned by user",
-            productId: productId
-        )
-    }
-    
-    /// Create error for connection initialization failure
-    public static func initConnectionFailed(message: String = "Failed to initialize store connection") -> PurchaseError {
-        return PurchaseError(
-            code: E_INIT_CONNECTION,
-            message: message
-        )
-    }
-    
-    /// Create error for service disconnected
-    public static func serviceDisconnected() -> PurchaseError {
-        return PurchaseError(
-            code: E_SERVICE_DISCONNECTED,
-            message: "Store service disconnected"
-        )
-    }
-    
-    // MARK: - StoreKit Error Mapping
-    
-    /// Create PurchaseError from StoreKit error
-    @available(iOS 15.0, macOS 14.0, *)
-    public init(from error: Error, productId: String? = nil) {
-        if let skError = error as? SKError {
-            switch skError.code {
-            case .paymentCancelled:
-                self = PurchaseError(
-                    code: Self.E_USER_CANCELLED,
-                    message: "User cancelled transaction",
-                    productId: productId
-                )
-            case .cloudServiceNetworkConnectionFailed, .cloudServicePermissionDenied:
-                self = PurchaseError(
-                    code: Self.E_NETWORK_ERROR,
-                    message: "Network unavailable",
-                    productId: productId
-                )
-            case .storeProductNotAvailable:
-                self = PurchaseError(
-                    code: Self.E_ITEM_UNAVAILABLE,
-                    message: "Product not available",
-                    productId: productId
-                )
-            case .paymentNotAllowed:
-                self = PurchaseError(
-                    code: Self.E_IAP_NOT_AVAILABLE,
-                    message: "In-app purchase not available",
-                    productId: productId
-                )
-            case .paymentInvalid:
-                self = PurchaseError(
-                    code: Self.E_RECEIPT_FAILED,
-                    message: "Receipt validation failed",
-                    productId: productId
-                )
-            default:
-                self = PurchaseError(
-                    code: Self.E_SERVICE_ERROR,
-                    message: "App Store service error: \(skError.localizedDescription)",
-                    productId: productId
-                )
-            }
-        } else if let storeKitError = error as? StoreKitError {
-            switch storeKitError {
-            case .userCancelled:
-                self = PurchaseError(
-                    code: Self.E_USER_CANCELLED,
-                    message: "User cancelled the purchase",
-                    productId: productId
-                )
-            case .networkError(_):
-                self = PurchaseError(
-                    code: Self.E_NETWORK_ERROR,
-                    message: "Network error occurred",
-                    productId: productId
-                )
-            case .systemError(_):
-                self = PurchaseError(
-                    code: Self.E_SERVICE_ERROR,
-                    message: "System error occurred",
-                    productId: productId
-                )
-            case .notAvailableInStorefront:
-                self = PurchaseError(
-                    code: Self.E_ITEM_UNAVAILABLE,
-                    message: "Product not available in storefront",
-                    productId: productId
-                )
-            case .notEntitled:
-                self = PurchaseError(
-                    code: Self.E_ITEM_NOT_OWNED,
-                    message: "User not entitled to this product",
-                    productId: productId
-                )
-            default:
-                self = PurchaseError(
-                    code: Self.E_UNKNOWN,
-                    message: "Unknown error: \(error.localizedDescription)",
-                    productId: productId
-                )
-            }
-        } else {
-            // Generic error
-            self = PurchaseError(
-                code: Self.E_UNKNOWN,
-                message: error.localizedDescription,
-                productId: productId
-            )
         }
     }
 }
