@@ -11,6 +11,7 @@
 #### Examples
 
 ##### ✅ Correct
+
 ```swift
 // iOS-specific functions
 func presentCodeRedemptionSheetIOS()
@@ -29,6 +30,7 @@ func finishTransaction()
 ```
 
 ##### ❌ Incorrect
+
 ```swift
 // Missing IOS suffix for iOS-specific
 func presentCodeRedemptionSheet()  // Should be presentCodeRedemptionSheetIOS()
@@ -44,8 +46,9 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 - **Use exact same function names as React Native OpenIAP**
 
 #### Standard API Names
+
 - `initConnection()` - Initialize IAP connection
-- `endConnection()` - End IAP connection  
+- `endConnection()` - End IAP connection
 - `fetchProducts()` - Fetch products from store
 - `getProducts()` - Get cached products
 - `getAvailablePurchases()` - Get available/restored purchases
@@ -84,7 +87,7 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 ### Specific Cases
 
 - **iOS**: `Ios` when at beginning/middle, `IOS` when as suffix
-- **IAP**: `Iap` when at beginning/middle, `IAP` when as suffix  
+- **IAP**: `Iap` when at beginning/middle, `IAP` when as suffix
 - **API**: `Api` when at beginning/middle, `API` when as suffix
 - **URL**: `Url` when at beginning/middle, `URL` when as suffix
 
@@ -99,6 +102,7 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 ### Directory Structure
 
 - **Sources/Models/**: OpenIAP official types that match [openiap.dev/docs/types](https://www.openiap.dev/docs/types)
+
   - `Product.swift` - OpenIapProduct and related types
   - `Purchase.swift` - OpenIapPurchase and related types
   - `ActiveSubscription.swift` - ActiveSubscription type
@@ -107,6 +111,7 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
   - etc.
 
 - **Sources/Helpers/**: Internal helper classes (NOT in OpenIAP official types)
+
   - `ProductManager.swift` - Thread-safe product caching
   - `IapStatus.swift` - UI status management for SwiftUI
 

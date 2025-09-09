@@ -54,10 +54,10 @@ All new features must include tests:
 func testYourFeature() async throws {
     // Arrange
     let module = IapModule.shared
-    
+
     // Act
     let result = try await module.yourMethod()
-    
+
     // Assert
     XCTAssertEqual(result, expectedValue)
 }
@@ -93,6 +93,7 @@ Keep them clear and concise:
 When your PR is merged, maintainers will handle the release:
 
 1. **Version Update**: We use semantic versioning (major.minor.patch)
+
    ```bash
    ./scripts/bump-version.sh patch  # for bug fixes
    ./scripts/bump-version.sh minor  # for new features
@@ -100,10 +101,11 @@ When your PR is merged, maintainers will handle the release:
    ```
 
 2. **Automatic Deployment**: Creating a GitHub release triggers:
+
    - Swift Package Manager update (immediate)
    - CocoaPods deployment (via `pod trunk push`)
 
-3. **Availability**: 
+3. **Availability**:
    - Swift Package: Available immediately after release
    - CocoaPods: Available within ~10 minutes via `pod update`
 
@@ -112,6 +114,7 @@ Contributors don't need to worry about deployment - just focus on making great c
 ## Questions?
 
 Feel free to:
+
 - Open an issue for bugs or features
 - Start a discussion for questions
 - Tag @hyodotdev for urgent matters
