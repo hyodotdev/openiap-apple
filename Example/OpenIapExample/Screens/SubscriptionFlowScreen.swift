@@ -324,7 +324,7 @@ struct SubscriptionFlowScreen: View {
         }
     }
     
-    private func handlePurchaseError(_ error: OpenIapErrorEvent) {
+    private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ [SubscriptionFlow] Subscription error: \(error.message)")
         // Error status is already handled internally by OpenIapStore
     }

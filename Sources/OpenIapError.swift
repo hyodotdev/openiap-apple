@@ -1,6 +1,6 @@
 import Foundation
 
-public enum OpenIapError: LocalizedError {
+public enum OpenIapFailure: LocalizedError {
     case productNotFound(id: String)
     case purchaseFailed(reason: String)
     case purchaseCancelled
@@ -44,10 +44,21 @@ public enum OpenIapError: LocalizedError {
     }
 }
 
-// MARK: - Error Code Constants + Mapping (for bridging)
+// MARK: - Unified Error Event + Codes
+public struct OpenIapError: Codable, Equatable {
+    public let code: String
+    public let message: String
+    public let productId: String?
+
+    public init(code: String, message: String, productId: String? = nil) {
+        self.code = code
+        self.message = message
+        self.productId = productId
+    }
+}
+
 public extension OpenIapError {
-    // Expose the same string codes available on PurchaseError, for convenience
-    // and to avoid importing two symbols at call sites.
+    // Error Code Constants (single source)
     static let E_UNKNOWN = "E_UNKNOWN"
     static let E_SERVICE_ERROR = "E_SERVICE_ERROR"
     static let E_USER_CANCELLED = "E_USER_CANCELLED"
@@ -82,36 +93,6 @@ public extension OpenIapError {
     static let E_QUERY_PRODUCT = "E_QUERY_PRODUCT"
     static let E_ITEM_NOT_OWNED = "E_ITEM_NOT_OWNED"
     static let E_EMPTY_SKU_LIST = "E_EMPTY_SKU_LIST"
-
-    /// OpenIAP string code that corresponds to this error case
-    var code: String {
-        switch self {
-        case .purchaseCancelled:
-            return Self.E_USER_CANCELLED
-        case .purchaseDeferred:
-            return Self.E_DEFERRED_PAYMENT
-        case .productNotFound:
-            return Self.E_SKU_NOT_FOUND
-        case .purchaseFailed:
-            return Self.E_SERVICE_ERROR
-        case .paymentNotAllowed:
-            return Self.E_IAP_NOT_AVAILABLE
-        case .invalidReceipt:
-            return Self.E_RECEIPT_FAILED
-        case .networkError:
-            return Self.E_NETWORK_ERROR
-        case .verificationFailed:
-            return Self.E_TRANSACTION_VALIDATION_FAILED
-        case .restoreFailed:
-            return Self.E_SERVICE_ERROR
-        case .storeKitError:
-            return Self.E_SERVICE_ERROR
-        case .notSupported:
-            return Self.E_FEATURE_NOT_SUPPORTED
-        case .unknownError:
-            return Self.E_UNKNOWN
-        }
-    }
 
     /// Dictionary of error keys to OpenIAP codes
     static func errorCodes() -> [String: String] {
@@ -168,55 +149,7 @@ public extension OpenIapError {
     }
 }
 
-// MARK: - Unified Error Event under OpenIapError namespace
-public struct OpenIapErrorEvent: Codable, Equatable {
-    public let code: String
-    public let message: String
-    public let productId: String?
-
-    public init(code: String, message: String, productId: String? = nil) {
-        self.code = code
-        self.message = message
-        self.productId = productId
-    }
-
-    // Re-export error code constants (single source under OpenIapError)
-    public static let E_USER_CANCELLED = OpenIapError.E_USER_CANCELLED
-    public static let E_USER_ERROR = OpenIapError.E_USER_ERROR
-    public static let E_DEFERRED_PAYMENT = OpenIapError.E_DEFERRED_PAYMENT
-    public static let E_INTERRUPTED = OpenIapError.E_INTERRUPTED
-    public static let E_ITEM_UNAVAILABLE = OpenIapError.E_ITEM_UNAVAILABLE
-    public static let E_SKU_NOT_FOUND = OpenIapError.E_SKU_NOT_FOUND
-    public static let E_SKU_OFFER_MISMATCH = OpenIapError.E_SKU_OFFER_MISMATCH
-    public static let E_QUERY_PRODUCT = OpenIapError.E_QUERY_PRODUCT
-    public static let E_ALREADY_OWNED = OpenIapError.E_ALREADY_OWNED
-    public static let E_ITEM_NOT_OWNED = OpenIapError.E_ITEM_NOT_OWNED
-    public static let E_NETWORK_ERROR = OpenIapError.E_NETWORK_ERROR
-    public static let E_SERVICE_ERROR = OpenIapError.E_SERVICE_ERROR
-    public static let E_REMOTE_ERROR = OpenIapError.E_REMOTE_ERROR
-    public static let E_INIT_CONNECTION = OpenIapError.E_INIT_CONNECTION
-    public static let E_SERVICE_DISCONNECTED = OpenIapError.E_SERVICE_DISCONNECTED
-    public static let E_CONNECTION_CLOSED = OpenIapError.E_CONNECTION_CLOSED
-    public static let E_IAP_NOT_AVAILABLE = OpenIapError.E_IAP_NOT_AVAILABLE
-    public static let E_BILLING_UNAVAILABLE = OpenIapError.E_BILLING_UNAVAILABLE
-    public static let E_FEATURE_NOT_SUPPORTED = OpenIapError.E_FEATURE_NOT_SUPPORTED
-    public static let E_SYNC_ERROR = OpenIapError.E_SYNC_ERROR
-    public static let E_RECEIPT_FAILED = OpenIapError.E_RECEIPT_FAILED
-    public static let E_RECEIPT_FINISHED = OpenIapError.E_RECEIPT_FINISHED
-    public static let E_RECEIPT_FINISHED_FAILED = OpenIapError.E_RECEIPT_FINISHED_FAILED
-    public static let E_TRANSACTION_VALIDATION_FAILED = OpenIapError.E_TRANSACTION_VALIDATION_FAILED
-    public static let E_EMPTY_SKU_LIST = OpenIapError.E_EMPTY_SKU_LIST
-    public static let E_NOT_PREPARED = OpenIapError.E_NOT_PREPARED
-    public static let E_NOT_ENDED = OpenIapError.E_NOT_ENDED
-    public static let E_DEVELOPER_ERROR = OpenIapError.E_DEVELOPER_ERROR
-    public static let E_PURCHASE_ERROR = OpenIapError.E_PURCHASE_ERROR
-    public static let E_ACTIVITY_UNAVAILABLE = OpenIapError.E_ACTIVITY_UNAVAILABLE
-    public static let E_ALREADY_PREPARED = OpenIapError.E_ALREADY_PREPARED
-    public static let E_PENDING = OpenIapError.E_PENDING
-    public static let E_UNKNOWN = OpenIapError.E_UNKNOWN
-}
-
-public extension OpenIapErrorEvent {
+public extension OpenIapError {
     /// Default human-readable message for a given error code
     static func defaultMessage(for code: String) -> String {
         switch code {
@@ -269,8 +202,8 @@ public extension OpenIapErrorEvent {
     }
 
     /// Convenience factory that fills a default message for the code
-    static func make(code: String, productId: String? = nil, message: String? = nil) -> OpenIapErrorEvent {
-        return OpenIapErrorEvent(
+    static func make(code: String, productId: String? = nil, message: String? = nil) -> OpenIapError {
+        return OpenIapError(
             code: code,
             message: message ?? defaultMessage(for: code),
             productId: productId
@@ -278,12 +211,12 @@ public extension OpenIapErrorEvent {
     }
 
     /// Convenience: create error for empty SKU list (parity with previous API)
-    static func emptySkuList() -> OpenIapErrorEvent {
-        return OpenIapErrorEvent(code: OpenIapError.E_EMPTY_SKU_LIST, message: "Empty SKU list provided")
+    static func emptySkuList() -> OpenIapError {
+        return OpenIapError(code: OpenIapError.E_EMPTY_SKU_LIST, message: "Empty SKU list provided")
     }
 
     /// Create from OpenIapError
-    init(from error: OpenIapError, productId: String? = nil) {
+    init(from error: OpenIapFailure, productId: String? = nil) {
         switch error {
         case .purchaseCancelled:
             self.init(code: Self.E_USER_CANCELLED, message: "User cancelled the purchase flow", productId: productId)
@@ -346,5 +279,35 @@ public extension OpenIapErrorEvent {
     }
 }
 
-// Backward compatibility: keep previous public type names
-// (Removed backward-compat typealiases as requested)
+// MARK: - Mapping from thrown errors to codes
+public extension OpenIapFailure {
+    /// OpenIAP string code that corresponds to this error case
+    var code: String {
+        switch self {
+        case .purchaseCancelled:
+            return OpenIapError.E_USER_CANCELLED
+        case .purchaseDeferred:
+            return OpenIapError.E_DEFERRED_PAYMENT
+        case .productNotFound:
+            return OpenIapError.E_SKU_NOT_FOUND
+        case .purchaseFailed:
+            return OpenIapError.E_SERVICE_ERROR
+        case .paymentNotAllowed:
+            return OpenIapError.E_IAP_NOT_AVAILABLE
+        case .invalidReceipt:
+            return OpenIapError.E_RECEIPT_FAILED
+        case .networkError:
+            return OpenIapError.E_NETWORK_ERROR
+        case .verificationFailed:
+            return OpenIapError.E_TRANSACTION_VALIDATION_FAILED
+        case .restoreFailed:
+            return OpenIapError.E_SERVICE_ERROR
+        case .storeKitError:
+            return OpenIapError.E_SERVICE_ERROR
+        case .notSupported:
+            return OpenIapError.E_FEATURE_NOT_SUPPORTED
+        case .unknownError:
+            return OpenIapError.E_UNKNOWN
+        }
+    }
+}

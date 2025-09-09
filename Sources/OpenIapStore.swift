@@ -13,7 +13,7 @@ public final class OpenIapStore: ObservableObject {
     @Published public private(set) var products: [OpenIapProduct] = []
     @Published public private(set) var availablePurchases: [OpenIapPurchase] = []
     @Published public private(set) var currentPurchase: OpenIapPurchase?
-    @Published public private(set) var currentPurchaseError: OpenIapErrorEvent?
+    @Published public private(set) var currentPurchaseError: OpenIapError?
     @Published public private(set) var activeSubscriptions: [OpenIapActiveSubscription] = []
     @Published public private(set) var promotedProduct: String?
     
@@ -29,14 +29,14 @@ public final class OpenIapStore: ObservableObject {
     // MARK: - Callbacks
     
     public var onPurchaseSuccess: ((OpenIapPurchase) -> Void)?
-    public var onPurchaseError: ((OpenIapErrorEvent) -> Void)?
+    public var onPurchaseError: ((OpenIapError) -> Void)?
     public var onPromotedProduct: ((String) -> Void)?
     
     // MARK: - Initialization
     
     public init(
         onPurchaseSuccess: ((OpenIapPurchase) -> Void)? = nil,
-        onPurchaseError: ((OpenIapErrorEvent) -> Void)? = nil,
+        onPurchaseError: ((OpenIapError) -> Void)? = nil,
         onPromotedProduct: ((String) -> Void)? = nil
     ) {
         self.onPurchaseSuccess = onPurchaseSuccess
@@ -132,7 +132,7 @@ public final class OpenIapStore: ObservableObject {
         }
     }
     
-    private func handlePurchaseError(_ error: OpenIapErrorEvent) {
+    private func handlePurchaseError(_ error: OpenIapError) {
         currentPurchase = nil
         currentPurchaseError = error
         if let productId = error.productId {

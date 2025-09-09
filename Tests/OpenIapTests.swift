@@ -98,15 +98,15 @@ final class OpenIapTests: XCTestCase {
     }
     
     func testOpenIapError() {
-        let error1 = OpenIapError.productNotFound(id: "test.product")
+        let error1 = OpenIapFailure.productNotFound(id: "test.product")
         XCTAssertNotNil(error1.errorDescription)
         XCTAssertTrue(error1.errorDescription?.contains("test.product") ?? false)
         
-        let error2 = OpenIapError.purchaseCancelled
+        let error2 = OpenIapFailure.purchaseCancelled
         XCTAssertNotNil(error2.errorDescription)
         XCTAssertTrue(error2.errorDescription?.contains("cancelled") ?? false)
         
-        let error3 = OpenIapError.verificationFailed(reason: "Invalid signature")
+        let error3 = OpenIapFailure.verificationFailed(reason: "Invalid signature")
         XCTAssertNotNil(error3.errorDescription)
         XCTAssertTrue(error3.errorDescription?.contains("Invalid signature") ?? false)
     }

@@ -282,7 +282,7 @@ struct PurchaseFlowScreen: View {
         }
     }
     
-    private func handlePurchaseError(_ error: OpenIapErrorEvent) {
+    private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ [PurchaseFlow] Purchase error: \(error.message)")
         
         // Update UI state

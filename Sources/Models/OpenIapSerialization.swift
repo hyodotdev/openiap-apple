@@ -115,7 +115,7 @@ public enum OpenIapSerialization {
         let codes = OpenIapError.errorCodes().values
         var map: [String: String] = [:]
         for code in codes {
-            map[code] = OpenIapErrorEvent.defaultMessage(for: code)
+            map[code] = OpenIapError.defaultMessage(for: code)
         }
         return map
     }

@@ -49,7 +49,7 @@ class TransactionObserver: ObservableObject {
         errorMessage = nil
     }
     
-    private func handlePurchaseError(_ error: OpenIapErrorEvent) {
+    private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ Purchase failed - Code: \(error.code), Message: \(error.message)")
         errorMessage = error.message
         isPending = false
