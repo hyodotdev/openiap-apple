@@ -19,6 +19,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     private let state = IapState()
     // Coalesce concurrent init attempts
     private var initTask: Task<Bool, Error>?
+
+    // MARK: - Error helpers
+    private func emitError(_ code: String, productId: String? = nil) {
+        emitPurchaseError(OpenIapError.make(code: code, productId: productId))
+    }
     
     private override init() {
         super.init()
@@ -38,13 +43,13 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             ok = await state.isInitialized
         }
         guard ok else {
-            let error = OpenIapError.make(code: OpenIapError.E_INIT_CONNECTION)
-            emitPurchaseError(error)
-            throw OpenIapFailure.purchaseFailed(reason: error.message)
+            emitError(OpenIapError.E_INIT_CONNECTION)
+            throw OpenIapFailure.purchaseFailed(
+                reason: OpenIapError.defaultMessage(for: OpenIapError.E_INIT_CONNECTION)
+            )
         }
         guard AppStore.canMakePayments else {
-            let error = OpenIapError.make(code: OpenIapError.E_IAP_NOT_AVAILABLE)
-            emitPurchaseError(error)
+            emitError(OpenIapError.E_IAP_NOT_AVAILABLE)
             throw OpenIapFailure.paymentNotAllowed
         }
     }
@@ -77,8 +82,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         // Check if IAP is available
         guard AppStore.canMakePayments else {
-            let error = OpenIapError.make(code: OpenIapError.E_IAP_NOT_AVAILABLE)
-            emitPurchaseError(error)
+            emitError(OpenIapError.E_IAP_NOT_AVAILABLE)
             await state.setInitialized(false)
             return false
         }
