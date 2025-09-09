@@ -109,7 +109,7 @@ import OpenIAP
 @MainActor
 class StoreViewModel: ObservableObject {
     private let iapProvider: OpenIapProvider
-    
+
     init() {
         // Setup provider with event handlers
         self.iapProvider = OpenIapProvider(
@@ -120,11 +120,11 @@ class StoreViewModel: ObservableObject {
                 print("Purchase failed: \(error.message)")
             }
         )
-        
+
         Task {
             // Initialize connection
             try await iapProvider.initConnection()
-            
+
             // Fetch products
             try await iapProvider.fetchProducts(
                 skus: ["product1", "product2"],
@@ -132,7 +132,7 @@ class StoreViewModel: ObservableObject {
             )
         }
     }
-    
+
     deinit {
         Task {
             // End connection when done
@@ -152,22 +152,22 @@ import OpenIAP
 @MainActor
 func setupStore() async throws {
     let module = OpenIapModule.shared
-    
+
     // Initialize connection first
     _ = try await module.initConnection()
-    
+
     // Setup listeners
     let subscription = module.purchaseUpdatedListener { purchase in
         print("Purchase updated: \(purchase.productId)")
     }
-    
+
     // Fetch and purchase
     let request = ProductRequest(skus: ["premium"], type: .all)
     let products = try await module.fetchProducts(request)
-    
+
     let props = RequestPurchaseProps(sku: "premium")
     let purchase = try await module.requestPurchase(props)
-    
+
     // When done, clean up
     module.removeListener(subscription)
     _ = try await module.endConnection()
@@ -179,7 +179,9 @@ func setupStore() async throws {
 OpenIAP now has a **simplified, minimal API** with just 2 main components:
 
 ### Core Components
-1. **OpenIapModule** (`OpenIapModule.swift`) 
+
+1. **OpenIapModule** (`OpenIapModule.swift`)
+
    - Core StoreKit 2 implementation
    - Static convenience methods for simple usage
    - Low-level instance methods for advanced control
@@ -191,6 +193,7 @@ OpenIAP now has a **simplified, minimal API** with just 2 main components:
    - Perfect for MVVM architecture
 
 ### Why This Design?
+
 - **No Duplication**: Each component has a distinct purpose
 - **Flexibility**: Use global functions, static methods, or instances
 - **Simplicity**: Only 2 files to understand instead of 4+
@@ -266,17 +269,17 @@ The library provides explicit connection management with automatic listener clea
 ```swift
 class StoreViewModel: ObservableObject {
     private let iapProvider = OpenIapProvider()
-    
+
     init() {
         Task {
             // Initialize connection
             try await iapProvider.initConnection()
-            
+
             // Fetch products
             try await iapProvider.fetchProducts(skus: productIds)
         }
     }
-    
+
     deinit {
         Task {
             // End connection (listeners cleaned up automatically)

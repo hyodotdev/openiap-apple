@@ -51,8 +51,40 @@ extension OpenIapAppTransaction {
 }
 
 public struct OpenIapSubscriptionStatus: Codable, Sendable {
-    public let state: String
+    public let state: Product.SubscriptionInfo.RenewalState
     public let renewalInfo: OpenIapRenewalInfo?
+
+    enum CodingKeys: String, CodingKey {
+        case state
+        case renewalInfo
+    }
+
+    public init(state: Product.SubscriptionInfo.RenewalState, renewalInfo: OpenIapRenewalInfo?) {
+        self.state = state
+        self.renewalInfo = renewalInfo
+    }
+
+    // Encode enum as string for JSON compatibility
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(String(describing: state), forKey: .state)
+        try container.encodeIfPresent(renewalInfo, forKey: .renewalInfo)
+    }
+
+    // Decode state from string into known cases; fallback to .expired
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let raw = (try? container.decode(String.self, forKey: .state))?.lowercased()
+        switch raw {
+        case "subscribed": self.state = .subscribed
+        case "expired": self.state = .expired
+        case "inbillingretryperiod": self.state = .inBillingRetryPeriod
+        case "ingraceperiod": self.state = .inGracePeriod
+        case "revoked": self.state = .revoked
+        default: self.state = .expired
+        }
+        self.renewalInfo = try container.decodeIfPresent(OpenIapRenewalInfo.self, forKey: .renewalInfo)
+    }
 }
 
 public struct OpenIapRenewalInfo: Codable, Sendable {
@@ -92,4 +124,3 @@ public struct OpenIapPriceLocale: Codable, Sendable {
     public let currencySymbol: String
     public let countryCode: String
 }
-
