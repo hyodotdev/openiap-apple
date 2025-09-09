@@ -48,40 +48,40 @@ public enum OpenIapError: LocalizedError {
 public extension OpenIapError {
     // Expose the same string codes available on PurchaseError, for convenience
     // and to avoid importing two symbols at call sites.
-    static let E_UNKNOWN = OpenIapErrorEvent.E_UNKNOWN
-    static let E_SERVICE_ERROR = OpenIapErrorEvent.E_SERVICE_ERROR
-    static let E_USER_CANCELLED = OpenIapErrorEvent.E_USER_CANCELLED
-    static let E_USER_ERROR = OpenIapErrorEvent.E_USER_ERROR
-    static let E_ITEM_UNAVAILABLE = OpenIapErrorEvent.E_ITEM_UNAVAILABLE
-    static let E_REMOTE_ERROR = OpenIapErrorEvent.E_REMOTE_ERROR
-    static let E_NETWORK_ERROR = OpenIapErrorEvent.E_NETWORK_ERROR
-    static let E_RECEIPT_FAILED = OpenIapErrorEvent.E_RECEIPT_FAILED
-    static let E_RECEIPT_FINISHED = OpenIapErrorEvent.E_RECEIPT_FINISHED
-    static let E_RECEIPT_FINISHED_FAILED = OpenIapErrorEvent.E_RECEIPT_FINISHED_FAILED
+    static let E_UNKNOWN = "E_UNKNOWN"
+    static let E_SERVICE_ERROR = "E_SERVICE_ERROR"
+    static let E_USER_CANCELLED = "E_USER_CANCELLED"
+    static let E_USER_ERROR = "E_USER_ERROR"
+    static let E_ITEM_UNAVAILABLE = "E_ITEM_UNAVAILABLE"
+    static let E_REMOTE_ERROR = "E_REMOTE_ERROR"
+    static let E_NETWORK_ERROR = "E_NETWORK_ERROR"
+    static let E_RECEIPT_FAILED = "E_RECEIPT_FAILED"
+    static let E_RECEIPT_FINISHED = "E_RECEIPT_FINISHED"
+    static let E_RECEIPT_FINISHED_FAILED = "E_RECEIPT_FINISHED_FAILED"
     static let E_NOT_PREPARED = "E_NOT_PREPARED"
     static let E_NOT_ENDED = "E_NOT_ENDED"
-    static let E_ALREADY_OWNED = OpenIapErrorEvent.E_ALREADY_OWNED
+    static let E_ALREADY_OWNED = "E_ALREADY_OWNED"
     static let E_DEVELOPER_ERROR = "E_DEVELOPER_ERROR"
     static let E_PURCHASE_ERROR = "E_PURCHASE_ERROR"
-    static let E_SYNC_ERROR = OpenIapErrorEvent.E_SYNC_ERROR
-    static let E_DEFERRED_PAYMENT = OpenIapErrorEvent.E_DEFERRED_PAYMENT
-    static let E_TRANSACTION_VALIDATION_FAILED = OpenIapErrorEvent.E_TRANSACTION_VALIDATION_FAILED
+    static let E_SYNC_ERROR = "E_SYNC_ERROR"
+    static let E_DEFERRED_PAYMENT = "E_DEFERRED_PAYMENT"
+    static let E_TRANSACTION_VALIDATION_FAILED = "E_TRANSACTION_VALIDATION_FAILED"
     static let E_BILLING_RESPONSE_JSON_PARSE_ERROR = "E_BILLING_RESPONSE_JSON_PARSE_ERROR"
-    static let E_INTERRUPTED = OpenIapErrorEvent.E_INTERRUPTED
-    static let E_IAP_NOT_AVAILABLE = OpenIapErrorEvent.E_IAP_NOT_AVAILABLE
+    static let E_INTERRUPTED = "E_INTERRUPTED"
+    static let E_IAP_NOT_AVAILABLE = "E_IAP_NOT_AVAILABLE"
     static let E_ACTIVITY_UNAVAILABLE = "E_ACTIVITY_UNAVAILABLE"
     static let E_ALREADY_PREPARED = "E_ALREADY_PREPARED"
     static let E_PENDING = "E_PENDING"
-    static let E_CONNECTION_CLOSED = OpenIapErrorEvent.E_CONNECTION_CLOSED
-    static let E_INIT_CONNECTION = OpenIapErrorEvent.E_INIT_CONNECTION
-    static let E_SERVICE_DISCONNECTED = OpenIapErrorEvent.E_SERVICE_DISCONNECTED
-    static let E_BILLING_UNAVAILABLE = OpenIapErrorEvent.E_BILLING_UNAVAILABLE
-    static let E_FEATURE_NOT_SUPPORTED = OpenIapErrorEvent.E_FEATURE_NOT_SUPPORTED
-    static let E_SKU_NOT_FOUND = OpenIapErrorEvent.E_SKU_NOT_FOUND
-    static let E_SKU_OFFER_MISMATCH = OpenIapErrorEvent.E_SKU_OFFER_MISMATCH
-    static let E_QUERY_PRODUCT = OpenIapErrorEvent.E_QUERY_PRODUCT
-    static let E_ITEM_NOT_OWNED = OpenIapErrorEvent.E_ITEM_NOT_OWNED
-    static let E_EMPTY_SKU_LIST = OpenIapErrorEvent.E_EMPTY_SKU_LIST
+    static let E_CONNECTION_CLOSED = "E_CONNECTION_CLOSED"
+    static let E_INIT_CONNECTION = "E_INIT_CONNECTION"
+    static let E_SERVICE_DISCONNECTED = "E_SERVICE_DISCONNECTED"
+    static let E_BILLING_UNAVAILABLE = "E_BILLING_UNAVAILABLE"
+    static let E_FEATURE_NOT_SUPPORTED = "E_FEATURE_NOT_SUPPORTED"
+    static let E_SKU_NOT_FOUND = "E_SKU_NOT_FOUND"
+    static let E_SKU_OFFER_MISMATCH = "E_SKU_OFFER_MISMATCH"
+    static let E_QUERY_PRODUCT = "E_QUERY_PRODUCT"
+    static let E_ITEM_NOT_OWNED = "E_ITEM_NOT_OWNED"
+    static let E_EMPTY_SKU_LIST = "E_EMPTY_SKU_LIST"
 
     /// OpenIAP string code that corresponds to this error case
     var code: String {
@@ -277,6 +277,11 @@ public extension OpenIapErrorEvent {
         )
     }
 
+    /// Convenience: create error for empty SKU list (parity with previous API)
+    static func emptySkuList() -> OpenIapErrorEvent {
+        return OpenIapErrorEvent(code: OpenIapError.E_EMPTY_SKU_LIST, message: "Empty SKU list provided")
+    }
+
     /// Create from OpenIapError
     init(from error: OpenIapError, productId: String? = nil) {
         switch error {
@@ -340,3 +345,6 @@ public extension OpenIapErrorEvent {
         }
     }
 }
+
+// Backward compatibility: keep previous public type names
+// (Removed backward-compat typealiases as requested)
