@@ -108,4 +108,15 @@ public enum OpenIapSerialization {
     public static func errorCodes() -> [String: String] {
         return OpenIapError.errorCodes()
     }
+
+    /// Default messages for each error code (code -> message)
+    @inlinable
+    public static func errorMessages() -> [String: String] {
+        let codes = OpenIapError.errorCodes().values
+        var map: [String: String] = [:]
+        for code in codes {
+            map[code] = PurchaseError.defaultMessage(for: code)
+        }
+        return map
+    }
 }

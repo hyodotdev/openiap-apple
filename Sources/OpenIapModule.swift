@@ -609,7 +609,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 }
                 
                 return OpenIapSubscriptionStatus(
-                    state: status.state.rawValue.description,
+                    state: status.state,
                     renewalInfo: renewalInfo
                 )
             }

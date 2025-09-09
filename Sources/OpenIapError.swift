@@ -141,6 +141,10 @@ public extension OpenIapError {
             "billingUnavailable": Self.E_BILLING_UNAVAILABLE,
             "featureNotSupported": Self.E_FEATURE_NOT_SUPPORTED,
             "syncError": Self.E_SYNC_ERROR,
+            // Lifecycle/Preparation Errors (extra parity)
+            "notPrepared": Self.E_NOT_PREPARED,
+            "notEnded": Self.E_NOT_ENDED,
+            "developerError": Self.E_DEVELOPER_ERROR,
 
             // Validation Errors
             "receiptFailed": Self.E_RECEIPT_FAILED,
@@ -148,6 +152,15 @@ public extension OpenIapError {
             "receiptFinishedFailed": Self.E_RECEIPT_FINISHED_FAILED,
             "transactionValidationFailed": Self.E_TRANSACTION_VALIDATION_FAILED,
             "emptySkuList": Self.E_EMPTY_SKU_LIST,
+
+            // Platform/Parsing Errors (extra parity)
+            "billingResponseJsonParseError": Self.E_BILLING_RESPONSE_JSON_PARSE_ERROR,
+            "activityUnavailable": Self.E_ACTIVITY_UNAVAILABLE,
+
+            // State/Generic Errors (extra parity)
+            "alreadyPrepared": Self.E_ALREADY_PREPARED,
+            "pending": Self.E_PENDING,
+            "purchaseError": Self.E_PURCHASE_ERROR,
 
             // Generic Error
             "unknown": Self.E_UNKNOWN

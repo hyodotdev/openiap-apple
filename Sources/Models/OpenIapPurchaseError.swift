@@ -72,6 +72,15 @@ extension PurchaseError {
     // MARK: Generic Error
     public static let E_UNKNOWN = "E_UNKNOWN"
     
+    // MARK: Extra Parity / Lifecycle (cross-platform constants)
+    public static let E_NOT_PREPARED = "E_NOT_PREPARED"
+    public static let E_NOT_ENDED = "E_NOT_ENDED"
+    public static let E_DEVELOPER_ERROR = "E_DEVELOPER_ERROR"
+    public static let E_PURCHASE_ERROR = "E_PURCHASE_ERROR"
+    public static let E_ACTIVITY_UNAVAILABLE = "E_ACTIVITY_UNAVAILABLE"
+    public static let E_ALREADY_PREPARED = "E_ALREADY_PREPARED"
+    public static let E_PENDING = "E_PENDING"
+    
     /// Create PurchaseError from OpenIapError
     public init(from error: OpenIapError, productId: String? = nil) {
         switch error {
@@ -190,5 +199,69 @@ extension PurchaseError {
         default:
             return nil
         }
+    }
+}
+
+// MARK: - Default Messages + Convenience Factory
+
+extension PurchaseError {
+    /// Default human-readable message for a given error code
+    public static func defaultMessage(for code: String) -> String {
+        switch code {
+        // User Action Errors
+        case Self.E_USER_CANCELLED: return "User cancelled the purchase flow"
+        case Self.E_USER_ERROR: return "User action error"
+        case Self.E_DEFERRED_PAYMENT: return "Payment was deferred (pending approval)"
+        case Self.E_INTERRUPTED: return "Purchase flow interrupted"
+
+        // Product Errors
+        case Self.E_ITEM_UNAVAILABLE: return "Item unavailable"
+        case Self.E_SKU_NOT_FOUND: return "SKU not found"
+        case Self.E_SKU_OFFER_MISMATCH: return "SKU offer mismatch"
+        case Self.E_QUERY_PRODUCT: return "Failed to query product"
+        case Self.E_ALREADY_OWNED: return "Item already owned"
+        case Self.E_ITEM_NOT_OWNED: return "Item not owned"
+
+        // Network & Service Errors
+        case Self.E_NETWORK_ERROR: return "Network connection error"
+        case Self.E_SERVICE_ERROR: return "Store service error"
+        case Self.E_REMOTE_ERROR: return "Remote service error"
+        case Self.E_INIT_CONNECTION: return "Failed to initialize billing connection"
+        case Self.E_SERVICE_DISCONNECTED: return "Billing service disconnected"
+        case Self.E_CONNECTION_CLOSED: return "Connection closed"
+        case Self.E_IAP_NOT_AVAILABLE: return "In-app purchases not available on this device"
+        case Self.E_BILLING_UNAVAILABLE: return "Billing unavailable"
+        case Self.E_FEATURE_NOT_SUPPORTED: return "Feature not supported on this platform"
+        case Self.E_SYNC_ERROR: return "Sync error"
+
+        // Validation Errors
+        case Self.E_RECEIPT_FAILED: return "Receipt validation failed"
+        case Self.E_RECEIPT_FINISHED: return "Receipt already finished"
+        case Self.E_RECEIPT_FINISHED_FAILED: return "Receipt finish failed"
+        case Self.E_TRANSACTION_VALIDATION_FAILED: return "Transaction validation failed"
+        case Self.E_EMPTY_SKU_LIST: return "Empty SKU list provided"
+
+        // Extra Parity / Lifecycle
+        case Self.E_NOT_PREPARED: return "Billing is not prepared"
+        case Self.E_NOT_ENDED: return "Billing connection not ended"
+        case Self.E_DEVELOPER_ERROR: return "Developer configuration error"
+        case Self.E_PURCHASE_ERROR: return "Purchase error"
+        case Self.E_ACTIVITY_UNAVAILABLE: return "Required activity is unavailable"
+        case Self.E_ALREADY_PREPARED: return "Billing already prepared"
+        case Self.E_PENDING: return "Transaction pending"
+
+        // Generic
+        case Self.E_UNKNOWN: return "Unknown error occurred"
+        default: return "Unknown error occurred"
+        }
+    }
+
+    /// Convenience factory that fills a default message for the code
+    public static func make(code: String, productId: String? = nil, message: String? = nil) -> PurchaseError {
+        return PurchaseError(
+            code: code,
+            message: message ?? defaultMessage(for: code),
+            productId: productId
+        )
     }
 }
