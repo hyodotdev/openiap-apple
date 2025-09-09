@@ -17,6 +17,8 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     private var updateListenerTask: Task<Void, Error>?
     private var productManager: ProductManager?
     private let state = IapState()
+    // Coalesce concurrent init attempts
+    private var initTask: Task<Bool, Error>?
     
     private override init() {
         super.init()
@@ -29,16 +31,20 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     /// Ensure connection is initialized before operations
     private func ensureConnection() async throws {
-        let ok = await state.isInitialized
+        var ok = await state.isInitialized
+        if !ok {
+            // Coalesce with ongoing initialization
+            _ = try await initConnection()
+            ok = await state.isInitialized
+        }
         guard ok else {
             let error = OpenIapErrorEvent(
                 code: OpenIapError.E_INIT_CONNECTION,
-                message: "Connection not initialized. Call initConnection() first."
+                message: "Connection not initialized"
             )
             emitPurchaseError(error)
             throw OpenIapError.purchaseFailed(reason: error.message)
         }
-        
         guard AppStore.canMakePayments else {
             let error = OpenIapErrorEvent(
                 code: OpenIapError.E_IAP_NOT_AVAILABLE,
@@ -50,7 +56,22 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
     
     public func initConnection() async throws -> Bool {
-        return try await initConnectionInternal()
+        if let task = initTask {
+            return try await task.value
+        }
+        let task = Task { [weak self] () -> Bool in
+            guard let self = self else { return false }
+            return try await self.initConnectionInternal()
+        }
+        initTask = task
+        do {
+            let result = try await task.value
+            initTask = nil
+            return result
+        } catch {
+            initTask = nil
+            throw error
+        }
     }
     
     private func initConnectionInternal() async throws -> Bool {
@@ -87,6 +108,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
     
     private func endConnectionInternal() async throws -> Bool {
+        // Cancel any in-flight initialization
+        initTask?.cancel()
+        initTask = nil
         await cleanupExistingState()
         return true
     }
