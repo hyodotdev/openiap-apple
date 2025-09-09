@@ -38,20 +38,14 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             ok = await state.isInitialized
         }
         guard ok else {
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_INIT_CONNECTION,
-                message: "Connection not initialized"
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_INIT_CONNECTION)
             emitPurchaseError(error)
-            throw OpenIapError.purchaseFailed(reason: error.message)
+            throw OpenIapFailure.purchaseFailed(reason: error.message)
         }
         guard AppStore.canMakePayments else {
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_IAP_NOT_AVAILABLE,
-                message: "In-app purchases are not available on this device"
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_IAP_NOT_AVAILABLE)
             emitPurchaseError(error)
-            throw OpenIapError.paymentNotAllowed
+            throw OpenIapFailure.paymentNotAllowed
         }
     }
     
@@ -83,10 +77,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         // Check if IAP is available
         guard AppStore.canMakePayments else {
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_IAP_NOT_AVAILABLE,
-                message: "In-app purchase not allowed on this device"
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_IAP_NOT_AVAILABLE)
             emitPurchaseError(error)
             await state.setInitialized(false)
             return false
@@ -139,9 +130,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         // Check for empty SKU list
         guard !params.skus.isEmpty else {
-            let error = OpenIapErrorEvent.emptySkuList()
+            let error = OpenIapError.emptySkuList()
             emitPurchaseError(error)
-            throw OpenIapError.purchaseFailed(reason: error.message)
+            throw OpenIapFailure.purchaseFailed(reason: error.message)
         }
         
         try await ensureConnection()
@@ -199,12 +190,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             OpenIapLog.debug("🔷 [OpenIapModule] After filtering: \(openIapProducts.count) products")
             return openIapProducts
         } catch {
-            let purchaseError = OpenIapErrorEvent(
-                code: OpenIapError.E_QUERY_PRODUCT,
-                message: "Failed to query product details: \(error.localizedDescription)"
-            )
+            let purchaseError = OpenIapError.make(code: OpenIapError.E_QUERY_PRODUCT)
             emitPurchaseError(purchaseError)
-            throw OpenIapError.productNotFound(id: params.skus.joined(separator: ", "))
+            throw OpenIapFailure.productNotFound(id: params.skus.joined(separator: ", "))
         }
     }
     
@@ -263,13 +251,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_SKU_NOT_FOUND,
-                message: "SKU not found: \(props.sku)",
-                productId: props.sku
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_SKU_NOT_FOUND, productId: props.sku)
             emitPurchaseError(error)
-            throw OpenIapError.productNotFound(id: props.sku)
+            throw OpenIapFailure.productNotFound(id: props.sku)
         }
         
         // Build purchase options using RequestPurchaseProps
@@ -284,7 +268,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 UIApplication.shared.connectedScenes.first as? UIWindowScene
             }
             guard let scene else {
-                throw OpenIapError.purchaseFailed(reason: "Could not find window scene")
+                throw OpenIapFailure.purchaseFailed(reason: "Could not find window scene")
             }
             result = try await product.purchase(confirmIn: scene, options: options)
         } else {
@@ -329,32 +313,20 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             return purchase
             
         case .userCancelled:
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_USER_CANCELLED,
-                message: "Purchase cancelled by user",
-                productId: props.sku
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_USER_CANCELLED, productId: props.sku)
             emitPurchaseError(error)
-            throw OpenIapError.purchaseCancelled
+            throw OpenIapFailure.purchaseCancelled
             
         case .pending:
             // For deferred payments, emit appropriate event
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_DEFERRED_PAYMENT,
-                message: "Payment was deferred (pending family approval, etc.)",
-                productId: props.sku
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_DEFERRED_PAYMENT, productId: props.sku)
             emitPurchaseError(error)
-            throw OpenIapError.purchaseDeferred
+            throw OpenIapFailure.purchaseDeferred
             
         @unknown default:
-            let error = OpenIapErrorEvent(
-                code: OpenIapError.E_UNKNOWN,
-                message: "Unknown error occurred",
-                productId: props.sku
-            )
+            let error = OpenIapError.make(code: OpenIapError.E_UNKNOWN, productId: props.sku)
             emitPurchaseError(error)
-            throw OpenIapError.unknownError
+            throw OpenIapFailure.unknownError
         }
     }
     
@@ -373,7 +345,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         // Otherwise search in current entitlements (more efficient than Transaction.all)
         guard let id = UInt64(transactionIdentifier) else {
-            throw OpenIapError.purchaseFailed(reason: "Invalid transaction ID")
+            throw OpenIapFailure.purchaseFailed(reason: "Invalid transaction ID")
         }
         
         // Search in current entitlements first (active purchases)
@@ -402,7 +374,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             }
         }
         
-        throw OpenIapError.purchaseFailed(reason: "Transaction not found")
+        throw OpenIapFailure.purchaseFailed(reason: "Transaction not found")
     }
     
     @available(iOS 15.0, macOS 14.0, *)
@@ -467,7 +439,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let result = await product.latestTransaction else {
-            throw OpenIapError.productNotFound(id: sku)
+            throw OpenIapFailure.productNotFound(id: sku)
         }
         
         return result.jwsRepresentation
@@ -511,7 +483,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     public func getStorefrontIOS() async throws -> String {
         guard let storefront = await Storefront.current else {
-            throw OpenIapError.unknownError
+            throw OpenIapFailure.unknownError
         }
         return storefront.countryCode
     }
@@ -527,7 +499,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             return nil
         }
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
     }
     
@@ -592,10 +564,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let scene: UIWindowScene? = await MainActor.run {
             UIApplication.shared.connectedScenes.first as? UIWindowScene
         }
-        guard let scene else { throw OpenIapError.unknownError }
+        guard let scene else { throw OpenIapFailure.unknownError }
         try await AppStore.showManageSubscriptions(in: scene)
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
     }
     
@@ -610,7 +582,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let subscription = product.subscription else {
-            throw OpenIapError.productNotFound(id: sku)
+            throw OpenIapFailure.productNotFound(id: sku)
         }
         
         do {
@@ -638,7 +610,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 )
             }
         } catch {
-            throw OpenIapError.storeKitError(error: error)
+            throw OpenIapFailure.storeKitError(error: error)
         }
     }
     
@@ -652,7 +624,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            throw OpenIapError.productNotFound(id: sku)
+            throw OpenIapFailure.productNotFound(id: sku)
         }
         
         if let result = await product.currentEntitlement {
@@ -660,7 +632,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 let transaction = try checkVerified(result) as Transaction
                 return await OpenIapPurchase(from: transaction, jwsRepresentation: result.jwsRepresentation)
             } catch {
-                throw OpenIapError.verificationFailed(reason: error.localizedDescription)
+                throw OpenIapFailure.verificationFailed(reason: error.localizedDescription)
             }
         }
         
@@ -677,7 +649,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         
         guard let product = product else {
-            throw OpenIapError.productNotFound(id: sku)
+            throw OpenIapFailure.productNotFound(id: sku)
         }
         
         if let result = await product.latestTransaction {
@@ -685,7 +657,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 let transaction = try checkVerified(result) as Transaction
                 return await OpenIapPurchase(from: transaction, jwsRepresentation: result.jwsRepresentation)
             } catch {
-                throw OpenIapError.verificationFailed(reason: error.localizedDescription)
+                throw OpenIapFailure.verificationFailed(reason: error.localizedDescription)
             }
         }
         
@@ -703,7 +675,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         
         guard let product = product,
               let result = await product.latestTransaction else {
-            throw OpenIapError.productNotFound(id: sku)
+            throw OpenIapFailure.productNotFound(id: sku)
         }
         
         do {
@@ -712,7 +684,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let windowScene: UIWindowScene? = await MainActor.run {
             UIApplication.shared.connectedScenes.first as? UIWindowScene
         }
-        guard let windowScene else { throw OpenIapError.purchaseFailed(reason: "Cannot find window scene") }
+        guard let windowScene else { throw OpenIapFailure.purchaseFailed(reason: "Cannot find window scene") }
         let refundStatus = try await transaction.beginRefundRequest(in: windowScene)
             
             switch refundStatus {
@@ -724,10 +696,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return nil
             }
         } catch {
-            throw OpenIapError.purchaseFailed(reason: error.localizedDescription)
+            throw OpenIapFailure.purchaseFailed(reason: error.localizedDescription)
         }
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
     }
     
@@ -758,7 +730,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     
     public func requestPurchaseOnPromotedProductIOS() async throws {
         // Not implemented without Event Listeners system
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
     }
     
     // MARK: - Legacy/Compatibility
@@ -768,7 +740,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             try await AppStore.sync()
             return true
         } catch {
-            throw OpenIapError.storeKitError(error: error)
+            throw OpenIapFailure.storeKitError(error: error)
         }
     }
     
@@ -779,7 +751,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
         return true
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
     }
     
@@ -790,7 +762,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             UIApplication.shared.connectedScenes.first as? UIWindowScene
         }
         guard let windowScene else {
-            throw OpenIapError.unknownError
+            throw OpenIapFailure.unknownError
         }
             
             // Get current subscription statuses before showing UI
@@ -858,10 +830,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             return updatedSubscriptions
         
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
         #else
-        throw OpenIapError.notSupported
+        throw OpenIapFailure.notSupported
         #endif
     }
     
@@ -916,15 +888,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     // Emit purchase error when transaction verification fails
                     OpenIapLog.error("⚠️ Transaction verification failed: \(error)")
                     
-                    let purchaseError: OpenIapErrorEvent
-                    if let openIapError = error as? OpenIapError {
-                        purchaseError = OpenIapErrorEvent(from: openIapError, productId: nil)
+                    let purchaseError: OpenIapError
+                    if let openIapError = error as? OpenIapFailure {
+                        purchaseError = OpenIapError(from: openIapError, productId: nil)
                     } else {
-                        purchaseError = OpenIapErrorEvent(
-                            code: OpenIapError.E_TRANSACTION_VALIDATION_FAILED,
-                            message: "Transaction verification failed: \(error.localizedDescription)",
-                            productId: nil
-                        )
+                        purchaseError = OpenIapError.make(code: OpenIapError.E_TRANSACTION_VALIDATION_FAILED)
                     }
                     self.emitPurchaseError(purchaseError)
                 }
@@ -950,15 +918,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 OpenIapLog.error("⚠️ Failed to process unfinished transaction: \(error)")
                 
                 // Emit purchase error for unfinished transaction processing failure
-                let purchaseError: OpenIapErrorEvent
-                if let openIapError = error as? OpenIapError {
-                    purchaseError = OpenIapErrorEvent(from: openIapError, productId: nil)
+                let purchaseError: OpenIapError
+                if let openIapError = error as? OpenIapFailure {
+                    purchaseError = OpenIapError(from: openIapError, productId: nil)
                 } else {
-                    purchaseError = OpenIapErrorEvent(
-                        code: OpenIapError.E_TRANSACTION_VALIDATION_FAILED,
-                        message: "Failed to process unfinished transaction: \(error.localizedDescription)",
-                        productId: nil
-                    )
+                    purchaseError = OpenIapError.make(code: OpenIapError.E_TRANSACTION_VALIDATION_FAILED)
                 }
                 emitPurchaseError(purchaseError)
                 continue
@@ -969,7 +933,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
-            throw OpenIapError.verificationFailed(reason: "Transaction verification failed")
+            throw OpenIapFailure.verificationFailed(reason: "Transaction verification failed")
         case .verified(let safe):
             return safe
         }
@@ -1117,7 +1081,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
     
-    private func emitPurchaseError(_ error: OpenIapErrorEvent) {
+    private func emitPurchaseError(_ error: OpenIapError) {
         Task { [state] in
             let listeners: [PurchaseErrorListener] = await state.snapshotPurchaseError()
             await MainActor.run {

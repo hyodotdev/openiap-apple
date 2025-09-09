@@ -7,7 +7,7 @@ import StoreKit
 public typealias PurchaseUpdatedListener = @Sendable (OpenIapPurchase) -> Void
 
 @available(iOS 15.0, macOS 14.0, *)
-public typealias PurchaseErrorListener = @Sendable (OpenIapErrorEvent) -> Void
+public typealias PurchaseErrorListener = @Sendable (OpenIapError) -> Void
 
 @available(iOS 15.0, macOS 14.0, *)
 public typealias PromotedProductListener = @Sendable (String) -> Void
