@@ -25,11 +25,13 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 - ✅ **Thread-safe** operations with MainActor isolation
 - ✅ **Explicit connection management** with automatic listener cleanup
 - ✅ **Multiple API levels** - From simple global functions to advanced control
-- ✅ **React Native parity** - UseIAP hook for SwiftUI
 - ✅ **Product management** with intelligent caching
 - ✅ **Purchase handling** with automatic transaction verification
+  - Processes only StoreKit 2 verified transactions and emits updates.
 - ✅ **Subscription management** with cancel/reactivate support
+  - Opens App Store manage subscriptions UI for user cancel/reactivate and detects state changes.
 - ✅ **Receipt validation** and transaction security
+  - Provides Base64 receipt and JWS; verifies latest transaction via StoreKit and supports server-side validation.
 - ✅ **Event-driven** purchase observation
 - ✅ **Swift Package Manager** and **CocoaPods** support
 
