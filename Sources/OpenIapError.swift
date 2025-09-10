@@ -1,51 +1,7 @@
 import Foundation
 
-public enum OpenIapFailure: LocalizedError {
-    case productNotFound(id: String)
-    case purchaseFailed(reason: String)
-    case purchaseCancelled
-    case purchaseDeferred
-    case paymentNotAllowed
-    case storeKitError(error: Error)
-    case invalidReceipt
-    case networkError
-    case verificationFailed(reason: String)
-    case restoreFailed(reason: String)
-    case unknownError
-    case notSupported
-    
-    public var errorDescription: String? {
-        switch self {
-        case .productNotFound(let id):
-            return "Product not found: \(id)"
-        case .purchaseFailed(let reason):
-            return "Purchase failed: \(reason)"
-        case .purchaseCancelled:
-            return "Purchase cancelled by user"
-        case .purchaseDeferred:
-            return "Purchase deferred"
-        case .paymentNotAllowed:
-            return "Payment not allowed"
-        case .storeKitError(let error):
-            return "StoreKit error: \(error.localizedDescription)"
-        case .invalidReceipt:
-            return "Invalid receipt"
-        case .networkError:
-            return "Network error occurred"
-        case .verificationFailed(let reason):
-            return "Verification failed: \(reason)"
-        case .restoreFailed(let reason):
-            return "Restore failed: \(reason)"
-        case .unknownError:
-            return "Unknown error occurred"
-        case .notSupported:
-            return "Feature not supported on this platform"
-        }
-    }
-}
-
 // MARK: - Unified Error Event + Codes
-public struct OpenIapError: Codable, Equatable {
+public struct OpenIapError: Codable, Equatable, LocalizedError {
     public let code: String
     public let message: String
     public let productId: String?
@@ -55,6 +11,8 @@ public struct OpenIapError: Codable, Equatable {
         self.message = message
         self.productId = productId
     }
+
+    public var errorDescription: String? { message }
 }
 
 public extension OpenIapError {
@@ -215,36 +173,6 @@ public extension OpenIapError {
         return OpenIapError(code: OpenIapError.E_EMPTY_SKU_LIST, message: "Empty SKU list provided")
     }
 
-    /// Create from OpenIapError
-    init(from error: OpenIapFailure, productId: String? = nil) {
-        switch error {
-        case .purchaseCancelled:
-            self.init(code: Self.E_USER_CANCELLED, message: "User cancelled the purchase flow", productId: productId)
-        case .purchaseDeferred:
-            self.init(code: Self.E_DEFERRED_PAYMENT, message: "Payment was deferred (pending family approval, etc.)", productId: productId)
-        case .productNotFound(let id):
-            self.init(code: Self.E_SKU_NOT_FOUND, message: "SKU not found: \(id)", productId: id)
-        case .purchaseFailed(let reason):
-            self.init(code: Self.E_SERVICE_ERROR, message: "Purchase failed: \(reason)", productId: productId)
-        case .paymentNotAllowed:
-            self.init(code: Self.E_IAP_NOT_AVAILABLE, message: "In-app purchase not allowed on this device", productId: productId)
-        case .invalidReceipt:
-            self.init(code: Self.E_RECEIPT_FAILED, message: "Receipt validation failed", productId: productId)
-        case .networkError:
-            self.init(code: Self.E_NETWORK_ERROR, message: "Network connection error", productId: productId)
-        case .verificationFailed(let reason):
-            self.init(code: Self.E_TRANSACTION_VALIDATION_FAILED, message: "Transaction validation failed: \(reason)", productId: productId)
-        case .restoreFailed(let reason):
-            self.init(code: Self.E_SERVICE_ERROR, message: "Restore failed: \(reason)", productId: productId)
-        case .storeKitError(let error):
-            self.init(code: Self.E_SERVICE_ERROR, message: "Store service error: \(error.localizedDescription)", productId: productId)
-        case .notSupported:
-            self.init(code: Self.E_FEATURE_NOT_SUPPORTED, message: "Feature not supported on this platform", productId: productId)
-        case .unknownError:
-            self.init(code: Self.E_UNKNOWN, message: "Unknown error occurred", productId: productId)
-        }
-    }
-
     /// Check if error can be retried
     var canRetry: Bool {
         switch code {
@@ -279,35 +207,3 @@ public extension OpenIapError {
     }
 }
 
-// MARK: - Mapping from thrown errors to codes
-public extension OpenIapFailure {
-    /// OpenIAP string code that corresponds to this error case
-    var code: String {
-        switch self {
-        case .purchaseCancelled:
-            return OpenIapError.E_USER_CANCELLED
-        case .purchaseDeferred:
-            return OpenIapError.E_DEFERRED_PAYMENT
-        case .productNotFound:
-            return OpenIapError.E_SKU_NOT_FOUND
-        case .purchaseFailed:
-            return OpenIapError.E_SERVICE_ERROR
-        case .paymentNotAllowed:
-            return OpenIapError.E_IAP_NOT_AVAILABLE
-        case .invalidReceipt:
-            return OpenIapError.E_RECEIPT_FAILED
-        case .networkError:
-            return OpenIapError.E_NETWORK_ERROR
-        case .verificationFailed:
-            return OpenIapError.E_TRANSACTION_VALIDATION_FAILED
-        case .restoreFailed:
-            return OpenIapError.E_SERVICE_ERROR
-        case .storeKitError:
-            return OpenIapError.E_SERVICE_ERROR
-        case .notSupported:
-            return OpenIapError.E_FEATURE_NOT_SUPPORTED
-        case .unknownError:
-            return OpenIapError.E_UNKNOWN
-        }
-    }
-}
