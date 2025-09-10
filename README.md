@@ -370,15 +370,17 @@ struct DiscountOffer {
 OpenIAP provides comprehensive error handling:
 
 ```swift
-enum OpenIapError: LocalizedError {
-    case purchaseFailed(reason: String)
-    case purchaseCancelled
-    case purchaseDeferred
-    case productNotFound(productId: String)
-    case verificationFailed(reason: String)
-    case storeKitError(error: Error)
-    case notSupported
+// Unified error model
+struct OpenIapError: LocalizedError {
+    let code: String
+    let message: String
+    let productId: String?
+
+    var errorDescription: String? { message }
 }
+
+// Create errors with predefined codes
+let error = OpenIapError(code: "E_USER_CANCELLED", message: "User cancelled the purchase")
 ```
 
 ## 🤝 Contributing
