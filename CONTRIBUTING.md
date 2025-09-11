@@ -117,7 +117,7 @@ Feel free to:
 
 - Open an issue for bugs or features
 - Start a discussion for questions
-- Tag @hyodotdev for urgent matters
+- Tag @hyochan for urgent matters
 
 ## License
 
