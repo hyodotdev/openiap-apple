@@ -1,11 +1,11 @@
 # OpenIAP Apple
 
 <div align="center">
-  <img src="https://openiap.dev/logo.png" alt="OpenIAP Logo" width="120" height="120">
+  <img src="./logo.png" alt="OpenIAP Apple Logo" width="120" height="120">
 </div>
 
 <div align="center">
-  <strong>A comprehensive Swift implementation of the OpenIAP specification for iOS, macOS, tvOS, and watchOS applications.</strong>
+  <strong>A comprehensive Swift implementation of the <a href="https://openiap.dev">OpenIAP</a> specification for iOS, macOS, tvOS, and watchOS applications.</strong>
 </div>
 
 <br />
