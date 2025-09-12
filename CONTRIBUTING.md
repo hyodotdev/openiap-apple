@@ -53,7 +53,7 @@ All new features must include tests:
 ```swift
 func testYourFeature() async throws {
     // Arrange
-    let module = IapModule.shared
+    let module = OpenIapModule.shared
 
     // Act
     let result = try await module.yourMethod()
@@ -81,12 +81,18 @@ func testYourFeature() async throws {
 
 ## Commit Messages
 
-Keep them clear and concise:
+Use Angular Conventional Commits:
 
-- `Add purchase error recovery`
-- `Fix subscription status check`
-- `Update StoreKit 2 integration`
-- `Refactor transaction handling`
+- Format: `<type>(<scope>): <subject>`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+- Subject: imperative, lowercase, no period, ~50 chars
+- Body/footers optional; wrap at ~72 cols
+
+Examples:
+
+- `feat(store): add purchase success callback`
+- `fix(iap): handle user cancellation edge case`
+- `docs(readme): correct api examples for OpenIapStore`
 
 ## Release Process (Maintainers Only)
 

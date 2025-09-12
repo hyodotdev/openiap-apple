@@ -45,16 +45,14 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 - **MUST match openiap.dev API naming**
 - **Use exact same function names as React Native OpenIAP**
 
-#### Standard API Names
+#### Standard API Names (Apple module)
 
 - `initConnection()` - Initialize IAP connection
 - `endConnection()` - End IAP connection
 - `fetchProducts()` - Fetch products from store
-- `getProducts()` - Get cached products
 - `getAvailablePurchases()` - Get available/restored purchases
 - `requestPurchase()` - Request a purchase
 - `finishTransaction()` - Finish a transaction
-- `restorePurchases()` - Restore previous purchases
 
 ## Swift Naming Conventions for Acronyms
 

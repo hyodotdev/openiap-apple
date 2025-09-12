@@ -1,11 +1,11 @@
 # OpenIAP Apple
 
 <div align="center">
-  <img src="https://openiap.dev/logo.png" alt="OpenIAP Logo" width="120" height="120">
+  <img src="./logo.png" alt="OpenIAP Apple Logo" width="120" height="120">
 </div>
 
 <div align="center">
-  <strong>A comprehensive Swift implementation of the OpenIAP specification for iOS, macOS, tvOS, and watchOS applications.</strong>
+  <strong>A comprehensive Swift implementation of the <a href="https://openiap.dev">OpenIAP</a> specification for iOS, macOS, tvOS, and watchOS applications.</strong>
 </div>
 
 <br />
@@ -24,7 +24,7 @@ Visit [**openiap.dev**](https://openiap.dev) for complete documentation, guides,
 - ✅ **Cross-platform** support (iOS, macOS, tvOS, watchOS)
 - ✅ **Thread-safe** operations with MainActor isolation
 - ✅ **Explicit connection management** with automatic listener cleanup
-- ✅ **Multiple API levels** - From simple global functions to advanced control
+- ✅ **Multiple API levels** - Use `OpenIapModule.shared` or `OpenIapStore`
 - ✅ **Product management** with intelligent caching
 - ✅ **Purchase handling** with automatic transaction verification
   - Processes only StoreKit 2 verified transactions and emits updates.
@@ -81,27 +81,36 @@ pod install
 
 OpenIAP provides multiple ways to integrate in-app purchases, from super simple one-liners to advanced control. Choose the approach that fits your needs!
 
-### Option 1: Static Methods (Simplest)
+### Option 1: Shared Instance (Simplest)
 
-Use OpenIapModule's static methods for quick integration:
+Use `OpenIapModule.shared` for quick integration:
 
 ```swift
 import OpenIAP
 
+let module = OpenIapModule.shared
+
 // Initialize connection
-let connected = try await OpenIapModule.initConnection()
+_ = try await module.initConnection()
 
 // Fetch products
-let products = try await OpenIapModule.fetchProducts(skus: ["premium", "coins"])
+let products = try await module.fetchProducts(
+    OpenIapProductRequest(skus: ["premium", "coins"], type: .all)
+)
 
 // Make a purchase
-let purchase = try await OpenIapModule.requestPurchase(sku: "premium")
+let purchase = try await module.requestPurchase(
+    OpenIapRequestPurchaseProps(sku: "premium")
+)
 
-// Restore purchases
-try await OpenIapModule.restorePurchases()
+// Get available/restored purchases
+let restored = try await module.getAvailablePurchases(nil)
+
+// End connection when done
+_ = try await module.endConnection()
 ```
 
-### Option 2: OpenIapProvider (SwiftUI Ready)
+### Option 2: OpenIapStore (SwiftUI Ready)
 
 For more control while keeping it simple:
 
@@ -110,11 +119,11 @@ import OpenIAP
 
 @MainActor
 class StoreViewModel: ObservableObject {
-    private let iapProvider: OpenIapProvider
+    private let iapStore: OpenIapStore
 
     init() {
-        // Setup provider with event handlers
-        self.iapProvider = OpenIapProvider(
+        // Setup store with event handlers
+        self.iapStore = OpenIapStore(
             onPurchaseSuccess: { purchase in
                 print("Purchase successful: \(purchase.productId)")
             },
@@ -125,10 +134,10 @@ class StoreViewModel: ObservableObject {
 
         Task {
             // Initialize connection
-            try await iapProvider.initConnection()
+            try await iapStore.initConnection()
 
             // Fetch products
-            try await iapProvider.fetchProducts(
+            try await iapStore.fetchProducts(
                 skus: ["product1", "product2"],
                 type: .inapp
             )
@@ -138,7 +147,7 @@ class StoreViewModel: ObservableObject {
     deinit {
         Task {
             // End connection when done
-            try await iapProvider.endConnection()
+            try await iapStore.endConnection()
         }
     }
 }
@@ -164,10 +173,10 @@ func setupStore() async throws {
     }
 
     // Fetch and purchase
-    let request = ProductRequest(skus: ["premium"], type: .all)
+    let request = OpenIapProductRequest(skus: ["premium"], type: .all)
     let products = try await module.fetchProducts(request)
 
-    let props = RequestPurchaseProps(sku: "premium")
+    let props = OpenIapRequestPurchaseProps(sku: "premium")
     let purchase = try await module.requestPurchase(props)
 
     // When done, clean up
@@ -185,19 +194,19 @@ OpenIAP now has a **simplified, minimal API** with just 2 main components:
 1. **OpenIapModule** (`OpenIapModule.swift`)
 
    - Core StoreKit 2 implementation
-   - Static convenience methods for simple usage
+   - Shared instance for simple usage
    - Low-level instance methods for advanced control
 
-2. **OpenIapProvider** (`OpenIapProvider.swift`)
+2. **OpenIapStore** (`OpenIapStore.swift`)
    - SwiftUI-ready with `@Published` properties
-   - Automatic connection management
+   - Explicit connection management (initConnection/endConnection)
    - Event callbacks for purchase success/error
    - Perfect for MVVM architecture
 
 ### Why This Design?
 
 - **No Duplication**: Each component has a distinct purpose
-- **Flexibility**: Use global functions, static methods, or instances
+- **Flexibility**: Use the shared module or the SwiftUI store
 - **Simplicity**: Only 2 files to understand instead of 4+
 - **Compatibility**: Maintains openiap.dev spec compliance
 
@@ -243,15 +252,17 @@ swift test
 OpenIAP provides comprehensive transaction verification with server-side receipt validation:
 
 ```swift
-// Request purchase without auto-finishing
-let purchase = try await requestPurchase(
-    sku: "dev.hyo.premium",
-    andDangerouslyFinishTransactionAutomatically: false
+let store = OpenIapStore()
+try await store.initConnection()
+
+// Request purchase (validate server-side first)
+let purchase = try await store.requestPurchase(
+    OpenIapRequestPurchaseProps(sku: "dev.hyo.premium")
 )
 
-// Validate on your server using transactionReceipt
+// Validate on your server using purchase.transactionReceipt
 // Then finish the transaction manually
-try await finishTransaction(purchase: purchase, isConsumable: false)
+_ = try await store.finishTransaction(purchase: purchase, isConsumable: false)
 ```
 
 ## 🔄 Connection Management
@@ -270,22 +281,22 @@ The library provides explicit connection management with automatic listener clea
 
 ```swift
 class StoreViewModel: ObservableObject {
-    private let iapProvider = OpenIapProvider()
+    private let iapStore = OpenIapStore()
 
     init() {
         Task {
             // Initialize connection
-            try await iapProvider.initConnection()
+            try await iapStore.initConnection()
 
             // Fetch products
-            try await iapProvider.fetchProducts(skus: productIds)
+            try await iapStore.fetchProducts(skus: productIds)
         }
     }
 
     deinit {
         Task {
             // End connection (listeners cleaned up automatically)
-            try await iapProvider.endConnection()
+            try await iapStore.endConnection()
         }
     }
 }
@@ -395,7 +406,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🔄 Best Practices
 
-1. **Choose the right API level**: Start with global functions for simple apps, use UseIAP for SwiftUI
+1. **Choose the right API level**: Use `OpenIapModule.shared` for simple flows, or `OpenIapStore` for SwiftUI apps
 2. **Handle errors appropriately**: Always check for user cancellations vs actual errors
 3. **Validate receipts server-side**: Use `andDangerouslyFinishTransactionAutomatically: false` for server validation
 4. **Test with Sandbox**: Always test purchases in App Store Connect Sandbox environment
