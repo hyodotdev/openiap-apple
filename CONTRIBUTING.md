@@ -106,10 +106,17 @@ When your PR is merged, maintainers will handle the release:
    ./scripts/bump-version.sh major  # for breaking changes
    ```
 
-2. **Automatic Deployment**: Creating a GitHub release triggers:
+2. **Deployment Workflows (separated)**
 
-   - Swift Package Manager update (immediate)
-   - CocoaPods deployment (via `pod trunk push`)
+   - Swift Package (SPM):
+     - Actions → "Release Swift Package" → Run workflow → enter version (e.g., `1.2.3` or `patch`).
+     - This bumps version, commits, tags, creates a GitHub Release, and runs build/tests. SPM picks up new versions from git tags automatically.
+
+   - CocoaPods:
+     - Actions → "Deploy to CocoaPods" → Run workflow.
+     - Uses the current `openiap.podspec` version and publishes via `pod trunk push` (requires `COCOAPODS_TRUNK_TOKEN` repository secret).
+
+   - These are decoupled. Run SPM release and CocoaPods deploy independently, or run both sequentially (SPM first, then CocoaPods).
 
 3. **Availability**:
    - Swift Package: Available immediately after release

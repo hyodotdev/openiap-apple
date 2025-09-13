@@ -1,47 +1,94 @@
-name: Deploy Swift Package
+name: Release Swift Package
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 1.2.3 or major/minor/patch)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
-  deploy:
+  release:
     runs-on: macos-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Select Xcode
-      run: |
-        sudo xcode-select -s /Applications/Xcode.app
-    
-    - name: Build Package
-      run: swift build
-    
-    - name: Run Tests
-      run: swift test
-    
-    - name: Create git tag if not exists
-      if: github.event_name == 'workflow_dispatch'
-      run: |
-        VERSION=$(cat VERSION)
-        git config user.name hyodotdev
-        git config user.email hyo@hyo.dev
-        
-        # Check if tag exists on remote
-        if git ls-remote --tags origin | grep -q "refs/tags/$VERSION"; then
-          echo "Tag $VERSION already exists on remote, skipping..."
-        else
-          # Create tag locally if not exists
-          if ! git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
-            git tag $VERSION
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Determine version
+        id: set_version
+        shell: bash
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          # Trim possible leading 'v'
+          VERSION="${VERSION#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Release version: $VERSION"
+
+      - name: Configure Git
+        run: |
+          git config user.name "hyodotdev"
+          git config user.email "hyo@hyo.dev"
+
+      - name: Bump version and tag
+        run: |
+          ./scripts/bump-version.sh "${{ env.VERSION }}"
+          # Refresh VERSION to the computed value (handles major/minor/patch)
+          NEW_VERSION=$(cat VERSION)
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Computed version: $NEW_VERSION"
+
+      - name: Build Package
+        run: swift build
+
+      - name: Run Tests
+        run: swift test
+
+      - name: Verify Package
+        run: |
+          swift package show-dependencies
+          swift package describe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: |
+          gem list -i cocoapods || gem install cocoapods --no-document
+
+      - name: Validate Podspec
+        env:
+          COCOAPODS_VALIDATOR_SKIP_XCODEBUILD: 1
+        run: |
+          pod lib lint openiap.podspec --allow-warnings
+
+      - name: Publish to CocoaPods Trunk
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+          COCOAPODS_VALIDATOR_SKIP_XCODEBUILD: 1
+        run: |
+          if [ -z "$COCOAPODS_TRUNK_TOKEN" ]; then
+            echo "COCOAPODS_TRUNK_TOKEN is not set. Skipping CocoaPods publish.";
+            exit 0;
           fi
-          # Push tag
-          git push origin $VERSION
-        fi
-    
-    - name: Verify Package
-      run: |
-        swift package show-dependencies
-        swift package describe
+          pod trunk push openiap.podspec --allow-warnings

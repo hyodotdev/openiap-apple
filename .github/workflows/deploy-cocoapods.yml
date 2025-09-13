@@ -1,8 +1,6 @@
 name: Deploy to CocoaPods
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -31,9 +29,12 @@ jobs:
         pod lib lint openiap.podspec --allow-warnings
     
     - name: Deploy to CocoaPods Trunk
-      if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
       env:
         COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         COCOAPODS_VALIDATOR_SKIP_XCODEBUILD: 1
       run: |
+        if [ -z "$COCOAPODS_TRUNK_TOKEN" ]; then
+          echo "COCOAPODS_TRUNK_TOKEN is not set. Skipping CocoaPods publish.";
+          exit 0;
+        fi
         pod trunk push openiap.podspec --allow-warnings
