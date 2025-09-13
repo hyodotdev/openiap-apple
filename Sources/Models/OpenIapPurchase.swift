@@ -7,8 +7,7 @@ public struct OpenIapPurchase: Codable, Equatable, Sendable {
     public let productId: String               // Product identifier
     public let ids: [String]?                  // Common field for both platforms
     public let transactionDate: Double         // Unix timestamp in milliseconds
-    public let transactionReceipt: String      // Purchase receipt/token
-    public let purchaseToken: String?          // Purchase token
+    public let purchaseToken: String           // Purchase token (unified: was transactionReceipt)
     public let platform: String                // Always "ios"
     public let quantity: Int                   // Purchase quantity (common field, defaults to 1)
     public let purchaseState: OpenIapPurchaseState    // Purchase state (common field)
@@ -61,7 +60,6 @@ extension OpenIapPurchase {
         self.productId = transaction.productID
         self.ids = nil // Single product purchase
         self.transactionDate = transaction.purchaseDate.timeIntervalSince1970 * 1000  // Unix timestamp in milliseconds
-        self.transactionReceipt = jwsRepresentation ?? String(transaction.id)
         self.purchaseToken = jwsRepresentation ?? String(transaction.id)
         self.platform = "ios"
         self.quantity = transaction.purchasedQuantity

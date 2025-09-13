@@ -988,7 +988,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             "id": purchase.id,
             "productId": purchase.productId,
             "transactionDate": purchase.transactionDate,
-            "transactionReceipt": purchase.transactionReceipt,
             "purchaseToken": purchase.purchaseToken,
             "quantity": purchase.quantity,
             "purchaseState": purchase.purchaseState.rawValue,

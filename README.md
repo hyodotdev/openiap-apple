@@ -260,7 +260,7 @@ let purchase = try await store.requestPurchase(
     OpenIapRequestPurchaseProps(sku: "dev.hyo.premium")
 )
 
-// Validate on your server using purchase.transactionReceipt
+// Validate on your server using purchase.purchaseToken
 // Then finish the transaction manually
 _ = try await store.finishTransaction(purchase: purchase, isConsumable: false)
 ```
@@ -344,7 +344,7 @@ struct OpenIapPurchase {
     let id: String  // Transaction ID
     let productId: String
     let transactionDate: Double  // Unix timestamp in milliseconds
-    let transactionReceipt: String
+    let purchaseToken: String
     let purchaseState: PurchaseState
     let isAutoRenewing: Bool
     let quantity: Int
