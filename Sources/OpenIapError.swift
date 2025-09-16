@@ -53,56 +53,57 @@ public extension OpenIapError {
     static let E_EMPTY_SKU_LIST = "E_EMPTY_SKU_LIST"
 
     /// Dictionary of error keys to OpenIAP codes
+    /// Keys use PascalCase to match TS ErrorCode enum
     static func errorCodes() -> [String: String] {
         return [
             // User Action Errors
-            "userCancelled": Self.E_USER_CANCELLED,
-            "userError": Self.E_USER_ERROR,
-            "deferredPayment": Self.E_DEFERRED_PAYMENT,
-            "interrupted": Self.E_INTERRUPTED,
+            "UserCancelled": Self.E_USER_CANCELLED,
+            "UserError": Self.E_USER_ERROR,
+            "DeferredPayment": Self.E_DEFERRED_PAYMENT,
+            "Interrupted": Self.E_INTERRUPTED,
 
             // Product Errors
-            "itemUnavailable": Self.E_ITEM_UNAVAILABLE,
-            "skuNotFound": Self.E_SKU_NOT_FOUND,
-            "skuOfferMismatch": Self.E_SKU_OFFER_MISMATCH,
-            "queryProduct": Self.E_QUERY_PRODUCT,
-            "alreadyOwned": Self.E_ALREADY_OWNED,
-            "itemNotOwned": Self.E_ITEM_NOT_OWNED,
+            "ItemUnavailable": Self.E_ITEM_UNAVAILABLE,
+            "SkuNotFound": Self.E_SKU_NOT_FOUND,
+            "SkuOfferMismatch": Self.E_SKU_OFFER_MISMATCH,
+            "QueryProduct": Self.E_QUERY_PRODUCT,
+            "AlreadyOwned": Self.E_ALREADY_OWNED,
+            "ItemNotOwned": Self.E_ITEM_NOT_OWNED,
 
             // Network & Service Errors
-            "networkError": Self.E_NETWORK_ERROR,
-            "serviceError": Self.E_SERVICE_ERROR,
-            "remoteError": Self.E_REMOTE_ERROR,
-            "initConnection": Self.E_INIT_CONNECTION,
-            "serviceDisconnected": Self.E_SERVICE_DISCONNECTED,
-            "connectionClosed": Self.E_CONNECTION_CLOSED,
-            "iapNotAvailable": Self.E_IAP_NOT_AVAILABLE,
-            "billingUnavailable": Self.E_BILLING_UNAVAILABLE,
-            "featureNotSupported": Self.E_FEATURE_NOT_SUPPORTED,
-            "syncError": Self.E_SYNC_ERROR,
+            "NetworkError": Self.E_NETWORK_ERROR,
+            "ServiceError": Self.E_SERVICE_ERROR,
+            "RemoteError": Self.E_REMOTE_ERROR,
+            "InitConnection": Self.E_INIT_CONNECTION,
+            "ServiceDisconnected": Self.E_SERVICE_DISCONNECTED,
+            "ConnectionClosed": Self.E_CONNECTION_CLOSED,
+            "IapNotAvailable": Self.E_IAP_NOT_AVAILABLE,
+            "BillingUnavailable": Self.E_BILLING_UNAVAILABLE,
+            "FeatureNotSupported": Self.E_FEATURE_NOT_SUPPORTED,
+            "SyncError": Self.E_SYNC_ERROR,
             // Lifecycle/Preparation Errors (extra parity)
-            "notPrepared": Self.E_NOT_PREPARED,
-            "notEnded": Self.E_NOT_ENDED,
-            "developerError": Self.E_DEVELOPER_ERROR,
+            "NotPrepared": Self.E_NOT_PREPARED,
+            "NotEnded": Self.E_NOT_ENDED,
+            "DeveloperError": Self.E_DEVELOPER_ERROR,
 
             // Validation Errors
-            "receiptFailed": Self.E_RECEIPT_FAILED,
-            "receiptFinished": Self.E_RECEIPT_FINISHED,
-            "receiptFinishedFailed": Self.E_RECEIPT_FINISHED_FAILED,
-            "transactionValidationFailed": Self.E_TRANSACTION_VALIDATION_FAILED,
-            "emptySkuList": Self.E_EMPTY_SKU_LIST,
+            "ReceiptFailed": Self.E_RECEIPT_FAILED,
+            "ReceiptFinished": Self.E_RECEIPT_FINISHED,
+            "ReceiptFinishedFailed": Self.E_RECEIPT_FINISHED_FAILED,
+            "TransactionValidationFailed": Self.E_TRANSACTION_VALIDATION_FAILED,
+            "EmptySkuList": Self.E_EMPTY_SKU_LIST,
 
             // Platform/Parsing Errors (extra parity)
-            "billingResponseJsonParseError": Self.E_BILLING_RESPONSE_JSON_PARSE_ERROR,
-            "activityUnavailable": Self.E_ACTIVITY_UNAVAILABLE,
+            "BillingResponseJsonParseError": Self.E_BILLING_RESPONSE_JSON_PARSE_ERROR,
+            "ActivityUnavailable": Self.E_ACTIVITY_UNAVAILABLE,
 
             // State/Generic Errors (extra parity)
-            "alreadyPrepared": Self.E_ALREADY_PREPARED,
-            "pending": Self.E_PENDING,
-            "purchaseError": Self.E_PURCHASE_ERROR,
+            "AlreadyPrepared": Self.E_ALREADY_PREPARED,
+            "Pending": Self.E_PENDING,
+            "PurchaseError": Self.E_PURCHASE_ERROR,
 
             // Generic Error
-            "unknown": Self.E_UNKNOWN
+            "Unknown": Self.E_UNKNOWN
         ]
     }
 }
@@ -206,4 +207,3 @@ public extension OpenIapError {
         }
     }
 }
-

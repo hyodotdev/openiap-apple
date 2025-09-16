@@ -34,10 +34,10 @@ public struct OpenIapProduct: Codable, Equatable {
     public let introductoryPriceAsAmountIOS: String?
     public let introductoryPricePaymentModeIOS: String?  // PaymentMode as String
     public let introductoryPriceNumberOfPeriodsIOS: String?
-    public let introductoryPriceSubscriptionPeriodIOS: String?  // SubscriptionIosPeriod as String
+    public let introductoryPriceSubscriptionPeriodIOS: String?  // SubscriptionPeriodIOS as String
     public let subscriptionPeriodNumberIOS: String?
-    public let subscriptionPeriodUnitIOS: String?  // SubscriptionIosPeriod as String
-    
+    public let subscriptionPeriodUnitIOS: String?  // SubscriptionPeriodIOS as String
+
     // Discount structure for ProductSubscriptionIOS
     public struct Discount: Codable, Equatable {
         /// Discount identifier
