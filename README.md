@@ -139,7 +139,7 @@ class StoreViewModel: ObservableObject {
             // Fetch products
             try await iapStore.fetchProducts(
                 skus: ["product1", "product2"],
-                type: .inapp
+                type: .inApp
             )
         }
     }
@@ -312,7 +312,7 @@ struct OpenIapProduct {
     let id: String
     let title: String
     let description: String
-    let type: String  // "inapp" or "subs"
+    let type: String  // "in-app" (preferred) or legacy "inapp" (deprecated, removal in 1.2.0) or "subs"
     let displayPrice: String
     let currency: String
     let price: Double?

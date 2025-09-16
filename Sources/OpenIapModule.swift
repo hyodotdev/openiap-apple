@@ -171,8 +171,8 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             
             // Filter by type using enum
             switch params.requestType {
-            case .inapp:
-                OpenIapLog.debug("🔷 [OpenIapModule] Filtering for inapp products")
+            case .inapp, .inApp:
+                OpenIapLog.debug("🔷 [OpenIapModule] Filtering for in-app products")
                 openIapProducts = openIapProducts.filter { product in
                     let isInApp = product.productType == .inapp
                     OpenIapLog.debug("🔷 [OpenIapModule] Product \(product.id): productType=\(product.productType), isInApp=\(isInApp)")

@@ -224,7 +224,7 @@ struct PurchaseFlowScreen: View {
     private func loadProducts() {
         Task {
             do {
-                try await iapStore.fetchProducts(skus: productIds, type: .inapp)
+                try await iapStore.fetchProducts(skus: productIds, type: .inApp)
                 await MainActor.run {
                     if iapStore.products.isEmpty {
                         errorMessage = "No products found. Please check your App Store Connect configuration."
