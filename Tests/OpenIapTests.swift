@@ -189,4 +189,18 @@ final class OpenIapTests: XCTestCase {
         XCTAssertEqual(receipt.inAppPurchases.count, 1)
         XCTAssertEqual(receipt.inAppPurchases.first?.id, "trans1")
     }
+
+    func testProductRequestTypeNormalization() {
+        let legacyRequest = OpenIapProductRequest(skus: ["sku1"], type: "inapp")
+        XCTAssertEqual(legacyRequest.type, "in-app")
+        XCTAssertEqual(legacyRequest.requestType, .inApp)
+
+        let modernRequest = OpenIapProductRequest(skus: ["sku1"], type: "in-app")
+        XCTAssertEqual(modernRequest.type, "in-app")
+        XCTAssertEqual(modernRequest.requestType, .inApp)
+
+        let enumRequest = OpenIapProductRequest(skus: ["sku1"], type: .inApp)
+        XCTAssertEqual(enumRequest.type, "in-app")
+        XCTAssertEqual(enumRequest.requestType, .inApp)
+    }
 }
