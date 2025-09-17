@@ -17,93 +17,93 @@ public struct OpenIapError: Codable, Equatable, LocalizedError {
 
 public extension OpenIapError {
     // Error Code Constants (single source)
-    static let E_UNKNOWN = "E_UNKNOWN"
-    static let E_SERVICE_ERROR = "E_SERVICE_ERROR"
-    static let E_USER_CANCELLED = "E_USER_CANCELLED"
-    static let E_USER_ERROR = "E_USER_ERROR"
-    static let E_ITEM_UNAVAILABLE = "E_ITEM_UNAVAILABLE"
-    static let E_REMOTE_ERROR = "E_REMOTE_ERROR"
-    static let E_NETWORK_ERROR = "E_NETWORK_ERROR"
-    static let E_RECEIPT_FAILED = "E_RECEIPT_FAILED"
-    static let E_RECEIPT_FINISHED = "E_RECEIPT_FINISHED"
-    static let E_RECEIPT_FINISHED_FAILED = "E_RECEIPT_FINISHED_FAILED"
-    static let E_NOT_PREPARED = "E_NOT_PREPARED"
-    static let E_NOT_ENDED = "E_NOT_ENDED"
-    static let E_ALREADY_OWNED = "E_ALREADY_OWNED"
-    static let E_DEVELOPER_ERROR = "E_DEVELOPER_ERROR"
-    static let E_PURCHASE_ERROR = "E_PURCHASE_ERROR"
-    static let E_SYNC_ERROR = "E_SYNC_ERROR"
-    static let E_DEFERRED_PAYMENT = "E_DEFERRED_PAYMENT"
-    static let E_TRANSACTION_VALIDATION_FAILED = "E_TRANSACTION_VALIDATION_FAILED"
-    static let E_BILLING_RESPONSE_JSON_PARSE_ERROR = "E_BILLING_RESPONSE_JSON_PARSE_ERROR"
-    static let E_INTERRUPTED = "E_INTERRUPTED"
-    static let E_IAP_NOT_AVAILABLE = "E_IAP_NOT_AVAILABLE"
-    static let E_ACTIVITY_UNAVAILABLE = "E_ACTIVITY_UNAVAILABLE"
-    static let E_ALREADY_PREPARED = "E_ALREADY_PREPARED"
-    static let E_PENDING = "E_PENDING"
-    static let E_CONNECTION_CLOSED = "E_CONNECTION_CLOSED"
-    static let E_INIT_CONNECTION = "E_INIT_CONNECTION"
-    static let E_SERVICE_DISCONNECTED = "E_SERVICE_DISCONNECTED"
-    static let E_BILLING_UNAVAILABLE = "E_BILLING_UNAVAILABLE"
-    static let E_FEATURE_NOT_SUPPORTED = "E_FEATURE_NOT_SUPPORTED"
-    static let E_SKU_NOT_FOUND = "E_SKU_NOT_FOUND"
-    static let E_SKU_OFFER_MISMATCH = "E_SKU_OFFER_MISMATCH"
-    static let E_QUERY_PRODUCT = "E_QUERY_PRODUCT"
-    static let E_ITEM_NOT_OWNED = "E_ITEM_NOT_OWNED"
-    static let E_EMPTY_SKU_LIST = "E_EMPTY_SKU_LIST"
+    static let Unknown = "E_UNKNOWN"
+    static let ServiceError = "E_SERVICE_ERROR"
+    static let UserCancelled = "E_USER_CANCELLED"
+    static let UserError = "E_USER_ERROR"
+    static let ItemUnavailable = "E_ITEM_UNAVAILABLE"
+    static let RemoteError = "E_REMOTE_ERROR"
+    static let NetworkError = "E_NETWORK_ERROR"
+    static let ReceiptFailed = "E_RECEIPT_FAILED"
+    static let ReceiptFinished = "E_RECEIPT_FINISHED"
+    static let ReceiptFinishedFailed = "E_RECEIPT_FINISHED_FAILED"
+    static let NotPrepared = "E_NOT_PREPARED"
+    static let NotEnded = "E_NOT_ENDED"
+    static let AlreadyOwned = "E_ALREADY_OWNED"
+    static let DeveloperError = "E_DEVELOPER_ERROR"
+    static let PurchaseError = "E_PURCHASE_ERROR"
+    static let SyncError = "E_SYNC_ERROR"
+    static let DeferredPayment = "E_DEFERRED_PAYMENT"
+    static let TransactionValidationFailed = "E_TRANSACTION_VALIDATION_FAILED"
+    static let BillingResponseJsonParseError = "E_BILLING_RESPONSE_JSON_PARSE_ERROR"
+    static let Interrupted = "E_INTERRUPTED"
+    static let IapNotAvailable = "E_IAP_NOT_AVAILABLE"
+    static let ActivityUnavailable = "E_ACTIVITY_UNAVAILABLE"
+    static let AlreadyPrepared = "E_ALREADY_PREPARED"
+    static let Pending = "E_PENDING"
+    static let ConnectionClosed = "E_CONNECTION_CLOSED"
+    static let InitConnection = "E_INIT_CONNECTION"
+    static let ServiceDisconnected = "E_SERVICE_DISCONNECTED"
+    static let BillingUnavailable = "E_BILLING_UNAVAILABLE"
+    static let FeatureNotSupported = "E_FEATURE_NOT_SUPPORTED"
+    static let SkuNotFound = "E_SKU_NOT_FOUND"
+    static let SkuOfferMismatch = "E_SKU_OFFER_MISMATCH"
+    static let QueryProduct = "E_QUERY_PRODUCT"
+    static let ItemNotOwned = "E_ITEM_NOT_OWNED"
+    static let EmptySkuList = "E_EMPTY_SKU_LIST"
 
     /// Dictionary of error keys to OpenIAP codes
     /// Keys use PascalCase to match TS ErrorCode enum
     static func errorCodes() -> [String: String] {
         return [
             // User Action Errors
-            "UserCancelled": Self.E_USER_CANCELLED,
-            "UserError": Self.E_USER_ERROR,
-            "DeferredPayment": Self.E_DEFERRED_PAYMENT,
-            "Interrupted": Self.E_INTERRUPTED,
+            "UserCancelled": Self.UserCancelled,
+            "UserError": Self.UserError,
+            "DeferredPayment": Self.DeferredPayment,
+            "Interrupted": Self.Interrupted,
 
             // Product Errors
-            "ItemUnavailable": Self.E_ITEM_UNAVAILABLE,
-            "SkuNotFound": Self.E_SKU_NOT_FOUND,
-            "SkuOfferMismatch": Self.E_SKU_OFFER_MISMATCH,
-            "QueryProduct": Self.E_QUERY_PRODUCT,
-            "AlreadyOwned": Self.E_ALREADY_OWNED,
-            "ItemNotOwned": Self.E_ITEM_NOT_OWNED,
+            "ItemUnavailable": Self.ItemUnavailable,
+            "SkuNotFound": Self.SkuNotFound,
+            "SkuOfferMismatch": Self.SkuOfferMismatch,
+            "QueryProduct": Self.QueryProduct,
+            "AlreadyOwned": Self.AlreadyOwned,
+            "ItemNotOwned": Self.ItemNotOwned,
 
             // Network & Service Errors
-            "NetworkError": Self.E_NETWORK_ERROR,
-            "ServiceError": Self.E_SERVICE_ERROR,
-            "RemoteError": Self.E_REMOTE_ERROR,
-            "InitConnection": Self.E_INIT_CONNECTION,
-            "ServiceDisconnected": Self.E_SERVICE_DISCONNECTED,
-            "ConnectionClosed": Self.E_CONNECTION_CLOSED,
-            "IapNotAvailable": Self.E_IAP_NOT_AVAILABLE,
-            "BillingUnavailable": Self.E_BILLING_UNAVAILABLE,
-            "FeatureNotSupported": Self.E_FEATURE_NOT_SUPPORTED,
-            "SyncError": Self.E_SYNC_ERROR,
+            "NetworkError": Self.NetworkError,
+            "ServiceError": Self.ServiceError,
+            "RemoteError": Self.RemoteError,
+            "InitConnection": Self.InitConnection,
+            "ServiceDisconnected": Self.ServiceDisconnected,
+            "ConnectionClosed": Self.ConnectionClosed,
+            "IapNotAvailable": Self.IapNotAvailable,
+            "BillingUnavailable": Self.BillingUnavailable,
+            "FeatureNotSupported": Self.FeatureNotSupported,
+            "SyncError": Self.SyncError,
             // Lifecycle/Preparation Errors (extra parity)
-            "NotPrepared": Self.E_NOT_PREPARED,
-            "NotEnded": Self.E_NOT_ENDED,
-            "DeveloperError": Self.E_DEVELOPER_ERROR,
+            "NotPrepared": Self.NotPrepared,
+            "NotEnded": Self.NotEnded,
+            "DeveloperError": Self.DeveloperError,
 
             // Validation Errors
-            "ReceiptFailed": Self.E_RECEIPT_FAILED,
-            "ReceiptFinished": Self.E_RECEIPT_FINISHED,
-            "ReceiptFinishedFailed": Self.E_RECEIPT_FINISHED_FAILED,
-            "TransactionValidationFailed": Self.E_TRANSACTION_VALIDATION_FAILED,
-            "EmptySkuList": Self.E_EMPTY_SKU_LIST,
+            "ReceiptFailed": Self.ReceiptFailed,
+            "ReceiptFinished": Self.ReceiptFinished,
+            "ReceiptFinishedFailed": Self.ReceiptFinishedFailed,
+            "TransactionValidationFailed": Self.TransactionValidationFailed,
+            "EmptySkuList": Self.EmptySkuList,
 
             // Platform/Parsing Errors (extra parity)
-            "BillingResponseJsonParseError": Self.E_BILLING_RESPONSE_JSON_PARSE_ERROR,
-            "ActivityUnavailable": Self.E_ACTIVITY_UNAVAILABLE,
+            "BillingResponseJsonParseError": Self.BillingResponseJsonParseError,
+            "ActivityUnavailable": Self.ActivityUnavailable,
 
             // State/Generic Errors (extra parity)
-            "AlreadyPrepared": Self.E_ALREADY_PREPARED,
-            "Pending": Self.E_PENDING,
-            "PurchaseError": Self.E_PURCHASE_ERROR,
+            "AlreadyPrepared": Self.AlreadyPrepared,
+            "Pending": Self.Pending,
+            "PurchaseError": Self.PurchaseError,
 
             // Generic Error
-            "Unknown": Self.E_UNKNOWN
+            "Unknown": Self.Unknown
         ]
     }
 }
@@ -113,49 +113,49 @@ public extension OpenIapError {
     static func defaultMessage(for code: String) -> String {
         switch code {
         // User Action Errors
-        case E_USER_CANCELLED: return "User cancelled the purchase flow"
-        case E_USER_ERROR: return "User action error"
-        case E_DEFERRED_PAYMENT: return "Payment was deferred (pending approval)"
-        case E_INTERRUPTED: return "Purchase flow interrupted"
+        case UserCancelled: return "User cancelled the purchase flow"
+        case UserError: return "User action error"
+        case DeferredPayment: return "Payment was deferred (pending approval)"
+        case Interrupted: return "Purchase flow interrupted"
 
         // Product Errors
-        case E_ITEM_UNAVAILABLE: return "Item unavailable"
-        case E_SKU_NOT_FOUND: return "SKU not found"
-        case E_SKU_OFFER_MISMATCH: return "SKU offer mismatch"
-        case E_QUERY_PRODUCT: return "Failed to query product"
-        case E_ALREADY_OWNED: return "Item already owned"
-        case E_ITEM_NOT_OWNED: return "Item not owned"
+        case ItemUnavailable: return "Item unavailable"
+        case SkuNotFound: return "SKU not found"
+        case SkuOfferMismatch: return "SKU offer mismatch"
+        case QueryProduct: return "Failed to query product"
+        case AlreadyOwned: return "Item already owned"
+        case ItemNotOwned: return "Item not owned"
 
         // Network & Service Errors
-        case E_NETWORK_ERROR: return "Network connection error"
-        case E_SERVICE_ERROR: return "Store service error"
-        case E_REMOTE_ERROR: return "Remote service error"
-        case E_INIT_CONNECTION: return "Failed to initialize billing connection"
-        case E_SERVICE_DISCONNECTED: return "Billing service disconnected"
-        case E_CONNECTION_CLOSED: return "Connection closed"
-        case E_IAP_NOT_AVAILABLE: return "In-app purchases not available on this device"
-        case E_BILLING_UNAVAILABLE: return "Billing unavailable"
-        case E_FEATURE_NOT_SUPPORTED: return "Feature not supported on this platform"
-        case E_SYNC_ERROR: return "Sync error"
+        case NetworkError: return "Network connection error"
+        case ServiceError: return "Store service error"
+        case RemoteError: return "Remote service error"
+        case InitConnection: return "Failed to initialize billing connection"
+        case ServiceDisconnected: return "Billing service disconnected"
+        case ConnectionClosed: return "Connection closed"
+        case IapNotAvailable: return "In-app purchases not available on this device"
+        case BillingUnavailable: return "Billing unavailable"
+        case FeatureNotSupported: return "Feature not supported on this platform"
+        case SyncError: return "Sync error"
 
         // Validation Errors
-        case E_RECEIPT_FAILED: return "Receipt validation failed"
-        case E_RECEIPT_FINISHED: return "Receipt already finished"
-        case E_RECEIPT_FINISHED_FAILED: return "Receipt finish failed"
-        case E_TRANSACTION_VALIDATION_FAILED: return "Transaction validation failed"
-        case E_EMPTY_SKU_LIST: return "Empty SKU list provided"
+        case ReceiptFailed: return "Receipt validation failed"
+        case ReceiptFinished: return "Receipt already finished"
+        case ReceiptFinishedFailed: return "Receipt finish failed"
+        case TransactionValidationFailed: return "Transaction validation failed"
+        case EmptySkuList: return "Empty SKU list provided"
 
         // Extra Parity / Lifecycle
-        case E_NOT_PREPARED: return "Billing is not prepared"
-        case E_NOT_ENDED: return "Billing connection not ended"
-        case E_DEVELOPER_ERROR: return "Developer configuration error"
-        case E_PURCHASE_ERROR: return "Purchase error"
-        case E_ACTIVITY_UNAVAILABLE: return "Required activity is unavailable"
-        case E_ALREADY_PREPARED: return "Billing already prepared"
-        case E_PENDING: return "Transaction pending"
+        case NotPrepared: return "Billing is not prepared"
+        case NotEnded: return "Billing connection not ended"
+        case DeveloperError: return "Developer configuration error"
+        case PurchaseError: return "Purchase error"
+        case ActivityUnavailable: return "Required activity is unavailable"
+        case AlreadyPrepared: return "Billing already prepared"
+        case Pending: return "Transaction pending"
 
         // Generic
-        case E_UNKNOWN: return "Unknown error occurred"
+        case Unknown: return "Unknown error occurred"
         default: return "Unknown error occurred"
         }
     }
@@ -171,19 +171,19 @@ public extension OpenIapError {
 
     /// Convenience: create error for empty SKU list (parity with previous API)
     static func emptySkuList() -> OpenIapError {
-        return OpenIapError(code: OpenIapError.E_EMPTY_SKU_LIST, message: "Empty SKU list provided")
+        return OpenIapError(code: OpenIapError.EmptySkuList, message: "Empty SKU list provided")
     }
 
     /// Check if error can be retried
     var canRetry: Bool {
         switch code {
-        case Self.E_NETWORK_ERROR,
-             Self.E_SERVICE_ERROR,
-             Self.E_REMOTE_ERROR,
-             Self.E_CONNECTION_CLOSED,
-             Self.E_SYNC_ERROR,
-             Self.E_INIT_CONNECTION,
-             Self.E_SERVICE_DISCONNECTED:
+        case Self.NetworkError,
+             Self.ServiceError,
+             Self.RemoteError,
+             Self.ConnectionClosed,
+             Self.SyncError,
+             Self.InitConnection,
+             Self.ServiceDisconnected:
             return true
         default:
             return false
@@ -194,13 +194,13 @@ public extension OpenIapError {
     func retryDelay(attempt: Int) -> TimeInterval? {
         guard canRetry else { return nil }
         switch code {
-        case Self.E_NETWORK_ERROR, Self.E_SYNC_ERROR:
+        case Self.NetworkError, Self.SyncError:
             return TimeInterval(pow(2.0, Double(attempt)))
-        case Self.E_SERVICE_ERROR:
+        case Self.ServiceError:
             return TimeInterval(attempt * 5)
-        case Self.E_REMOTE_ERROR:
+        case Self.RemoteError:
             return 10
-        case Self.E_CONNECTION_CLOSED, Self.E_INIT_CONNECTION, Self.E_SERVICE_DISCONNECTED:
+        case Self.ConnectionClosed, Self.InitConnection, Self.ServiceDisconnected:
             return TimeInterval(pow(2.0, Double(attempt)))
         default:
             return nil

@@ -290,7 +290,7 @@ struct PurchaseFlowScreen: View {
         showPurchaseResult = true
         
         // Show error alert for non-cancellation errors
-        if error.code != OpenIapError.E_USER_CANCELLED {
+        if error.code != OpenIapError.UserCancelled {
             errorMessage = error.message
             showError = true
         }
