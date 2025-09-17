@@ -89,6 +89,11 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 - **API**: `Api` when at beginning/middle, `API` when as suffix
 - **URL**: `Url` when at beginning/middle, `URL` when as suffix
 
+## Error Code Naming
+
+- `OpenIapError` static code constants use PascalCase names (e.g. `UserCancelled`, `SkuNotFound`) while the raw string value stays as the `E_` code for parity with other platforms.
+- Always reference the PascalCase constants in Swift and avoid introducing new `E_`-prefixed identifiers.
+
 ## Testing
 
 - Run tests with: `swift test`
