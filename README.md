@@ -8,6 +8,20 @@
   <strong>A comprehensive Swift implementation of the <a href="https://openiap.dev">OpenIAP</a> specification for iOS, macOS, tvOS, and watchOS applications.</strong>
 </div>
 
+<div align="center">
+  <a href="https://github.com/hyodotdev/openiap-apple">
+    <img src="https://img.shields.io/github/v/tag/hyodotdev/openiap-apple?label=Swift%20Package&logo=swift&color=orange" alt="Swift Package" />
+  </a>
+  &nbsp;
+  <a href="https://cocoapods.org/pods/openiap">
+    <img src="https://img.shields.io/cocoapods/v/openiap?color=E35A5F&label=CocoaPods&logo=cocoapods" alt="CocoaPods" />
+  </a>
+  &nbsp;
+  <a href="https://github.com/hyodotdev/openiap-apple/actions/workflows/test.yml">
+    <img src="https://github.com/hyodotdev/openiap-apple/actions/workflows/test.yml/badge.svg" alt="Tests" />
+  </a>
+</div>
+
 <br />
 
 **OpenIAP** is a unified specification for in-app purchases across platforms, frameworks, and emerging technologies. This Apple ecosystem implementation standardizes IAP implementations to reduce fragmentation and enable consistent behavioral across all Apple platforms.
