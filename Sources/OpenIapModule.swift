@@ -12,6 +12,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     private var productManager: ProductManager?
     private let state = IapState()
     private var initTask: Task<Bool, Error>?
+    #if os(iOS)
+    private var didRegisterPaymentQueueObserver = false
+    #endif
 
     private override init() {
         super.init()
@@ -64,6 +67,13 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         await cleanupExistingState()
         productManager = ProductManager()
 
+        #if os(iOS)
+        if !didRegisterPaymentQueueObserver {
+            SKPaymentQueue.default().add(self)
+            didRegisterPaymentQueueObserver = true
+        }
+        #endif
+
         guard AppStore.canMakePayments else {
             emitPurchaseError(makePurchaseError(code: .iapNotAvailable))
             await state.setInitialized(false)
@@ -91,6 +101,12 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         updateListenerTask?.cancel()
         updateListenerTask = nil
         await state.reset()
+        #if os(iOS)
+        if didRegisterPaymentQueueObserver {
+            SKPaymentQueue.default().remove(self)
+            didRegisterPaymentQueueObserver = false
+        }
+        #endif
         if let manager = productManager { await manager.removeAll() }
         productManager = nil
     }
@@ -148,8 +164,33 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
 
     public func getPromotedProductIOS() async throws -> ProductIOS? {
-        // StoreKit does not currently expose a promoted product query API on iOS.
+        #if os(iOS)
+        let sku = await state.promotedProductIdentifier()
+        guard let sku else { return nil }
+
+        do {
+            try await ensureConnection()
+        } catch let purchaseError as PurchaseError {
+            throw purchaseError
+        }
+
+        await state.setPromotedProductId(sku)
+
+        do {
+            let product = try await storeProduct(for: sku)
+            return await StoreKitTypesBridge.productIOS(from: product)
+        } catch let purchaseError as PurchaseError {
+            await state.setPromotedProductId(nil)
+            throw purchaseError
+        } catch {
+            let wrapped = makePurchaseError(code: .queryProduct, productId: sku, message: error.localizedDescription)
+            emitPurchaseError(wrapped)
+            await state.setPromotedProductId(nil)
+            throw wrapped
+        }
+        #else
         return nil
+        #endif
     }
 
     // MARK: - Purchase Management
@@ -756,7 +797,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
 
-    private func makePurchaseError(code: ErrorCode, productId: String? = nil, message: String? = nil) -> PurchaseError {
+private func makePurchaseError(code: ErrorCode, productId: String? = nil, message: String? = nil) -> PurchaseError {
         PurchaseError(
             code: code,
             message: message ?? defaultMessage(for: code),
@@ -833,6 +874,23 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         )
     }
 }
+
+#if os(iOS)
+extension OpenIapModule: SKPaymentTransactionObserver {
+    public func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        // StoreKit 2 handles transactions via Transaction.updates; nothing to do here.
+    }
+
+    public func paymentQueue(_ queue: SKPaymentQueue, shouldAddStorePayment payment: SKPayment, for product: SKProduct) -> Bool {
+        Task { [weak self] in
+            guard let self else { return }
+            await self.state.setPromotedProductId(product.productIdentifier)
+            self.emitPromotedProduct(product.productIdentifier)
+        }
+        return false
+    }
+}
+#endif
 
 @available(iOS 15.0, macOS 14.0, *)
 private extension Date {
