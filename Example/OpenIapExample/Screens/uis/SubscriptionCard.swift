@@ -133,7 +133,7 @@ struct SubscriptionCard: View {
                                 Text(isLoading ? "Reactivating..." : "Reactivate Subscription")
                                     .fontWeight(.medium)
                                 Spacer()
-                                Text(product.displayPrice)
+                                Text(product?.displayPrice ?? "--")
                                     .fontWeight(.semibold)
                             }
                             .padding()
@@ -188,7 +188,7 @@ struct SubscriptionCard: View {
                         Spacer()
                         
                         if !isLoading {
-                            Text(product.displayPrice)
+                            Text(product?.displayPrice ?? "--")
                                 .fontWeight(.semibold)
                         }
                     }

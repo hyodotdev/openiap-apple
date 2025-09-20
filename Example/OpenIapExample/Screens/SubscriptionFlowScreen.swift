@@ -14,7 +14,7 @@ struct SubscriptionFlowScreen: View {
     // Product IDs for subscription testing
     private let subscriptionIds: [String] = [
         "dev.hyo.martie.premium",
-        "dev.hyo.martie.premium_yearly"
+        "dev.hyo.martie.premium_year"
     ]
     
     var body: some View {
@@ -344,21 +344,17 @@ private extension SubscriptionFlowScreen {
         guard let purchase = purchase(for: productId) else { return false }
         if let expirationTime = purchase.expirationDateIOS {
             let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-            return expirationDate > Date()
+            if expirationDate > Date() { return true }
         }
-        return purchase.isAutoRenewing
+        if purchase.isAutoRenewing { return true }
+        if purchase.purchaseState == .purchased || purchase.purchaseState == .restored { return true }
+        return purchase.isSubscription
     }
 
     func isCancelled(productId: String) -> Bool {
         guard let purchase = purchase(for: productId) else { return false }
-        let isActive: Bool
-        if let expirationTime = purchase.expirationDateIOS {
-            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-            isActive = expirationDate > Date()
-        } else {
-            isActive = purchase.isAutoRenewing
-        }
-        return purchase.isAutoRenewing == false && isActive
+        let active = isSubscribed(productId: productId)
+        return purchase.isAutoRenewing == false && active
     }
 }
 
