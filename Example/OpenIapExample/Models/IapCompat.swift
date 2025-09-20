@@ -4,8 +4,6 @@ import OpenIAP
 @available(iOS 15.0, *)
 typealias OpenIapProduct = ProductIOS
 @available(iOS 15.0, *)
-typealias OpenIapSubscriptionProduct = ProductSubscriptionIOS
-@available(iOS 15.0, *)
 typealias OpenIapPurchase = PurchaseIOS
 @available(iOS 15.0, *)
 typealias OpenIapError = PurchaseError
@@ -36,7 +34,6 @@ extension ProductIOS {
     var productIdentifier: String { id }
 }
 
-
 @available(iOS 15.0, *)
 extension OpenIAP.Product {
     func asIOS() -> OpenIapProduct? {
@@ -51,16 +48,6 @@ extension OpenIAP.Product {
 extension OpenIAP.Purchase {
     func asIOS() -> OpenIapPurchase? {
         if case let .purchaseIos(value) = self {
-            return value
-        }
-        return nil
-    }
-}
-
-@available(iOS 15.0, *)
-extension OpenIAP.ProductSubscription {
-    func asIOS() -> OpenIapSubscriptionProduct? {
-        if case let .productSubscriptionIos(value) = self {
             return value
         }
         return nil

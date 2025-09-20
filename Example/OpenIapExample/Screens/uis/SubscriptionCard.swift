@@ -2,7 +2,8 @@ import SwiftUI
 import OpenIAP
 
 struct SubscriptionCard: View {
-    let product: OpenIapSubscriptionProduct
+    let productId: String
+    let product: OpenIapProduct?
     let purchase: OpenIapPurchase?
     let isSubscribed: Bool
     let isCancelled: Bool
@@ -30,7 +31,7 @@ struct SubscriptionCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(product.title)
+                        Text(product?.title ?? productId)
                             .font(.headline)
                         
                         if isSubscribed {
@@ -44,7 +45,7 @@ struct SubscriptionCard: View {
                         }
                     }
                     
-                    Text(product.id)
+                    Text(productId)
                         .font(.caption)
                         .font(.system(.body, design: .monospaced))
                         .foregroundColor(.secondary)
@@ -53,12 +54,12 @@ struct SubscriptionCard: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(product.displayPrice)
+                    Text(product.map { $0.displayPrice } ?? "--")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.secondary)
-                    
-                    Label(product.typeIOS.rawValue, systemImage: "repeat")
+
+                    Label(product.map { $0.typeIOS.rawValue } ?? "subscription", systemImage: "repeat")
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)

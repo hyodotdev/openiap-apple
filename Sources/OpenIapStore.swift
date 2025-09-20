@@ -171,18 +171,34 @@ public final class OpenIapStore: ObservableObject {
         appAccountToken: String? = nil,
         withOffer: DiscountOfferInputIOS? = nil
     ) async throws -> OpenIAP.Purchase? {
-        let iosProps = RequestPurchaseIosProps(
-            andDangerouslyFinishTransactionAutomatically: autoFinish,
-            appAccountToken: appAccountToken,
-            quantity: quantity,
-            sku: sku,
-            withOffer: withOffer
-        )
-        let request = RequestPurchaseProps(
-            request: .purchase(RequestPurchasePropsByPlatforms(android: nil, ios: iosProps)),
-            type: type
-        )
-        return try await requestPurchase(request)
+        switch type {
+        case .subs:
+            let iosProps = RequestSubscriptionIosProps(
+                andDangerouslyFinishTransactionAutomatically: autoFinish,
+                appAccountToken: appAccountToken,
+                quantity: quantity,
+                sku: sku,
+                withOffer: withOffer
+            )
+            let request = RequestPurchaseProps(
+                request: .subscription(RequestSubscriptionPropsByPlatforms(android: nil, ios: iosProps)),
+                type: .subs
+            )
+            return try await requestPurchase(request)
+        default:
+            let iosProps = RequestPurchaseIosProps(
+                andDangerouslyFinishTransactionAutomatically: autoFinish,
+                appAccountToken: appAccountToken,
+                quantity: quantity,
+                sku: sku,
+                withOffer: withOffer
+            )
+            let request = RequestPurchaseProps(
+                request: .purchase(RequestPurchasePropsByPlatforms(android: nil, ios: iosProps)),
+                type: .inApp
+            )
+            return try await requestPurchase(request)
+        }
     }
 
     public func requestPurchase(_ params: RequestPurchaseProps) async throws -> OpenIAP.Purchase? {
@@ -210,6 +226,8 @@ public final class OpenIapStore: ObservableObject {
             currentPurchase = purchases.first
             return purchases.first
         case .purchases(nil):
+            return nil
+        case .none:
             return nil
         @unknown default:
             return nil

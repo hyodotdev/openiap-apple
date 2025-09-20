@@ -13,7 +13,8 @@ struct SubscriptionFlowScreen: View {
     
     // Product IDs for subscription testing
     private let subscriptionIds: [String] = [
-        "dev.hyo.martie.premium"
+        "dev.hyo.martie.premium",
+        "dev.hyo.martie.premium_yearly"
     ]
     
     var body: some View {
@@ -57,63 +58,35 @@ struct SubscriptionFlowScreen: View {
                         purchaseResultCard(for: purchase)
                     }
 
-                    let subscriptionProducts = iapStore.iosSubscriptionProducts
+                    let productIds = subscriptionProductIds
                     
-                    if subscriptionProducts.isEmpty {
+                    if productIds.isEmpty {
                         EmptyStateCard(
                             icon: "repeat.circle",
                             title: "No subscriptions available",
                             subtitle: "Configure subscription products in App Store Connect"
                         )
                     } else {
-                        ForEach(subscriptionProducts, id: \.id) { product in
+                        ForEach(productIds, id: \.self) { productId in
+                            let product = product(for: productId)
                             SubscriptionCard(
+                                productId: productId,
                                 product: product,
-                                purchase: iapStore.iosAvailablePurchases.first { $0.productId == product.id },
-                                isSubscribed: {
-                                    if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
-                                        if let expirationTime = purchase.expirationDateIOS {
-                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                            return expirationDate > Date.now
-                                        } else {
-                                            return purchase.isAutoRenewing
-                                        }
-                                    }
-                                    return false
-                                }(),
-                                isCancelled: {
-                                    if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
-                                        let isActive: Bool
-                                        if let expirationTime = purchase.expirationDateIOS {
-                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                            isActive = expirationDate > Date.now
-                                        } else {
-                                            isActive = purchase.isAutoRenewing
-                                        }
-                                        return purchase.isAutoRenewing == false && isActive
-                                    }
-                                    return false
-                                }(),
-                                isLoading: iapStore.status.isPurchasing(product.id),
+                                purchase: purchase(for: productId),
+                                isSubscribed: isSubscribed(productId: productId),
+                                isCancelled: isCancelled(productId: productId),
+                                isLoading: iapStore.status.isPurchasing(productId),
                                 onSubscribe: {
-                                    let isSubscribed = {
-                                        if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
-                                            if let expirationTime = purchase.expirationDateIOS {
-                                                let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                                return expirationDate > Date.now
-                                            } else {
-                                                return purchase.isAutoRenewing
-                                            }
-                                        }
-                                        return false
-                                    }()
-                                    
-                                    if isSubscribed {
+                                    let subscribed = isSubscribed(productId: productId)
+
+                                    if subscribed {
                                         Task {
                                             await manageSubscriptions()
                                         }
                                     } else {
-                                        purchaseProduct(product)
+                                        if let product = product {
+                                            purchaseProduct(product)
+                                        }
                                     }
                                 },
                                 onManage: {
@@ -257,12 +230,14 @@ struct SubscriptionFlowScreen: View {
             }
             
             do {
-                try await iapStore.fetchProducts(skus: subscriptionIds, type: .subs)
+                try await iapStore.fetchProducts(skus: subscriptionIds, type: .all)
                 await MainActor.run {
-                    if iapStore.iosSubscriptionProducts.isEmpty {
+                    let ids = subscriptionProductIds
+                    if ids.isEmpty {
                         errorMessage = "No subscription products found. Please check your App Store Connect configuration."
                         showError = true
                     }
+                    print("✅ [SubscriptionFlow] Loaded subscriptions: \(ids.joined(separator: ", "))")
                 }
             } catch {
                 await MainActor.run {
@@ -286,7 +261,7 @@ struct SubscriptionFlowScreen: View {
     
     // MARK: - Purchase Flow
     
-    private func purchaseProduct(_ product: OpenIapSubscriptionProduct) {
+    private func purchaseProduct(_ product: OpenIapProduct) {
         print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
         Task {
             do {
@@ -342,6 +317,53 @@ struct SubscriptionFlowScreen: View {
 }
 
 @available(iOS 15.0, *)
+@MainActor
+private extension SubscriptionFlowScreen {
+    var subscriptionProductIds: [String] {
+        var orderedIds: [String] = []
+        func appendIfNeeded(_ id: String) {
+            guard orderedIds.contains(id) == false else { return }
+            orderedIds.append(id)
+        }
+
+        subscriptionIds.forEach { appendIfNeeded($0) }
+        iapStore.iosProducts.filter { $0.type == .subs }.forEach { appendIfNeeded($0.id) }
+        iapStore.iosAvailablePurchases.filter { $0.isSubscription }.forEach { appendIfNeeded($0.productId) }
+        return orderedIds
+    }
+
+    func product(for id: String) -> OpenIapProduct? {
+        iapStore.iosProducts.first { $0.id == id }
+    }
+
+    func purchase(for productId: String) -> OpenIapPurchase? {
+        iapStore.iosAvailablePurchases.first { $0.productId == productId }
+    }
+
+    func isSubscribed(productId: String) -> Bool {
+        guard let purchase = purchase(for: productId) else { return false }
+        if let expirationTime = purchase.expirationDateIOS {
+            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+            return expirationDate > Date()
+        }
+        return purchase.isAutoRenewing
+    }
+
+    func isCancelled(productId: String) -> Bool {
+        guard let purchase = purchase(for: productId) else { return false }
+        let isActive: Bool
+        if let expirationTime = purchase.expirationDateIOS {
+            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+            isActive = expirationDate > Date()
+        } else {
+            isActive = purchase.isAutoRenewing
+        }
+        return purchase.isAutoRenewing == false && isActive
+    }
+}
+
+@available(iOS 15.0, *)
+@MainActor
 private extension SubscriptionFlowScreen {
     func purchaseResultCard(for purchase: OpenIapPurchase) -> some View {
         let transactionDate = Date(timeIntervalSince1970: purchase.transactionDate / 1000)

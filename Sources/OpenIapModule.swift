@@ -808,7 +808,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let appVersionId = transaction.appVersionID.map(Double.init) ?? 0
         let appVersion = transaction.appVersion
         let originalPlatform: String?
-        if #available(iOS 18.4, macOS 14.4, *) {
+        if #available(iOS 18.4, macOS 15.4, *) {
             originalPlatform = transaction.originalPlatform.rawValue
         } else {
             originalPlatform = nil
