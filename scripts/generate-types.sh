@@ -26,36 +26,3 @@ echo "Extracting ${SWIFT_FILE}..."
 TMP_SWIFT="${TMP_DIR}/${SWIFT_FILE}"
 unzip -p "${TMP_DIR}/${ZIP_NAME}" "${SWIFT_FILE}" > "${TMP_SWIFT}"
 export TMP_SWIFT OUTPUT_PATH
-
-# Remove default arguments from protocol requirements (not supported in Swift)
-python3 - <<'PY'
-import os
-import re
-from pathlib import Path
-
-source = Path(os.environ["TMP_SWIFT"])
-dest = Path(os.environ["OUTPUT_PATH"])
-
-text = source.read_text()
-
-defaults = {
-    r"func deepLinkToSubscriptions\(_ options: DeepLinkOptions\? = nil\)":
-        "func deepLinkToSubscriptions(_ options: DeepLinkOptions?)",
-    r"func finishTransaction\(purchase: PurchaseInput, isConsumable: Bool\? = nil\)":
-        "func finishTransaction(purchase: PurchaseInput, isConsumable: Bool?)",
-    r"func getActiveSubscriptions\(_ subscriptionIds: \[String\]\? = nil\)":
-        "func getActiveSubscriptions(_ subscriptionIds: [String]?)",
-    r"func getAvailablePurchases\(_ options: PurchaseOptions\? = nil\)":
-        "func getAvailablePurchases(_ options: PurchaseOptions?)",
-    r"func hasActiveSubscriptions\(_ subscriptionIds: \[String\]\? = nil\)":
-        "func hasActiveSubscriptions(_ subscriptionIds: [String]?)",
-}
-
-for pattern, replacement in defaults.items():
-    text = re.sub(pattern, replacement, text)
-
-source.write_text(text)
-source.replace(dest)
-PY
-
-echo "Wrote ${OUTPUT_PATH}"
