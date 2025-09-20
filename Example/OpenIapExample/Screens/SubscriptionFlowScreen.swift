@@ -51,7 +51,7 @@ struct SubscriptionFlowScreen: View {
                 if iapStore.status.isLoading {
                     LoadingCard(text: "Loading subscriptions...")
                 } else {
-                    let subscriptionProducts = iapStore.products.filter { $0.typeIOS.isSubs }
+                    let subscriptionProducts = iapStore.iosSubscriptionProducts
                     
                     if subscriptionProducts.isEmpty {
                         EmptyStateCard(
@@ -63,9 +63,9 @@ struct SubscriptionFlowScreen: View {
                         ForEach(subscriptionProducts, id: \.id) { product in
                             SubscriptionCard(
                                 product: product,
-                                purchase: iapStore.availablePurchases.first { $0.productId == product.id },
+                                purchase: iapStore.iosAvailablePurchases.first { $0.productId == product.id },
                                 isSubscribed: {
-                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                    if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
                                         if let expirationTime = purchase.expirationDateIOS {
                                             let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
                                             return expirationDate > Date.now
@@ -76,7 +76,7 @@ struct SubscriptionFlowScreen: View {
                                     return false
                                 }(),
                                 isCancelled: {
-                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                    if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
                                         let isActive: Bool
                                         if let expirationTime = purchase.expirationDateIOS {
                                             let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
@@ -91,7 +91,7 @@ struct SubscriptionFlowScreen: View {
                                 isLoading: iapStore.status.isPurchasing(product.id),
                                 onSubscribe: {
                                     let isSubscribed = {
-                                        if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
+                                        if let purchase = iapStore.iosAvailablePurchases.first(where: { $0.productId == product.id }) {
                                             if let expirationTime = purchase.expirationDateIOS {
                                                 let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
                                                 return expirationDate > Date.now
@@ -193,8 +193,10 @@ struct SubscriptionFlowScreen: View {
         
         // Setup callbacks
         iapStore.onPurchaseSuccess = { purchase in
-            Task { @MainActor in
-                self.handlePurchaseSuccess(purchase)
+            if let iosPurchase = purchase.asIOS() {
+                Task { @MainActor in
+                    self.handlePurchaseSuccess(iosPurchase)
+                }
             }
         }
         
@@ -243,7 +245,7 @@ struct SubscriptionFlowScreen: View {
             do {
                 try await iapStore.fetchProducts(skus: subscriptionIds, type: .subs)
                 await MainActor.run {
-                    if iapStore.products.isEmpty {
+                    if iapStore.iosSubscriptionProducts.isEmpty {
                         errorMessage = "No subscription products found. Please check your App Store Connect configuration."
                         showError = true
                     }
@@ -270,17 +272,13 @@ struct SubscriptionFlowScreen: View {
     
     // MARK: - Purchase Flow
     
-    private func purchaseProduct(_ product: OpenIapProduct) {
+    private func purchaseProduct(_ product: OpenIapSubscriptionProduct) {
         
         print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
         
         Task {
             do {
-                let params = RequestPurchaseProps(
-                    sku: product.id,
-                    andDangerouslyFinishTransactionAutomatically: true
-                )
-                _ = try await iapStore.requestPurchase(params)
+                _ = try await iapStore.requestPurchase(sku: product.id, type: .subs, autoFinish: true)
             } catch {
                 // Error is already handled by OpenIapStore internally
                 print("❌ [SubscriptionFlow] Purchase failed: \(error.localizedDescription)")
@@ -292,7 +290,7 @@ struct SubscriptionFlowScreen: View {
         do {
             try await iapStore.refreshPurchases(forceSync: true)
             await MainActor.run {
-                print("✅ [SubscriptionFlow] Restored \(iapStore.availablePurchases.count) purchases")
+                print("✅ [SubscriptionFlow] Restored \(iapStore.iosAvailablePurchases.count) purchases")
             }
         } catch {
             await MainActor.run {

@@ -93,7 +93,7 @@ struct PurchaseFlowScreen: View {
     @ViewBuilder
     private func ProductsSection() -> some View {
         LazyVStack(spacing: 16) {
-            ForEach(iapStore.products, id: \.id) { product in
+            ForEach(iapStore.iosProducts, id: \.id) { product in
                 ProductCard(
                     product: product,
                     isPurchasing: iapStore.status.isPurchasing(product.id)
@@ -186,11 +186,13 @@ struct PurchaseFlowScreen: View {
         
         // Setup callbacks
         iapStore.onPurchaseSuccess = { purchase in
-            Task { @MainActor in
-                self.handlePurchaseSuccess(purchase)
+            if let iosPurchase = purchase.asIOS() {
+                Task { @MainActor in
+                    self.handlePurchaseSuccess(iosPurchase)
+                }
             }
         }
-        
+
         iapStore.onPurchaseError = { error in
             Task { @MainActor in
                 self.handlePurchaseError(error)
@@ -226,7 +228,7 @@ struct PurchaseFlowScreen: View {
             do {
                 try await iapStore.fetchProducts(skus: productIds, type: .inApp)
                 await MainActor.run {
-                    if iapStore.products.isEmpty {
+                    if iapStore.iosProducts.isEmpty {
                         errorMessage = "No products found. Please check your App Store Connect configuration."
                         showError = true
                     }
@@ -247,13 +249,8 @@ struct PurchaseFlowScreen: View {
         
         Task {
             do {
-                let params = RequestPurchaseProps(
-                    sku: product.id,
-                    andDangerouslyFinishTransactionAutomatically: false,
-                    appAccountToken: nil,
-                    quantity: 1
-                )
-                _ = try await iapStore.requestPurchase(params)
+                let requestType: ProductQueryType = product.type == .subs ? .subs : .inApp
+                _ = try await iapStore.requestPurchase(sku: product.id, type: requestType)
             } catch {
                 // Error is already handled by OpenIapStore internally
                 print("❌ [PurchaseFlow] Purchase failed: \(error.localizedDescription)")
@@ -290,15 +287,15 @@ struct PurchaseFlowScreen: View {
         showPurchaseResult = true
         
         // Show error alert for non-cancellation errors
-        if error.code != OpenIapError.UserCancelled {
+        if error.code != .userCancelled {
             errorMessage = error.message
             showError = true
         }
     }
-    
+
     private func finishPurchase(_ purchase: OpenIapPurchase) async {
         do {
-            _ = try await iapStore.finishTransaction(purchase: purchase)
+            try await iapStore.finishTransaction(purchase: purchase)
             print("✅ [PurchaseFlow] Transaction finished: \(purchase.id)")
         } catch {
             print("❌ [PurchaseFlow] Failed to finish transaction: \(error)")

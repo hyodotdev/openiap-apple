@@ -106,8 +106,8 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 
 - **Sources/Models/**: OpenIAP official types that match [openiap.dev/docs/types](https://www.openiap.dev/docs/types)
 
-  - `Product.swift` - OpenIapProduct and related types
-  - `Purchase.swift` - OpenIapPurchase and related types
+  - `Product.swift` - ProductIOS and related types
+  - `Purchase.swift` - PurchaseIOS and related types
   - `ActiveSubscription.swift` - ActiveSubscription type
   - `PurchaseError.swift` - PurchaseError type
   - `Receipt.swift` - Receipt validation types
@@ -122,7 +122,6 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
   - `OpenIapModule.swift` - Core implementation
   - `OpenIapStore.swift` - SwiftUI-friendly store
   - `OpenIapProtocol.swift` - API interface definitions
-  - `OpenIapError.swift` - Error definitions
 
 ### Naming Rules
 

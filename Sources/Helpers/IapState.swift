@@ -41,14 +41,16 @@ actor IapState {
         promotedProductListeners.append((id: pair.0, listener: pair.1))
     }
 
-    func removeListener(id: UUID, type: OpenIapEvent) {
+    func removeListener(id: UUID, type: IapEvent) {
         switch type {
-        case .PURCHASE_UPDATED:
+        case .purchaseUpdated:
             purchaseUpdatedListeners.removeAll { $0.id == id }
-        case .PURCHASE_ERROR:
+        case .purchaseError:
             purchaseErrorListeners.removeAll { $0.id == id }
-        case .PROMOTED_PRODUCT_IOS:
+        case .promotedProductIos:
             promotedProductListeners.removeAll { $0.id == id }
+        default:
+            break
         }
     }
 
@@ -68,4 +70,3 @@ actor IapState {
         promotedProductListeners.map { $0.listener }
     }
 }
-

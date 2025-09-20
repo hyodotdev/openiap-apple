@@ -109,12 +109,12 @@ _ = try await module.initConnection()
 
 // Fetch products
 let products = try await module.fetchProducts(
-    OpenIapProductRequest(skus: ["premium", "coins"], type: .all)
+    ProductRequest(skus: ["premium", "coins"], type: .all)
 )
 
 // Make a purchase
 let purchase = try await module.requestPurchase(
-    OpenIapRequestPurchaseProps(sku: "premium")
+    let purchase = try await module.requestPurchase(RequestPurchaseProps(request: .purchase(RequestPurchasePropsByPlatforms(android: nil, ios: RequestPurchaseIosProps(andDangerouslyFinishTransactionAutomatically: nil, appAccountToken: nil, quantity: 1, sku: "premium", withOffer: nil))), type: .inApp))
 )
 
 // Get available/restored purchases
@@ -187,10 +187,10 @@ func setupStore() async throws {
     }
 
     // Fetch and purchase
-    let request = OpenIapProductRequest(skus: ["premium"], type: .all)
+    let request = ProductRequest(skus: ["premium"], type: .all)
     let products = try await module.fetchProducts(request)
 
-    let props = OpenIapRequestPurchaseProps(sku: "premium")
+    let purchase = try await store.requestPurchase(sku: "premium")
     let purchase = try await module.requestPurchase(props)
 
     // When done, clean up
@@ -224,24 +224,6 @@ OpenIAP now has a **simplified, minimal API** with just 2 main components:
 - **Simplicity**: Only 2 files to understand instead of 4+
 - **Compatibility**: Maintains openiap.dev spec compliance
 
-## 📱 Example App
-
-The repository includes a complete **SwiftUI example app** demonstrating all OpenIAP features:
-
-- **Product catalog** with real-time pricing
-- **Purchase flow** with loading states and error handling
-- **Subscription management** with renewal tracking, cancel/reactivate support
-- **Purchase history** and transaction details
-- **Event logging** for debugging and monitoring
-- **Sandbox debug tools** integrated into My Purchases section
-
-Run the example:
-
-```bash
-cd Example
-open Martie.xcodeproj
-```
-
 ## 🧪 Testing
 
 ### Run Tests
@@ -259,7 +241,6 @@ swift test
 1. Configure your products in **App Store Connect**
 2. Create a **Sandbox Apple ID**
 3. Use test card: `4242 4242 4242 4242`
-4. Monitor purchase events in the Example app logs
 
 ### Server-Side Validation
 
@@ -271,7 +252,7 @@ try await store.initConnection()
 
 // Request purchase (validate server-side first)
 let purchase = try await store.requestPurchase(
-    OpenIapRequestPurchaseProps(sku: "dev.hyo.premium")
+    try await store.requestPurchase(sku: "dev.hyo.premium")
 )
 
 // Validate on your server using purchase.purchaseToken
@@ -318,10 +299,10 @@ class StoreViewModel: ObservableObject {
 
 ## 📚 Data Models
 
-### OpenIapProduct
+### ProductIOS
 
 ```swift
-struct OpenIapProduct {
+struct ProductIOS {
     // Common properties
     let id: String
     let title: String
@@ -350,10 +331,10 @@ enum ProductTypeIOS {
 }
 ```
 
-### OpenIapPurchase
+### PurchaseIOS
 
 ```swift
-struct OpenIapPurchase {
+struct PurchaseIOS {
     // Common properties
     let id: String  // Transaction ID
     let productId: String
@@ -398,7 +379,7 @@ OpenIAP provides comprehensive error handling:
 
 ```swift
 // Unified error model
-struct OpenIapError: LocalizedError {
+struct PurchaseError: LocalizedError {
     let code: String
     let message: String
     let productId: String?
@@ -407,7 +388,7 @@ struct OpenIapError: LocalizedError {
 }
 
 // Create errors with predefined codes
-let error = OpenIapError(code: "E_USER_CANCELLED", message: "User cancelled the purchase")
+let error = PurchaseError(code: "E_USER_CANCELLED", message: "User cancelled the purchase")
 ```
 
 ## 🤝 Contributing

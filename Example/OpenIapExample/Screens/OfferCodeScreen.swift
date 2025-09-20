@@ -89,8 +89,10 @@ struct OfferCodeScreen: View {
         print("🔷 [OfferCode] Setting up OpenIapStore...")
         
         iapStore.onPurchaseSuccess = { purchase in
-            Task { @MainActor in
-                print("✅ [OfferCode] Offer code redeemed successfully: \(purchase.productId)")
+            if let iosPurchase = purchase.asIOS() {
+                Task { @MainActor in
+                    print("✅ [OfferCode] Offer code redeemed successfully: \(iosPurchase.productId)")
+                }
             }
         }
         

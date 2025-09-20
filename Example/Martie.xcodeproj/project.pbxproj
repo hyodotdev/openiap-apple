@@ -18,6 +18,7 @@
 		C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */; };
 		C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F6032C8F1AC500123456 /* AppColors.swift */; };
 		C0E1F6072C8F1AD000123456 /* OpenIAP in Frameworks */ = {isa = PBXBuildFile; productRef = C0E1F6062C8F1AD000123456 /* OpenIAP */; };
+		C0IAC0012D10000000000001 /* IapCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0IAC0002D10000000000001 /* IapCompat.swift */; };
 		C0UI00012D00000000000001 /* FeatureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10012D00000000000001 /* FeatureCard.swift */; };
 		C0UI00022D00000000000002 /* LoadingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10022D00000000000002 /* LoadingCard.swift */; };
 		C0UI00032D00000000000003 /* EmptyStateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0UI10032D00000000000003 /* EmptyStateCard.swift */; };
@@ -47,6 +48,7 @@
 		C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailablePurchasesScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCodeScreen.swift; sourceTree = "<group>"; };
 		C0E1F6032C8F1AC500123456 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		C0IAC0002D10000000000001 /* IapCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IapCompat.swift; sourceTree = "<group>"; };
 		C0UI10012D00000000000001 /* FeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCard.swift; sourceTree = "<group>"; };
 		C0UI10022D00000000000002 /* LoadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingCard.swift; sourceTree = "<group>"; };
 		C0UI10032D00000000000003 /* EmptyStateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateCard.swift; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				C0E1F6032C8F1AC500123456 /* AppColors.swift */,
+				C0IAC0002D10000000000001 /* IapCompat.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -195,7 +198,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					C0E1F5E42C8F1A9400123456 = {
 						CreatedOnToolsVersion = 15.0;
@@ -247,6 +250,7 @@
 				C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */,
 				C0E1F6002C8F1ABA00123456 /* OfferCodeScreen.swift in Sources */,
 				C0E1F6042C8F1AC500123456 /* AppColors.swift in Sources */,
+				C0IAC0012D10000000000001 /* IapCompat.swift in Sources */,
 				C0E1F5E92C8F1A9400123456 /* OpenIapExampleApp.swift in Sources */,
 				C0UI00012D00000000000001 /* FeatureCard.swift in Sources */,
 				C0UI00022D00000000000002 /* LoadingCard.swift in Sources */,
@@ -304,6 +308,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -327,6 +332,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -367,6 +373,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -383,6 +390,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -396,7 +404,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenIapExample/Preview Content\"";
-				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenIAP;
@@ -427,7 +434,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenIapExample/Preview Content\"";
-				DEVELOPMENT_TEAM = PRDQGB267K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenIAP;

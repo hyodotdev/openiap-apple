@@ -2,7 +2,7 @@ import SwiftUI
 import OpenIAP
 
 struct SubscriptionCard: View {
-    let product: OpenIapProduct
+    let product: OpenIapSubscriptionProduct
     let purchase: OpenIapPurchase?
     let isSubscribed: Bool
     let isCancelled: Bool
@@ -206,4 +206,3 @@ struct SubscriptionCard: View {
         .padding(.horizontal)
     }
 }
-
