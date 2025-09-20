@@ -12,11 +12,9 @@
   <a href="https://github.com/hyodotdev/openiap-apple">
     <img src="https://img.shields.io/github/v/tag/hyodotdev/openiap-apple?label=Swift%20Package&logo=swift&color=orange" alt="Swift Package" />
   </a>
-  &nbsp;
   <a href="https://cocoapods.org/pods/openiap">
     <img src="https://img.shields.io/cocoapods/v/openiap?color=E35A5F&label=CocoaPods&logo=cocoapods" alt="CocoaPods" />
   </a>
-  &nbsp;
   <a href="https://github.com/hyodotdev/openiap-apple/actions/workflows/test.yml">
     <img src="https://github.com/hyodotdev/openiap-apple/actions/workflows/test.yml/badge.svg" alt="Tests" />
   </a>
@@ -299,67 +297,58 @@ class StoreViewModel: ObservableObject {
 
 ## 📚 Data Models
 
-### ProductIOS
+Our Swift data models are generated from the shared GraphQL schema in [`openiap-gql`](https://github.com/hyodotdev/openiap-gql). Run `./scripts/generate-types.sh` (or the equivalent tooling in that repo) to update `Sources/Models/Types.swift`, and every consumer—including the example app—should rely on those generated definitions instead of hand-written structs.
+
+<details>
+<summary>ProductIOS snapshot</summary>
 
 ```swift
 struct ProductIOS {
-    // Common properties
     let id: String
     let title: String
     let description: String
-    let type: String  // "in-app" (preferred) or legacy "inapp" (deprecated, removal in 1.2.0) or "subs"
+    let type: ProductType
     let displayPrice: String
     let currency: String
     let price: Double?
-    let platform: String
+    let platform: IapPlatform
 
     // iOS-specific properties
     let displayNameIOS: String
     let typeIOS: ProductTypeIOS
-    let subscriptionInfoIOS: SubscriptionInfo?
-    let discountsIOS: [Discount]?
+    let subscriptionInfoIOS: SubscriptionInfoIOS?
+    let discountsIOS: [DiscountIOS]?
     let isFamilyShareableIOS: Bool
-}
-
-enum ProductTypeIOS {
-    case consumable
-    case nonConsumable
-    case autoRenewableSubscription
-    case nonRenewingSubscription
-
-    var isSubs: Bool { /* returns true for autoRenewableSubscription */ }
 }
 ```
 
-### PurchaseIOS
+</details>
+
+<details>
+<summary>PurchaseIOS snapshot</summary>
 
 ```swift
 struct PurchaseIOS {
-    // Common properties
-    let id: String  // Transaction ID
+    let id: String
     let productId: String
-    let transactionDate: Double  // Unix timestamp in milliseconds
-    let purchaseToken: String
+    let transactionDate: Double
+    let purchaseToken: String?
     let purchaseState: PurchaseState
     let isAutoRenewing: Bool
     let quantity: Int
-    let platform: String
+    let platform: IapPlatform
 
     // iOS-specific properties
     let appAccountToken: String?
     let environmentIOS: String?
     let storefrontCountryCodeIOS: String?
-    let productTypeIOS: String?
     let subscriptionGroupIdIOS: String?
-    let transactionReasonIOS: String?  // "PURCHASE" | "RENEWAL"
-    let offerIOS: PurchaseOffer?
-    // ... additional properties
-}
-
-enum PurchaseState {
-    case pending, purchased, failed, restored, deferred, unknown
+    let transactionReasonIOS: String?
+    let offerIOS: PurchaseOfferIOS?
 }
 ```
+
+</details>
 
 ### DiscountOffer
 
