@@ -6,6 +6,7 @@ actor IapState {
     private(set) var isInitialized: Bool = false
     private var processedTransactionIds: Set<String> = []
     private var pendingTransactions: [String: Transaction] = [:]
+    private var promotedProductId: String?
 
     // Event listeners
     private var purchaseUpdatedListeners: [(id: UUID, listener: PurchaseUpdatedListener)] = []
@@ -18,6 +19,7 @@ actor IapState {
         processedTransactionIds.removeAll()
         pendingTransactions.removeAll()
         isInitialized = false
+        promotedProductId = nil
     }
 
     // MARK: - Transactions
@@ -29,6 +31,10 @@ actor IapState {
     func getPending(id: String) -> Transaction? { pendingTransactions[id] }
     func removePending(id: String) { pendingTransactions.removeValue(forKey: id) }
     func pendingSnapshot() -> [Transaction] { Array(pendingTransactions.values) }
+
+    // MARK: - Promoted Products
+    func setPromotedProductId(_ id: String?) { promotedProductId = id }
+    func promotedProductIdentifier() -> String? { promotedProductId }
 
     // MARK: - Listeners
     func addPurchaseUpdatedListener(_ pair: (UUID, PurchaseUpdatedListener)) {
@@ -49,7 +55,7 @@ actor IapState {
             purchaseErrorListeners.removeAll { $0.id == id }
         case .promotedProductIos:
             promotedProductListeners.removeAll { $0.id == id }
-        default:
+        @unknown default:
             break
         }
     }

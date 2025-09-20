@@ -25,7 +25,12 @@ extension PurchaseState {
 @available(iOS 15.0, *)
 extension PurchaseIOS {
     var isSubscription: Bool {
-        expirationDateIOS != nil || isAutoRenewing
+        if expirationDateIOS != nil { return true }
+        if isAutoRenewing { return true }
+        // Newly purchased subscriptions can report neither expiration nor auto-renew yet,
+        // but StoreKit always adds the subscription group identifier for them.
+        if let groupId = subscriptionGroupIdIOS, groupId.isEmpty == false { return true }
+        return false
     }
 }
 

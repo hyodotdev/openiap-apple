@@ -10,6 +10,7 @@ struct SubscriptionFlowScreen: View {
     @State private var errorMessage = ""
     @State private var recentPurchase: OpenIapPurchase?
     @State private var selectedPurchase: OpenIapPurchase?
+    @State private var isInitialLoading = true
     
     // Product IDs for subscription testing
     private let subscriptionIds: [String] = [
@@ -51,7 +52,7 @@ struct SubscriptionFlowScreen: View {
                 .shadow(radius: 2)
                 .padding(.horizontal)
                 
-                if iapStore.status.isLoading {
+                if isInitialLoading {
                     LoadingCard(text: "Loading subscriptions...")
                 } else {
                     if let purchase = recentPurchase {
@@ -146,11 +147,11 @@ struct SubscriptionFlowScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .navigationBarItems(trailing: 
             Button {
-                loadProducts()
+                Task { await loadProducts() }
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
-            .disabled(iapStore.status.isLoading)
+            .disabled(isInitialLoading || iapStore.status.isLoading)
         )
         .sheet(isPresented: Binding(
             get: { selectedPurchase != nil },
@@ -166,10 +167,14 @@ struct SubscriptionFlowScreen: View {
             Text(errorMessage)
         }
         .onAppear {
+            isInitialLoading = true
             setupIapProvider()
         }
         .onDisappear {
+            iapStore.resetEphemeralState()
             teardownConnection()
+            recentPurchase = nil
+            selectedPurchase = nil
         }
     }
     
@@ -197,12 +202,14 @@ struct SubscriptionFlowScreen: View {
             do {
                 try await iapStore.initConnection()
                 print("✅ [SubscriptionFlow] Connection initialized")
-                loadProducts()
+                await loadProducts()
+                await MainActor.run { isInitialLoading = false }
                 await loadPurchases()
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to initialize connection: \(error.localizedDescription)"
                     showError = true
+                    isInitialLoading = false
                 }
             }
         }
@@ -218,32 +225,21 @@ struct SubscriptionFlowScreen: View {
     
     // MARK: - Product and Purchase Loading
     
-    private func loadProducts() {
-        Task {
+    private func loadProducts() async {
+        do {
+            try await iapStore.fetchProducts(skus: subscriptionIds, type: .all)
             await MainActor.run {
-                // Loading state is managed internally
-            }
-            defer { 
-                Task { @MainActor in
-                    // Loading state is managed internally
-                }
-            }
-            
-            do {
-                try await iapStore.fetchProducts(skus: subscriptionIds, type: .all)
-                await MainActor.run {
-                    let ids = subscriptionProductIds
-                    if ids.isEmpty {
-                        errorMessage = "No subscription products found. Please check your App Store Connect configuration."
-                        showError = true
-                    }
-                    print("✅ [SubscriptionFlow] Loaded subscriptions: \(ids.joined(separator: ", "))")
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load products: \(error.localizedDescription)"
+                let ids = subscriptionProductIds
+                if ids.isEmpty {
+                    errorMessage = "No subscription products found. Please check your App Store Connect configuration."
                     showError = true
                 }
+                print("✅ [SubscriptionFlow] Loaded subscriptions: \(ids.joined(separator: ", "))")
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to load products: \(error.localizedDescription)"
+                showError = true
             }
         }
     }
