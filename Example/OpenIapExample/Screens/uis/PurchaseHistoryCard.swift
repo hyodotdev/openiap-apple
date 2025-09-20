@@ -3,6 +3,7 @@ import OpenIAP
 
 struct PurchaseHistoryCard: View {
     let purchase: OpenIapPurchase
+    let onShowDetails: () -> Void
     
     private var statusColor: Color {
         switch purchase.purchaseState {
@@ -68,6 +69,14 @@ struct PurchaseHistoryCard: View {
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
+
+                Button(action: onShowDetails) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 18))
+                        .foregroundColor(AppColors.primary)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 8)
             }
             
             HStack(spacing: 16) {
@@ -88,4 +97,3 @@ struct PurchaseHistoryCard: View {
         .shadow(radius: 2)
     }
 }
-

@@ -8,6 +8,8 @@ struct SubscriptionFlowScreen: View {
     // UI State
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var recentPurchase: OpenIapPurchase?
+    @State private var selectedPurchase: OpenIapPurchase?
     
     // Product IDs for subscription testing
     private let subscriptionIds: [String] = [
@@ -51,6 +53,10 @@ struct SubscriptionFlowScreen: View {
                 if iapStore.status.isLoading {
                     LoadingCard(text: "Loading subscriptions...")
                 } else {
+                    if let purchase = recentPurchase {
+                        purchaseResultCard(for: purchase)
+                    }
+
                     let subscriptionProducts = iapStore.iosSubscriptionProducts
                     
                     if subscriptionProducts.isEmpty {
@@ -173,6 +179,9 @@ struct SubscriptionFlowScreen: View {
             }
             .disabled(iapStore.status.isLoading)
         )
+        .sheet(item: $selectedPurchase) { purchase in
+            PurchaseDetailSheet(purchase: purchase)
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") {}
         } message: {
@@ -273,9 +282,7 @@ struct SubscriptionFlowScreen: View {
     // MARK: - Purchase Flow
     
     private func purchaseProduct(_ product: OpenIapSubscriptionProduct) {
-        
         print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
-        
         Task {
             do {
                 _ = try await iapStore.requestPurchase(sku: product.id, type: .subs, autoFinish: true)
@@ -320,10 +327,64 @@ struct SubscriptionFlowScreen: View {
         Task {
             await loadPurchases()
         }
+        recentPurchase = purchase
     }
     
     private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ [SubscriptionFlow] Subscription error: \(error.message)")
         // Error status is already handled internally by OpenIapStore
+    }
+}
+
+@available(iOS 15.0, *)
+private extension SubscriptionFlowScreen {
+    func purchaseResultCard(for purchase: OpenIapPurchase) -> some View {
+        let transactionDate = Date(timeIntervalSince1970: purchase.transactionDate / 1000)
+        let formattedDate = DateFormatter.localizedString(from: transactionDate, dateStyle: .short, timeStyle: .short)
+        let message = """
+        ✅ Subscription successful
+        Product: \(purchase.productId)
+        Transaction ID: \(purchase.id)
+        Date: \(formattedDate)
+        """
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(AppColors.success)
+                Text("Latest Subscription")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Dismiss") {
+                    recentPurchase = nil
+                }
+                .font(.caption)
+                .foregroundColor(AppColors.primary)
+            }
+
+            Button {
+                selectedPurchase = purchase
+            } label: {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .foregroundColor(AppColors.primary)
+                    Text(message)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(AppColors.cardBackground)
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
     }
 }

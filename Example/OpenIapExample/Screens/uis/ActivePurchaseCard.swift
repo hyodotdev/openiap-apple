@@ -4,9 +4,10 @@ import OpenIAP
 struct ActivePurchaseCard: View {
     let purchase: OpenIapPurchase
     let onConsume: () -> Void
+    let onShowDetails: () -> Void
     
     private var isSubscription: Bool {
-        purchase.productId.contains("premium")
+        purchase.isSubscription
     }
     
     var body: some View {
@@ -18,11 +19,19 @@ struct ActivePurchaseCard: View {
                 .background((isSubscription ? AppColors.warning : AppColors.success).opacity(0.1))
                 .cornerRadius(12)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(purchase.id)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(purchase.productId)
                     .font(.headline)
                     .fontWeight(.semibold)
-                
+
+                Text("Transaction: \(purchase.id)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text(Date(timeIntervalSince1970: purchase.transactionDate / 1000), style: .date)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
                 if isSubscription && purchase.isAutoRenewing {
                     Label("Auto-renewable", systemImage: "arrow.triangle.2.circlepath")
                         .font(.caption)
@@ -37,6 +46,13 @@ struct ActivePurchaseCard: View {
             }
             
             Spacer()
+
+            Button(action: onShowDetails) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColors.primary)
+            }
+            .buttonStyle(.plain)
             
             if !isSubscription && !purchase.purchaseState.isAcknowledged {
                 Button(action: onConsume) {
@@ -61,4 +77,3 @@ struct ActivePurchaseCard: View {
         .padding(.horizontal)
     }
 }
-

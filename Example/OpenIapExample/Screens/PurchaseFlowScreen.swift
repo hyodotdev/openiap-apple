@@ -8,6 +8,8 @@ struct PurchaseFlowScreen: View {
     // UI State
     @State private var showPurchaseResult = false
     @State private var purchaseResultMessage = ""
+    @State private var latestPurchase: OpenIapPurchase?
+    @State private var selectedPurchase: OpenIapPurchase?
     @State private var showError = false
     @State private var errorMessage = ""
     
@@ -56,6 +58,9 @@ struct PurchaseFlowScreen: View {
             Button("OK") { }
         } message: {
             Text(errorMessage)
+        }
+        .sheet(item: $selectedPurchase) { purchase in
+            PurchaseDetailSheet(purchase: purchase)
         }
     }
     
@@ -121,17 +126,30 @@ struct PurchaseFlowScreen: View {
                 Button("Dismiss") {
                     showPurchaseResult = false
                     purchaseResultMessage = ""
+                    latestPurchase = nil
                 }
                 .font(.caption)
                 .foregroundColor(AppColors.primary)
             }
             
-            Text(purchaseResultMessage)
-                .font(.system(.caption, design: .monospaced))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                if let purchase = latestPurchase {
+                    selectedPurchase = purchase
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .foregroundColor(AppColors.primary)
+                    Text(purchaseResultMessage)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
         }
         .padding()
         .background(AppColors.cardBackground)
@@ -192,7 +210,7 @@ struct PurchaseFlowScreen: View {
                 }
             }
         }
-
+        
         iapStore.onPurchaseError = { error in
             Task { @MainActor in
                 self.handlePurchaseError(error)
@@ -246,7 +264,6 @@ struct PurchaseFlowScreen: View {
     
     private func purchaseProduct(_ product: OpenIapProduct) {
         print("🛒 [PurchaseFlow] Starting purchase for: \(product.id)")
-        
         Task {
             do {
                 let requestType: ProductQueryType = product.type == .subs ? .subs : .inApp
@@ -272,7 +289,8 @@ struct PurchaseFlowScreen: View {
         Date: \(DateFormatter.localizedString(from: transactionDate, dateStyle: .short, timeStyle: .short))
         """
         showPurchaseResult = true
-        
+        latestPurchase = purchase
+
         // In production, validate receipt on your server before finishing
         Task {
             await finishPurchase(purchase)
@@ -292,7 +310,7 @@ struct PurchaseFlowScreen: View {
             showError = true
         }
     }
-
+    
     private func finishPurchase(_ purchase: OpenIapPurchase) async {
         do {
             try await iapStore.finishTransaction(purchase: purchase)
