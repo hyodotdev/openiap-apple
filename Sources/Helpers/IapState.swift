@@ -55,7 +55,7 @@ actor IapState {
             purchaseErrorListeners.removeAll { $0.id == id }
         case .promotedProductIos:
             promotedProductListeners.removeAll { $0.id == id }
-        default:
+        @unknown default:
             break
         }
     }

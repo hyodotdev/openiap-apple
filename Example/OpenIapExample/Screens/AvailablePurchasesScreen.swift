@@ -7,17 +7,22 @@ struct AvailablePurchasesScreen: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var selectedPurchase: OpenIapPurchase?
+    @State private var isInitialLoading = true
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                availablePurchasesSection
-                purchaseHistorySection
-                
-                // Debug section for Sandbox testing
-                #if DEBUG
-                sandboxToolsSection
-                #endif
+                if isInitialLoading {
+                    LoadingCard(text: "Loading purchases...")
+                } else {
+                    availablePurchasesSection
+                    purchaseHistorySection
+                    
+                    // Debug section for Sandbox testing
+                    #if DEBUG
+                    sandboxToolsSection
+                    #endif
+                }
             }
             .padding(.vertical)
         }
@@ -26,9 +31,9 @@ struct AvailablePurchasesScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    loadPurchases()
-                }) {
+                Button {
+                    Task { await loadPurchases() }
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .disabled(iapStore.status.loadings.restorePurchases)
@@ -48,10 +53,16 @@ struct AvailablePurchasesScreen: View {
             Text(errorMessage)
         }
         .onAppear {
+            isInitialLoading = true
             setupIapProvider()
         }
         .onDisappear {
             teardownConnection()
+        }
+        .onChange(of: iapStore.iosAvailablePurchases.count) { _ in
+            if isInitialLoading {
+                isInitialLoading = false
+            }
         }
     }
     
@@ -76,20 +87,23 @@ struct AvailablePurchasesScreen: View {
             if purchase.isSubscription {
                 // Active subscriptions: check auto-renewing or expiry time
                 if purchase.isAutoRenewing {
+                    OpenIapLog.debug("📦 Active subscription auto-renewing product=\(purchase.productId)")
                     return true  // Always show auto-renewing subscriptions
                 }
                 // For non-auto-renewing, check expiry time
                 if let expiryTime = purchase.expirationDateIOS {
                     let expiryDate = Date(timeIntervalSince1970: expiryTime / 1000)
+                    OpenIapLog.debug("📦 Subscription product=\(purchase.productId) expiry=\(expiryDate) isActive=\(expiryDate > Date())")
                     return expiryDate > Date()  // Only show if not expired
                 }
                 return true  // Show if no expiry info
             } else {
                 // Consumables: show if not acknowledged
+                OpenIapLog.debug("📦 Consumable product=\(purchase.productId) state=\(purchase.purchaseState.rawValue) isAcknowledged=\(purchase.purchaseState.isAcknowledged)")
                 return !purchase.purchaseState.isAcknowledged
             }
         }
-        
+
         // Return sorted by date
         return allActivePurchases.sorted(by: { $0.transactionDate > $1.transactionDate })
     }
@@ -121,6 +135,26 @@ struct AvailablePurchasesScreen: View {
     // MARK: - Purchase History Section (All Past Purchases)
     private var purchaseHistorySection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            Button {
+                Task { await showManageSubscriptions() }
+            } label: {
+                HStack {
+                    Image(systemName: "gearshape.fill")
+                    Text("Manage Subscriptions")
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward.app")
+                        .font(.caption)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(AppColors.secondary)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+
             SectionHeaderView(
                 title: "Purchase History",
                 subtitle: "All your past purchases",
@@ -287,30 +321,30 @@ struct AvailablePurchasesScreen: View {
         
         iapStore.onPurchaseSuccess = { purchase in
             if purchase.asIOS() != nil {
-                Task { @MainActor in
-                    loadPurchases()
-                }
+                Task { await loadPurchases() }
             }
         }
-        
+
         iapStore.onPurchaseError = { error in
             Task { @MainActor in
                 errorMessage = error.message
                 showError = true
             }
         }
-        
+
         Task {
             do {
                 try await iapStore.initConnection()
                 print("✅ [AvailablePurchases] Connection initialized")
-                loadPurchases()
+                await loadPurchases()
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to initialize connection: \(error.localizedDescription)"
                     showError = true
+                    isInitialLoading = false
                 }
             }
+            await MainActor.run { isInitialLoading = false }
         }
     }
     
@@ -324,16 +358,32 @@ struct AvailablePurchasesScreen: View {
     
     // MARK: - Purchase Loading
     
-    private func loadPurchases() {
-        Task {
-            do {
-                try await iapStore.getAvailablePurchases()
-                print("✅ [AvailablePurchases] Loaded \(iapStore.iosAvailablePurchases.count) purchases")
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load purchases: \(error.localizedDescription)"
-                    showError = true
-                }
+    @MainActor
+    private func loadPurchases(retry: Int = 0) async {
+        isInitialLoading = false
+        do {
+            try await iapStore.getAvailablePurchases()
+            print("✅ [AvailablePurchases] Loaded \(iapStore.iosAvailablePurchases.count) purchases")
+        } catch {
+            errorMessage = "Failed to load purchases: \(error.localizedDescription)"
+            showError = true
+        }
+
+        if iapStore.iosAvailablePurchases.isEmpty && retry < 3 {
+            let delay = UInt64((retry + 1) * 2) * 1_000_000_000
+            OpenIapLog.debug("🕑 No purchases yet, retrying loadPurchases attempt=\(retry + 1)")
+            try? await Task.sleep(nanoseconds: delay)
+            await loadPurchases(retry: retry + 1)
+        }
+    }
+
+    private func showManageSubscriptions() async {
+        do {
+            _ = try await iapStore.showManageSubscriptionsIOS()
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to open subscription management: \(error.localizedDescription)"
+                showError = true
             }
         }
     }
@@ -344,8 +394,7 @@ struct AvailablePurchasesScreen: View {
         do {
             try await iapStore.finishTransaction(purchase: purchase)
             print("✅ [AvailablePurchases] Transaction finished: \(purchase.id)")
-            // Reload purchases to update UI
-            loadPurchases()
+            await loadPurchases()
         } catch {
             await MainActor.run {
                 errorMessage = "Failed to finish transaction: \(error.localizedDescription)"
@@ -359,13 +408,13 @@ struct AvailablePurchasesScreen: View {
     private func clearAllTransactions() async {
         // Note: This would require additional API in OpenIapStore
         // For now, just reload purchases
-        loadPurchases()
+        await loadPurchases()
         print("🧪 [AvailablePurchases] Clear transactions requested (reloaded purchases)")
     }
-    
+
     private func syncSubscriptions() async {
         // Reload purchases to sync subscription status
-        loadPurchases()
+        await loadPurchases()
         print("🧪 [AvailablePurchases] Subscription sync requested (reloaded purchases)")
     }
     
@@ -382,7 +431,7 @@ struct AvailablePurchasesScreen: View {
         }
         
         // Reload after finishing transactions
-        loadPurchases()
+        await loadPurchases()
     }
 }
 

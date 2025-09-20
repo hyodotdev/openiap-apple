@@ -12,6 +12,7 @@ struct PurchaseFlowScreen: View {
     @State private var selectedPurchase: OpenIapPurchase?
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var isInitialLoading = true
     
     // Product IDs configured in App Store Connect
     private let productIds: [String] = [
@@ -24,11 +25,15 @@ struct PurchaseFlowScreen: View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
                 HeaderCardView()
-                
-                ProductsSection()
-                
-                if showPurchaseResult {
-                    PurchaseResultSection()
+
+                if isInitialLoading {
+                    LoadingCard(text: "Loading products...")
+                } else {
+                    ProductsSection()
+
+                    if showPurchaseResult {
+                        PurchaseResultSection()
+                    }
                 }
                 
                 InstructionsCard()
@@ -42,17 +47,24 @@ struct PurchaseFlowScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: loadProducts) {
+                Button {
+                    Task { await loadProducts() }
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
-                .disabled(iapStore.status.isLoading)
+                .disabled(isInitialLoading || iapStore.status.isLoading)
             }
         }
         .onAppear {
+            isInitialLoading = true
             setupIapProvider()
         }
         .onDisappear {
+            iapStore.resetEphemeralState()
             teardownConnection()
+            selectedPurchase = nil
+            latestPurchase = nil
+            showPurchaseResult = false
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -226,13 +238,15 @@ struct PurchaseFlowScreen: View {
             do {
                 try await iapStore.initConnection()
                 print("✅ [PurchaseFlow] Connection initialized")
-                loadProducts()
+                await loadProducts()
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to initialize connection: \(error.localizedDescription)"
                     showError = true
                 }
             }
+
+            await MainActor.run { isInitialLoading = false }
         }
     }
     
@@ -246,21 +260,19 @@ struct PurchaseFlowScreen: View {
     
     // MARK: - Product Loading
     
-    private func loadProducts() {
-        Task {
-            do {
-                try await iapStore.fetchProducts(skus: productIds, type: .inApp)
-                await MainActor.run {
-                    if iapStore.iosProducts.isEmpty {
-                        errorMessage = "No products found. Please check your App Store Connect configuration."
-                        showError = true
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load products: \(error.localizedDescription)"
+    private func loadProducts() async {
+        do {
+            try await iapStore.fetchProducts(skus: productIds, type: .inApp)
+            await MainActor.run {
+                if iapStore.iosProducts.isEmpty {
+                    errorMessage = "No products found. Please check your App Store Connect configuration."
                     showError = true
                 }
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to load products: \(error.localizedDescription)"
+                showError = true
             }
         }
     }

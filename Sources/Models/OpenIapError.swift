@@ -61,49 +61,14 @@ public extension PurchaseError {
         )
     }
 
-    // MARK: - Legacy Identifiers
-
-    static let E_UNKNOWN = ErrorCode.unknown.legacyIdentifier
-    static let E_USER_CANCELLED = ErrorCode.userCancelled.legacyIdentifier
-    static let E_USER_ERROR = ErrorCode.userError.legacyIdentifier
-    static let E_ITEM_UNAVAILABLE = ErrorCode.itemUnavailable.legacyIdentifier
-    static let E_REMOTE_ERROR = ErrorCode.remoteError.legacyIdentifier
-    static let E_NETWORK_ERROR = ErrorCode.networkError.legacyIdentifier
-    static let E_SERVICE_ERROR = ErrorCode.serviceError.legacyIdentifier
-    static let E_RECEIPT_FAILED = ErrorCode.receiptFailed.legacyIdentifier
-    static let E_RECEIPT_FINISHED = ErrorCode.receiptFinished.legacyIdentifier
-    static let E_RECEIPT_FINISHED_FAILED = ErrorCode.receiptFinishedFailed.legacyIdentifier
-    static let E_NOT_PREPARED = ErrorCode.notPrepared.legacyIdentifier
-    static let E_NOT_ENDED = ErrorCode.notEnded.legacyIdentifier
-    static let E_ALREADY_OWNED = ErrorCode.alreadyOwned.legacyIdentifier
-    static let E_DEVELOPER_ERROR = ErrorCode.developerError.legacyIdentifier
-    static let E_BILLING_RESPONSE_JSON_PARSE_ERROR = ErrorCode.billingResponseJsonParseError.legacyIdentifier
-    static let E_DEFERRED_PAYMENT = ErrorCode.deferredPayment.legacyIdentifier
-    static let E_INTERRUPTED = ErrorCode.interrupted.legacyIdentifier
-    static let E_IAP_NOT_AVAILABLE = ErrorCode.iapNotAvailable.legacyIdentifier
-    static let E_PURCHASE_ERROR = ErrorCode.purchaseError.legacyIdentifier
-    static let E_SYNC_ERROR = ErrorCode.syncError.legacyIdentifier
-    static let E_TRANSACTION_VALIDATION_FAILED = ErrorCode.transactionValidationFailed.legacyIdentifier
-    static let E_ACTIVITY_UNAVAILABLE = ErrorCode.activityUnavailable.legacyIdentifier
-    static let E_ALREADY_PREPARED = ErrorCode.alreadyPrepared.legacyIdentifier
-    static let E_PENDING = ErrorCode.pending.legacyIdentifier
-    static let E_CONNECTION_CLOSED = ErrorCode.connectionClosed.legacyIdentifier
-    static let E_INIT_CONNECTION = ErrorCode.initConnection.legacyIdentifier
-    static let E_SERVICE_DISCONNECTED = ErrorCode.serviceDisconnected.legacyIdentifier
-    static let E_QUERY_PRODUCT = ErrorCode.queryProduct.legacyIdentifier
-    static let E_SKU_NOT_FOUND = ErrorCode.skuNotFound.legacyIdentifier
-    static let E_SKU_OFFER_MISMATCH = ErrorCode.skuOfferMismatch.legacyIdentifier
-    static let E_ITEM_NOT_OWNED = ErrorCode.itemNotOwned.legacyIdentifier
-    static let E_BILLING_UNAVAILABLE = ErrorCode.billingUnavailable.legacyIdentifier
-    static let E_FEATURE_NOT_SUPPORTED = ErrorCode.featureNotSupported.legacyIdentifier
-    static let E_EMPTY_SKU_LIST = ErrorCode.emptySkuList.legacyIdentifier
+    // MARK: - Convenience Constructors
 
     static func make(
         code: String,
         productId: String? = nil,
         message: String? = nil
     ) -> PurchaseError {
-        let resolved = ErrorCode.fromLegacyIdentifier(code) ?? ErrorCode(rawValue: code) ?? .unknown
+        let resolved = ErrorCode(rawValue: code) ?? .unknown
         return make(code: resolved, productId: productId, message: message)
     }
 
@@ -114,30 +79,23 @@ public extension PurchaseError {
     static func purchaseError(message: String? = nil, productId: String? = nil) -> PurchaseError {
         make(code: .purchaseError, productId: productId, message: message)
     }
-}
 
-extension ErrorCode {
-    var legacyIdentifier: String {
-        let transformed = rawValue.replacingOccurrences(of: "-", with: "_").uppercased()
-        if transformed.hasPrefix("E_") {
-            return transformed
+    /// Returns the canonical set of error codes mapped to their default messages.
+    static func errorCodeTable() -> [String: String] {
+        ErrorCode.allCases.reduce(into: [String: String]()) { result, code in
+            result[code.rawValue] = defaultMessage(for: code)
         }
-        return "E_" + transformed
     }
 
-    static func fromLegacyIdentifier(_ value: String) -> ErrorCode? {
-        if let direct = ErrorCode(rawValue: value) {
-            return direct
+    /// Wraps any error into a `PurchaseError`, preserving existing instances.
+    static func wrap(
+        _ error: Error,
+        fallback: ErrorCode = .purchaseError,
+        productId: String? = nil
+    ) -> PurchaseError {
+        if let purchaseError = error as? PurchaseError {
+            return purchaseError
         }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.uppercased().hasPrefix("E_") else {
-            return nil
-        }
-        let normalized = trimmed.dropFirst(2)
-        let hyphenated = normalized
-            .replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "_", with: "-")
-            .lowercased()
-        return ErrorCode(rawValue: hyphenated)
+        return make(code: fallback, productId: productId, message: error.localizedDescription)
     }
 }

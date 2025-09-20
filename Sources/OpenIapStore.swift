@@ -107,12 +107,18 @@ public final class OpenIapStore: ObservableObject {
                 timestamp: Date(timeIntervalSince1970: ios.transactionDate / 1000),
                 message: "Purchase successful"
             )
+            availablePurchases = deduplicatePurchases(availablePurchases + [purchase])
         }
 
         onPurchaseSuccess?(purchase)
 
-        if purchase.asIOS()?.expirationDateIOS != nil {
-            Task { await refreshPurchases() }
+        if let ios = purchase.asIOS() {
+            let shouldRefresh = ios.expirationDateIOS != nil
+                || ios.isAutoRenewing
+                || (ios.subscriptionGroupIdIOS?.isEmpty == false)
+            if shouldRefresh {
+                Task { await refreshPurchases() }
+            }
         }
     }
 
@@ -160,7 +166,16 @@ public final class OpenIapStore: ObservableObject {
         defer { status.loadings.restorePurchases = false }
 
         let purchases = try await module.getAvailablePurchases(options)
+        OpenIapLog.debug("🧾 getAvailablePurchases returned \(purchases.count) purchases")
+        purchases.forEach { purchase in
+            if let ios = purchase.asIOS() {
+                OpenIapLog.debug("  • purchase id=\(ios.transactionId) product=\(ios.productId) state=\(ios.purchaseState.rawValue) autoRenew=\(ios.isAutoRenewing) expires=\(ios.expirationDateIOS.map { Date(timeIntervalSince1970: $0 / 1000) } ?? Date.distantPast)")
+            } else {
+                OpenIapLog.debug("  • non-iOS purchase encountered")
+            }
+        }
         availablePurchases = deduplicatePurchases(purchases)
+        OpenIapLog.debug("🧾 availablePurchases updated to \(availablePurchases.count) items")
     }
 
     public func requestPurchase(
@@ -269,11 +284,14 @@ public final class OpenIapStore: ObservableObject {
     }
 
     public func refreshPurchases(forceSync: Bool = false) async throws {
-        if forceSync {
-            status.loadings.restorePurchases = true
-            defer { status.loadings.restorePurchases = false }
-            _ = try await module.syncIOS()
-        }
+        try await getAvailablePurchases()
+
+        guard forceSync else { return }
+
+        status.loadings.restorePurchases = true
+        defer { status.loadings.restorePurchases = false }
+
+        _ = try await module.syncIOS()
         try await getAvailablePurchases()
     }
 
@@ -352,6 +370,12 @@ public final class OpenIapStore: ObservableObject {
         _ = try await module.clearTransactionIOS()
     }
 
+    public func resetEphemeralState() {
+        currentPurchase = nil
+        currentPurchaseError = nil
+        status.reset()
+    }
+
     // MARK: - Private Helpers
 
     private func clearCurrentPurchase() {
@@ -368,12 +392,24 @@ public final class OpenIapStore: ObservableObject {
 
         for purchase in purchases {
             guard let iosPurchase = purchase.asIOS() else {
+                OpenIapLog.debug("    ↳ keeping non-iOS purchase entry")
                 nonSubscriptionPurchases.append(purchase)
                 continue
             }
 
-            let isSubscription = iosPurchase.expirationDateIOS != nil || iosPurchase.isAutoRenewing
+            let isSubscription = iosPurchase.expirationDateIOS != nil
+                || iosPurchase.isAutoRenewing
+                || (iosPurchase.subscriptionGroupIdIOS?.isEmpty == false) // group id arrives immediately for subs
+            let expiryDescription: String
+            if let expiry = iosPurchase.expirationDateIOS {
+                let date = Date(timeIntervalSince1970: expiry / 1000)
+                expiryDescription = "\(date)"
+            } else {
+                expiryDescription = "none"
+            }
+            OpenIapLog.debug("    ↳ evaluating purchase id=\(iosPurchase.transactionId) product=\(iosPurchase.productId) state=\(iosPurchase.purchaseState.rawValue) autoRenew=\(iosPurchase.isAutoRenewing) expires=\(expiryDescription) isSubscription=\(isSubscription)")
             if isSubscription == false {
+                OpenIapLog.debug("      • classified as non-subscription, retaining")
                 nonSubscriptionPurchases.append(purchase)
                 continue
             }
@@ -381,17 +417,29 @@ public final class OpenIapStore: ObservableObject {
             let isActive: Bool
             if let expiry = iosPurchase.expirationDateIOS {
                 let expiryDate = Date(timeIntervalSince1970: expiry / 1000)
-                isActive = expiryDate > Date() || iosPurchase.isAutoRenewing
+                isActive = expiryDate > Date()
+                OpenIapLog.debug("      • expiryDate=\(expiryDate) isActive=\(isActive)")
             } else {
                 isActive = iosPurchase.isAutoRenewing
+                    || iosPurchase.purchaseState == .purchased
+                    || iosPurchase.purchaseState == .restored
+                OpenIapLog.debug("      • no expiry; autoRenew=\(iosPurchase.isAutoRenewing) state=\(iosPurchase.purchaseState.rawValue) -> isActive=\(isActive)")
             }
-            guard isActive else { continue }
+            guard isActive else {
+                OpenIapLog.debug("      • skipping inactive subscription entry")
+                continue
+            }
 
             if let existing = latestSubscriptionByProduct[iosPurchase.productId], let existingIos = existing.asIOS() {
-                if shouldReplaceSubscription(existing: existingIos, candidate: iosPurchase) {
+                let shouldReplace = shouldReplaceSubscription(existing: existingIos, candidate: iosPurchase)
+                OpenIapLog.debug("      • existing subscription found (transactionDate=\(existingIos.transactionDate)); shouldReplace=\(shouldReplace)")
+                if shouldReplace {
                     latestSubscriptionByProduct[iosPurchase.productId] = purchase
+                } else {
+                    OpenIapLog.debug("      • keeping existing subscription")
                 }
             } else {
+                OpenIapLog.debug("      • first subscription for product, storing")
                 latestSubscriptionByProduct[iosPurchase.productId] = purchase
             }
         }

@@ -69,7 +69,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
 
         #if os(iOS)
         if !didRegisterPaymentQueueObserver {
-            SKPaymentQueue.default().add(self)
+            await MainActor.run {
+                SKPaymentQueue.default().add(self)
+            }
             didRegisterPaymentQueueObserver = true
         }
         #endif
@@ -103,7 +105,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         await state.reset()
         #if os(iOS)
         if didRegisterPaymentQueueObserver {
-            SKPaymentQueue.default().remove(self)
+            await MainActor.run {
+                SKPaymentQueue.default().remove(self)
+            }
             didRegisterPaymentQueueObserver = false
         }
         #endif
@@ -269,22 +273,31 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     public func getAvailablePurchases(_ options: PurchaseOptions?) async throws -> [Purchase] {
         try await ensureConnection()
         let onlyActive = options?.onlyIncludeActiveItemsIOS ?? false
-        var purchases: [Purchase] = []
+        var purchasedItems: [Purchase] = []
 
-        let sequence = onlyActive ? Transaction.currentEntitlements : Transaction.all
-        for await verification in sequence {
+        OpenIapLog.debug("🔍 getAvailablePurchases called. onlyActive=\(onlyActive)")
+
+        for await verification in (onlyActive ? Transaction.currentEntitlements : Transaction.all) {
             do {
                 let transaction = try checkVerified(verification)
-                if onlyActive, let expiration = transaction.expirationDate, expiration <= Date() {
+
+                if onlyActive, let expirationDate = transaction.expirationDate, expirationDate <= Date() {
                     continue
                 }
-                purchases.append(await StoreKitTypesBridge.purchase(from: transaction, jwsRepresentation: verification.jwsRepresentation))
+
+                let purchase = await StoreKitTypesBridge.purchase(
+                    from: transaction,
+                    jwsRepresentation: verification.jwsRepresentation
+                )
+                purchasedItems.append(purchase)
             } catch {
+                OpenIapLog.error("getAvailablePurchases: failed to verify transaction: \(error)")
                 continue
             }
         }
 
-        return purchases
+        OpenIapLog.debug("🔍 getAvailablePurchases returning \(purchasedItems.count) purchases")
+        return purchasedItems
     }
 
     // MARK: - Transaction Management
