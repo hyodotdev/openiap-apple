@@ -12,7 +12,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-    
+
+    - name: Verify generated types are not changed
+      run: |
+        ./scripts/generate-types.sh
+        git diff --exit-code Sources/Models/Types.swift
+
     - name: Select Xcode
       run: |
         echo "Available Xcode versions:"
