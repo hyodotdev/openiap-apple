@@ -8,10 +8,13 @@ struct SubscriptionFlowScreen: View {
     // UI State
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var recentPurchase: OpenIapPurchase?
+    @State private var selectedPurchase: OpenIapPurchase?
     
     // Product IDs for subscription testing
     private let subscriptionIds: [String] = [
-        "dev.hyo.martie.premium"
+        "dev.hyo.martie.premium",
+        "dev.hyo.martie.premium_year"
     ]
     
     var body: some View {
@@ -51,63 +54,39 @@ struct SubscriptionFlowScreen: View {
                 if iapStore.status.isLoading {
                     LoadingCard(text: "Loading subscriptions...")
                 } else {
-                    let subscriptionProducts = iapStore.products.filter { $0.typeIOS.isSubs }
+                    if let purchase = recentPurchase {
+                        purchaseResultCard(for: purchase)
+                    }
+
+                    let productIds = subscriptionProductIds
                     
-                    if subscriptionProducts.isEmpty {
+                    if productIds.isEmpty {
                         EmptyStateCard(
                             icon: "repeat.circle",
                             title: "No subscriptions available",
                             subtitle: "Configure subscription products in App Store Connect"
                         )
                     } else {
-                        ForEach(subscriptionProducts, id: \.id) { product in
+                        ForEach(productIds, id: \.self) { productId in
+                            let product = product(for: productId)
                             SubscriptionCard(
+                                productId: productId,
                                 product: product,
-                                purchase: iapStore.availablePurchases.first { $0.productId == product.id },
-                                isSubscribed: {
-                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
-                                        if let expirationTime = purchase.expirationDateIOS {
-                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                            return expirationDate > Date.now
-                                        } else {
-                                            return purchase.isAutoRenewing
-                                        }
-                                    }
-                                    return false
-                                }(),
-                                isCancelled: {
-                                    if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
-                                        let isActive: Bool
-                                        if let expirationTime = purchase.expirationDateIOS {
-                                            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                            isActive = expirationDate > Date.now
-                                        } else {
-                                            isActive = purchase.isAutoRenewing
-                                        }
-                                        return purchase.isAutoRenewing == false && isActive
-                                    }
-                                    return false
-                                }(),
-                                isLoading: iapStore.status.isPurchasing(product.id),
+                                purchase: purchase(for: productId),
+                                isSubscribed: isSubscribed(productId: productId),
+                                isCancelled: isCancelled(productId: productId),
+                                isLoading: iapStore.status.isPurchasing(productId),
                                 onSubscribe: {
-                                    let isSubscribed = {
-                                        if let purchase = iapStore.availablePurchases.first(where: { $0.productId == product.id }) {
-                                            if let expirationTime = purchase.expirationDateIOS {
-                                                let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                                                return expirationDate > Date.now
-                                            } else {
-                                                return purchase.isAutoRenewing
-                                            }
-                                        }
-                                        return false
-                                    }()
-                                    
-                                    if isSubscribed {
+                                    let subscribed = isSubscribed(productId: productId)
+
+                                    if subscribed {
                                         Task {
                                             await manageSubscriptions()
                                         }
                                     } else {
-                                        purchaseProduct(product)
+                                        if let product = product {
+                                            purchaseProduct(product)
+                                        }
                                     }
                                 },
                                 onManage: {
@@ -173,6 +152,14 @@ struct SubscriptionFlowScreen: View {
             }
             .disabled(iapStore.status.isLoading)
         )
+        .sheet(isPresented: Binding(
+            get: { selectedPurchase != nil },
+            set: { if !$0 { selectedPurchase = nil } }
+        )) {
+            if let purchase = selectedPurchase {
+                PurchaseDetailSheet(purchase: purchase)
+            }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") {}
         } message: {
@@ -193,8 +180,10 @@ struct SubscriptionFlowScreen: View {
         
         // Setup callbacks
         iapStore.onPurchaseSuccess = { purchase in
-            Task { @MainActor in
-                self.handlePurchaseSuccess(purchase)
+            if let iosPurchase = purchase.asIOS() {
+                Task { @MainActor in
+                    self.handlePurchaseSuccess(iosPurchase)
+                }
             }
         }
         
@@ -241,12 +230,14 @@ struct SubscriptionFlowScreen: View {
             }
             
             do {
-                try await iapStore.fetchProducts(skus: subscriptionIds, type: .subs)
+                try await iapStore.fetchProducts(skus: subscriptionIds, type: .all)
                 await MainActor.run {
-                    if iapStore.products.isEmpty {
+                    let ids = subscriptionProductIds
+                    if ids.isEmpty {
                         errorMessage = "No subscription products found. Please check your App Store Connect configuration."
                         showError = true
                     }
+                    print("✅ [SubscriptionFlow] Loaded subscriptions: \(ids.joined(separator: ", "))")
                 }
             } catch {
                 await MainActor.run {
@@ -271,16 +262,10 @@ struct SubscriptionFlowScreen: View {
     // MARK: - Purchase Flow
     
     private func purchaseProduct(_ product: OpenIapProduct) {
-        
         print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
-        
         Task {
             do {
-                let params = RequestPurchaseProps(
-                    sku: product.id,
-                    andDangerouslyFinishTransactionAutomatically: true
-                )
-                _ = try await iapStore.requestPurchase(params)
+                _ = try await iapStore.requestPurchase(sku: product.id, type: .subs, autoFinish: true)
             } catch {
                 // Error is already handled by OpenIapStore internally
                 print("❌ [SubscriptionFlow] Purchase failed: \(error.localizedDescription)")
@@ -292,7 +277,7 @@ struct SubscriptionFlowScreen: View {
         do {
             try await iapStore.refreshPurchases(forceSync: true)
             await MainActor.run {
-                print("✅ [SubscriptionFlow] Restored \(iapStore.availablePurchases.count) purchases")
+                print("✅ [SubscriptionFlow] Restored \(iapStore.iosAvailablePurchases.count) purchases")
             }
         } catch {
             await MainActor.run {
@@ -322,10 +307,107 @@ struct SubscriptionFlowScreen: View {
         Task {
             await loadPurchases()
         }
+        recentPurchase = purchase
     }
     
     private func handlePurchaseError(_ error: OpenIapError) {
         print("❌ [SubscriptionFlow] Subscription error: \(error.message)")
         // Error status is already handled internally by OpenIapStore
+    }
+}
+
+@available(iOS 15.0, *)
+@MainActor
+private extension SubscriptionFlowScreen {
+    var subscriptionProductIds: [String] {
+        var orderedIds: [String] = []
+        func appendIfNeeded(_ id: String) {
+            guard orderedIds.contains(id) == false else { return }
+            orderedIds.append(id)
+        }
+
+        subscriptionIds.forEach { appendIfNeeded($0) }
+        iapStore.iosProducts.filter { $0.type == .subs }.forEach { appendIfNeeded($0.id) }
+        iapStore.iosAvailablePurchases.filter { $0.isSubscription }.forEach { appendIfNeeded($0.productId) }
+        return orderedIds
+    }
+
+    func product(for id: String) -> OpenIapProduct? {
+        iapStore.iosProducts.first { $0.id == id }
+    }
+
+    func purchase(for productId: String) -> OpenIapPurchase? {
+        iapStore.iosAvailablePurchases.first { $0.productId == productId }
+    }
+
+    func isSubscribed(productId: String) -> Bool {
+        guard let purchase = purchase(for: productId) else { return false }
+        if let expirationTime = purchase.expirationDateIOS {
+            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+            if expirationDate > Date() { return true }
+        }
+        if purchase.isAutoRenewing { return true }
+        if purchase.purchaseState == .purchased || purchase.purchaseState == .restored { return true }
+        return purchase.isSubscription
+    }
+
+    func isCancelled(productId: String) -> Bool {
+        guard let purchase = purchase(for: productId) else { return false }
+        let active = isSubscribed(productId: productId)
+        return purchase.isAutoRenewing == false && active
+    }
+}
+
+@available(iOS 15.0, *)
+@MainActor
+private extension SubscriptionFlowScreen {
+    func purchaseResultCard(for purchase: OpenIapPurchase) -> some View {
+        let transactionDate = Date(timeIntervalSince1970: purchase.transactionDate / 1000)
+        let formattedDate = DateFormatter.localizedString(from: transactionDate, dateStyle: .short, timeStyle: .short)
+        let message = """
+        ✅ Subscription successful
+        Product: \(purchase.productId)
+        Transaction ID: \(purchase.id)
+        Date: \(formattedDate)
+        """
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(AppColors.success)
+                Text("Latest Subscription")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Dismiss") {
+                    recentPurchase = nil
+                }
+                .font(.caption)
+                .foregroundColor(AppColors.primary)
+            }
+
+            Button {
+                selectedPurchase = purchase
+            } label: {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .foregroundColor(AppColors.primary)
+                    Text(message)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(AppColors.cardBackground)
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
     }
 }

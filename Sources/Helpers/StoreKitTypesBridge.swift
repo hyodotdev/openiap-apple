@@ -1,0 +1,380 @@
+import Foundation
+import StoreKit
+
+@available(iOS 15.0, macOS 14.0, *)
+enum StoreKitTypesBridge {
+    static func product(from product: StoreKit.Product) async -> Product {
+        .productIos(await productIOS(from: product))
+    }
+
+    static func productSubscription(from product: StoreKit.Product) async -> ProductSubscription? {
+        guard let subscription = await productSubscriptionIOS(from: product) else { return nil }
+        return .productSubscriptionIos(subscription)
+    }
+
+    static func productIOS(from product: StoreKit.Product) async -> ProductIOS {
+        ProductIOS(
+            currency: product.priceFormatStyle.currencyCode,
+            debugDescription: product.description,
+            description: product.description,
+            displayName: product.displayName,
+            displayNameIOS: product.displayName,
+            displayPrice: product.displayPrice,
+            id: product.id,
+            isFamilyShareableIOS: product.isFamilyShareable,
+            jsonRepresentationIOS: String(data: product.jsonRepresentation, encoding: .utf8) ?? "",
+            platform: .ios,
+            price: NSDecimalNumber(decimal: product.price).doubleValue,
+            subscriptionInfoIOS: makeSubscriptionInfo(from: product.subscription),
+            title: product.displayName,
+            type: productType(from: product.type),
+            typeIOS: productTypeIOS(from: product.type)
+        )
+    }
+
+    static func productSubscriptionIOS(from product: StoreKit.Product) async -> ProductSubscriptionIOS? {
+        guard let subscription = product.subscription else { return nil }
+        return ProductSubscriptionIOS(
+            currency: product.priceFormatStyle.currencyCode,
+            debugDescription: product.description,
+            description: product.description,
+            discountsIOS: makeDiscounts(from: subscription),
+            displayName: product.displayName,
+            displayNameIOS: product.displayName,
+            displayPrice: product.displayPrice,
+            id: product.id,
+            introductoryPriceAsAmountIOS: introductoryPriceAmount(from: subscription.introductoryOffer),
+            introductoryPriceIOS: subscription.introductoryOffer?.displayPrice,
+            introductoryPriceNumberOfPeriodsIOS: introductoryPeriods(from: subscription.introductoryOffer),
+            introductoryPricePaymentModeIOS: subscription.introductoryOffer?.paymentMode.paymentModeIOS,
+            introductoryPriceSubscriptionPeriodIOS: subscription.introductoryOffer?.period.unit.subscriptionPeriodIOS,
+            isFamilyShareableIOS: product.isFamilyShareable,
+            jsonRepresentationIOS: String(data: product.jsonRepresentation, encoding: .utf8) ?? "",
+            platform: .ios,
+            price: NSDecimalNumber(decimal: product.price).doubleValue,
+            subscriptionInfoIOS: makeSubscriptionInfo(from: product.subscription),
+            subscriptionPeriodNumberIOS: String(subscription.subscriptionPeriod.value),
+            subscriptionPeriodUnitIOS: subscription.subscriptionPeriod.unit.subscriptionPeriodIOS,
+            title: product.displayName,
+            type: .subs,
+            typeIOS: productTypeIOS(from: product.type)
+        )
+    }
+
+    static func purchase(from transaction: StoreKit.Transaction, jwsRepresentation: String?) async -> Purchase {
+        .purchaseIos(await purchaseIOS(from: transaction, jwsRepresentation: jwsRepresentation))
+    }
+
+    static func purchaseIOS(from transaction: StoreKit.Transaction, jwsRepresentation: String?) async -> PurchaseIOS {
+        let transactionId = String(transaction.id)
+        let purchaseState: PurchaseState = .purchased
+        let expirationDate = transaction.expirationDate?.milliseconds
+        let revocationDate = transaction.revocationDate?.milliseconds
+        let autoRenewing = await determineAutoRenewStatus(for: transaction)
+        let environment: String?
+        if #available(iOS 16.0, *) {
+            environment = transaction.environment.rawValue
+        } else {
+            environment = nil
+        }
+        let offerInfo: PurchaseOfferIOS?
+        if #available(iOS 17.2, macOS 14.2, *) {
+            offerInfo = makePurchaseOffer(from: transaction.offer)
+        } else {
+            offerInfo = nil
+        }
+
+        return PurchaseIOS(
+            appAccountToken: transaction.appAccountToken?.uuidString,
+            appBundleIdIOS: transaction.appBundleID,
+            countryCodeIOS: transaction.storefrontCountryCode,
+            currencyCodeIOS: nil,
+            currencySymbolIOS: nil,
+            environmentIOS: environment,
+            expirationDateIOS: expirationDate,
+            id: transactionId,
+            ids: nil,
+            isAutoRenewing: autoRenewing,
+            isUpgradedIOS: transaction.isUpgraded,
+            offerIOS: offerInfo,
+            originalTransactionDateIOS: transaction.originalPurchaseDate.milliseconds,
+            originalTransactionIdentifierIOS: transaction.originalID != 0 ? String(transaction.originalID) : nil,
+            ownershipTypeIOS: transaction.ownershipType.description,
+            platform: .ios,
+            productId: transaction.productID,
+            purchaseState: purchaseState,
+            purchaseToken: jwsRepresentation ?? transactionId,
+            quantity: transaction.purchasedQuantity,
+            quantityIOS: transaction.purchasedQuantity,
+            reasonIOS: transaction.reasonDescription,
+            reasonStringRepresentationIOS: transaction.reasonDescription,
+            revocationDateIOS: revocationDate,
+            revocationReasonIOS: transaction.revocationReason?.rawValue.description,
+            storefrontCountryCodeIOS: transaction.storefrontCountryCode,
+            subscriptionGroupIdIOS: transaction.subscriptionGroupID,
+            transactionDate: transaction.purchaseDate.milliseconds,
+            transactionId: transactionId,
+            transactionReasonIOS: transaction.transactionReason ?? "PURCHASE",
+            webOrderLineItemIdIOS: transaction.webOrderLineItemID.map { String($0) }
+        )
+    }
+
+    private static func determineAutoRenewStatus(for transaction: StoreKit.Transaction) async -> Bool {
+        guard transaction.productType == .autoRenewable else { return false }
+
+        if let resolved = await subscriptionAutoRenewState(for: transaction) {
+            return resolved
+        }
+
+        return true
+    }
+
+    private static func subscriptionAutoRenewState(for transaction: StoreKit.Transaction) async -> Bool? {
+        guard let groupId = transaction.subscriptionGroupID else { return nil }
+
+        do {
+            let statuses = try await StoreKit.Product.SubscriptionInfo.status(for: groupId)
+            for status in statuses {
+                guard case .verified(let statusTransaction) = status.transaction else { continue }
+                guard statusTransaction.productID == transaction.productID else { continue }
+
+                switch status.renewalInfo {
+                case .verified(let info):
+                    return info.willAutoRenew
+                case .unverified(let info, _):
+                    return info.willAutoRenew
+                }
+            }
+        } catch {
+            return nil
+        }
+
+        return nil
+    }
+
+    static func purchaseOptions(from props: RequestPurchaseIosProps) -> Set<StoreKit.Product.PurchaseOption> {
+        var options: Set<StoreKit.Product.PurchaseOption> = []
+        if let quantity = props.quantity, quantity > 1 {
+            options.insert(.quantity(quantity))
+        }
+        if let token = props.appAccountToken, let uuid = UUID(uuidString: token) {
+            options.insert(.appAccountToken(uuid))
+        }
+        if let offerInput = props.withOffer, let option = promotionalOffer(from: offerInput) {
+            options.insert(option)
+        }
+        return options
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKitTypesBridge {
+    static func makeSubscriptionInfo(from info: StoreKit.Product.SubscriptionInfo?) -> SubscriptionInfoIOS? {
+        guard let info else { return nil }
+        let intro = info.introductoryOffer.map { makeSubscriptionOffer(from: $0, type: .introductory) }
+        let promos = makeSubscriptionOffers(from: info.promotionalOffers, type: .promotional)
+        return SubscriptionInfoIOS(
+            introductoryOffer: intro,
+            promotionalOffers: promos.isEmpty ? nil : promos,
+            subscriptionGroupId: info.subscriptionGroupID,
+            subscriptionPeriod: SubscriptionPeriodValueIOS(
+                unit: info.subscriptionPeriod.unit.subscriptionPeriodIOS,
+                value: info.subscriptionPeriod.value
+            )
+        )
+    }
+
+    static func makeSubscriptionOffers(from offers: [StoreKit.Product.SubscriptionOffer], type: SubscriptionOfferTypeIOS) -> [SubscriptionOfferIOS] {
+        offers.map { makeSubscriptionOffer(from: $0, type: type) }
+    }
+
+    static func makeSubscriptionOffer(from offer: StoreKit.Product.SubscriptionOffer, type: SubscriptionOfferTypeIOS) -> SubscriptionOfferIOS {
+        SubscriptionOfferIOS(
+            displayPrice: offer.displayPrice,
+            id: offer.id ?? "",
+            paymentMode: offer.paymentMode.paymentModeIOS,
+            period: SubscriptionPeriodValueIOS(
+                unit: offer.period.unit.subscriptionPeriodIOS,
+                value: offer.period.value
+            ),
+            periodCount: offer.periodCount,
+            price: NSDecimalNumber(decimal: offer.price).doubleValue,
+            type: type
+        )
+    }
+
+    static func makeDiscounts(from subscription: StoreKit.Product.SubscriptionInfo) -> [DiscountIOS]? {
+        var discounts: [DiscountIOS] = []
+        if let intro = subscription.introductoryOffer {
+            discounts.append(makeDiscount(from: intro, type: "introductory"))
+        }
+        let promotional = subscription.promotionalOffers.map { makeDiscount(from: $0, type: "promotional") }
+        discounts.append(contentsOf: promotional)
+        return discounts.isEmpty ? nil : discounts
+    }
+
+    static func makeDiscount(from offer: StoreKit.Product.SubscriptionOffer, type: String) -> DiscountIOS {
+        DiscountIOS(
+            identifier: offer.id ?? "",
+            localizedPrice: offer.displayPrice,
+            numberOfPeriods: offer.periodCount,
+            paymentMode: offer.paymentMode.paymentModeIOS,
+            price: offer.displayPrice,
+            priceAmount: NSDecimalNumber(decimal: offer.price).doubleValue,
+            subscriptionPeriod: offer.period.iso8601,
+            type: type
+        )
+    }
+
+    static func introductoryPriceAmount(from offer: StoreKit.Product.SubscriptionOffer?) -> String? {
+        guard let price = offer?.price else { return nil }
+        return String(NSDecimalNumber(decimal: price).doubleValue)
+    }
+
+    static func introductoryPeriods(from offer: StoreKit.Product.SubscriptionOffer?) -> String? {
+        guard let periodCount = offer?.periodCount else { return nil }
+        return String(periodCount)
+    }
+
+    static func productType(from type: StoreKit.Product.ProductType) -> ProductType {
+        switch type {
+        case .autoRenewable, .nonRenewable:
+            return .subs
+        case .consumable, .nonConsumable:
+            return .inApp
+        default:
+            return .inApp
+        }
+    }
+
+    static func productTypeIOS(from type: StoreKit.Product.ProductType) -> ProductTypeIOS {
+        switch type {
+        case .consumable:
+            return .consumable
+        case .nonConsumable:
+            return .nonConsumable
+        case .autoRenewable:
+            return .autoRenewableSubscription
+        case .nonRenewable:
+            return .nonRenewingSubscription
+        default:
+            return .consumable
+        }
+    }
+
+    static func promotionalOffer(from offer: DiscountOfferInputIOS) -> StoreKit.Product.PurchaseOption? {
+        guard let nonce = UUID(uuidString: offer.nonce),
+              let signature = Data(base64Encoded: offer.signature) else {
+            return nil
+        }
+        let timestamp = Int(offer.timestamp)
+        return .promotionalOffer(
+            offerID: offer.identifier,
+            keyID: offer.keyIdentifier,
+            nonce: nonce,
+            signature: signature,
+            timestamp: timestamp
+        )
+    }
+
+    @available(iOS 17.2, macOS 14.2, *)
+    static func makePurchaseOffer(from offer: StoreKit.Transaction.Offer?) -> PurchaseOfferIOS? {
+        guard let offer else { return nil }
+        return PurchaseOfferIOS(
+            id: offer.id ?? "",
+            paymentMode: offer.paymentMode?.rawValue ?? "",
+            type: String(describing: offer.type)
+        )
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Product.SubscriptionOffer.PaymentMode {
+    var paymentModeIOS: PaymentModeIOS {
+        switch self {
+        case .freeTrial: return .freeTrial
+        case .payAsYouGo: return .payAsYouGo
+        case .payUpFront: return .payUpFront
+        default: return .empty
+        }
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Product.SubscriptionPeriod.Unit {
+    var subscriptionPeriodIOS: SubscriptionPeriodIOS {
+        switch self {
+        case .day: return .day
+        case .week: return .week
+        case .month: return .month
+        case .year: return .year
+        default: return .empty
+        }
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Product.SubscriptionPeriod {
+    var iso8601: String { "P\(value)\(unit.isoComponent)" }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Product.SubscriptionPeriod.Unit {
+    var isoComponent: String {
+        switch self {
+        case .day: return "D"
+        case .week: return "W"
+        case .month: return "M"
+        case .year: return "Y"
+        default: return "D"
+        }
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension Date {
+    var milliseconds: Double { timeIntervalSince1970 * 1000 }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Transaction {
+    var reasonDescription: String? {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            switch reason {
+            case .purchase: return "purchase"
+            case .renewal: return "renewal"
+            default: return "unknown"
+            }
+        }
+        return nil
+    }
+
+    var transactionReason: String? {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            switch reason {
+            case .purchase: return "PURCHASE"
+            case .renewal: return "RENEWAL"
+            default: return "UNKNOWN"
+            }
+        }
+        return nil
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+private extension StoreKit.Transaction.OwnershipType {
+    var description: String {
+        switch self {
+        case .purchased: return "purchased"
+        case .familyShared: return "family_shared"
+        default: return "purchased"
+        }
+    }
+}
+
+@available(iOS 15.0, macOS 14.0, *)
+extension RequestPurchaseIosProps {
+    func storeKitPurchaseOptions() -> Set<StoreKit.Product.PurchaseOption> {
+        StoreKitTypesBridge.purchaseOptions(from: self)
+    }
+}

@@ -29,8 +29,9 @@ class TransactionObserver: ObservableObject {
     private func setupListeners() {
         // Add purchase updated listener
         purchaseSubscription = iapModule.purchaseUpdatedListener { [weak self] purchase in
+            guard let iosPurchase = purchase.asIOS() else { return }
             Task { @MainActor in
-                self?.handlePurchaseUpdated(purchase)
+                self?.handlePurchaseUpdated(iosPurchase)
             }
         }
         
@@ -43,7 +44,7 @@ class TransactionObserver: ObservableObject {
     }
     
     private func handlePurchaseUpdated(_ purchase: OpenIapPurchase) {
-        print("✅ Purchase successful: \(purchase.id)")
+        print("✅ Purchase successful: \(purchase.transactionId)")
         latestPurchase = purchase
         isPending = false
         errorMessage = nil
@@ -73,7 +74,7 @@ struct TransactionObserverExampleView: View {
                 VStack(alignment: .leading) {
                     Text("Latest Purchase:")
                         .font(.headline)
-                    Text("Product: \(purchase.id)")
+                    Text("Product: \(purchase.productId)")
                     Text("Date: \(Date(timeIntervalSince1970: purchase.transactionDate / 1000), formatter: dateFormatter)")
                 }
                 .padding()

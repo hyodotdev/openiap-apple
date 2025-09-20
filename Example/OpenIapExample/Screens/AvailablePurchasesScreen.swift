@@ -6,6 +6,7 @@ struct AvailablePurchasesScreen: View {
     @StateObject private var iapStore = OpenIapStore()
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var selectedPurchase: OpenIapPurchase?
     
     var body: some View {
         ScrollView {
@@ -31,6 +32,14 @@ struct AvailablePurchasesScreen: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .disabled(iapStore.status.loadings.restorePurchases)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { selectedPurchase != nil },
+            set: { if !$0 { selectedPurchase = nil } }
+        )) {
+            if let purchase = selectedPurchase {
+                PurchaseDetailSheet(purchase: purchase)
             }
         }
         .alert("Error", isPresented: $showError) {
@@ -60,15 +69,11 @@ struct AvailablePurchasesScreen: View {
     }
     
     private var uniqueActivePurchases: [OpenIapPurchase] {
-        let allActivePurchases = iapStore.availablePurchases.filter { purchase in
+        let allActivePurchases = iapStore.iosAvailablePurchases.filter { purchase in
             // Show active purchases (purchased or restored state)
             purchase.purchaseState == .purchased || purchase.purchaseState == .restored
         }.filter { purchase in
-            // Check product type if we can determine it
-            let isSubscription = purchase.productId.contains("premium") || 
-                                purchase.productId.contains("subscription")
-            
-            if isSubscription {
+            if purchase.isSubscription {
                 // Active subscriptions: check auto-renewing or expiry time
                 if purchase.isAutoRenewing {
                     return true  // Always show auto-renewing subscriptions
@@ -99,12 +104,14 @@ struct AvailablePurchasesScreen: View {
             )
         } else {
             VStack(spacing: 12) {
-                ForEach(uniqueActivePurchases, id: \.id) { purchase in
-                    ActivePurchaseCard(purchase: purchase) {
+                ForEach(uniqueActivePurchases, id: \.transactionId) { purchase in
+                    ActivePurchaseCard(purchase: purchase, onConsume: {
                         Task {
                             await finishPurchase(purchase)
                         }
-                    }
+                    }, onShowDetails: {
+                        selectedPurchase = purchase
+                    })
                 }
             }
             .padding(.horizontal)
@@ -126,7 +133,7 @@ struct AvailablePurchasesScreen: View {
     
     @ViewBuilder
     private var purchaseHistoryContent: some View {
-        if iapStore.availablePurchases.isEmpty {
+        if iapStore.iosAvailablePurchases.isEmpty {
             EmptyStateCard(
                 icon: "clock",
                 title: "No purchase history",
@@ -134,8 +141,10 @@ struct AvailablePurchasesScreen: View {
             )
         } else {
             VStack(spacing: 12) {
-                ForEach(iapStore.availablePurchases.sorted { $0.transactionDate > $1.transactionDate }, id: \.id) { purchase in
-                    PurchaseHistoryCard(purchase: purchase)
+                ForEach(iapStore.iosAvailablePurchases.sorted { $0.transactionDate > $1.transactionDate }, id: \.transactionId) { purchase in
+                    PurchaseHistoryCard(purchase: purchase) {
+                        selectedPurchase = purchase
+                    }
                 }
             }
             .padding(.horizontal)
@@ -277,9 +286,10 @@ struct AvailablePurchasesScreen: View {
         print("🔷 [AvailablePurchases] Setting up OpenIapStore...")
         
         iapStore.onPurchaseSuccess = { purchase in
-            Task { @MainActor in
-                // Refresh purchases when new purchase comes in
-                loadPurchases()
+            if purchase.asIOS() != nil {
+                Task { @MainActor in
+                    loadPurchases()
+                }
             }
         }
         
@@ -318,7 +328,7 @@ struct AvailablePurchasesScreen: View {
         Task {
             do {
                 try await iapStore.getAvailablePurchases()
-                print("✅ [AvailablePurchases] Loaded \(iapStore.availablePurchases.count) purchases")
+                print("✅ [AvailablePurchases] Loaded \(iapStore.iosAvailablePurchases.count) purchases")
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to load purchases: \(error.localizedDescription)"
@@ -332,10 +342,10 @@ struct AvailablePurchasesScreen: View {
     
     private func finishPurchase(_ purchase: OpenIapPurchase) async {
         do {
-            _ = try await iapStore.finishTransaction(purchase: purchase)
+            try await iapStore.finishTransaction(purchase: purchase)
             print("✅ [AvailablePurchases] Transaction finished: \(purchase.id)")
             // Reload purchases to update UI
-            await loadPurchases()
+            loadPurchases()
         } catch {
             await MainActor.run {
                 errorMessage = "Failed to finish transaction: \(error.localizedDescription)"
@@ -349,30 +359,30 @@ struct AvailablePurchasesScreen: View {
     private func clearAllTransactions() async {
         // Note: This would require additional API in OpenIapStore
         // For now, just reload purchases
-        await loadPurchases()
+        loadPurchases()
         print("🧪 [AvailablePurchases] Clear transactions requested (reloaded purchases)")
     }
     
     private func syncSubscriptions() async {
         // Reload purchases to sync subscription status
-        await loadPurchases()
+        loadPurchases()
         print("🧪 [AvailablePurchases] Subscription sync requested (reloaded purchases)")
     }
     
     private func finishUnfinishedTransactions() async {
-        let unfinishedPurchases = iapStore.availablePurchases.filter { !$0.purchaseState.isAcknowledged }
+        let unfinishedPurchases = iapStore.iosAvailablePurchases.filter { !$0.purchaseState.isAcknowledged }
         
         for purchase in unfinishedPurchases {
             do {
-                _ = try await iapStore.finishTransaction(purchase: purchase)
-                print("✅ [AvailablePurchases] Finished unfinished transaction: \(purchase.id)")
+                try await iapStore.finishTransaction(purchase: purchase)
+                print("✅ [AvailablePurchases] Finished unfinished transaction: \(purchase.transactionId)")
             } catch {
-                print("❌ [AvailablePurchases] Failed to finish transaction \(purchase.id): \(error)")
+                print("❌ [AvailablePurchases] Failed to finish transaction \(purchase.transactionId): \(error)")
             }
         }
         
         // Reload after finishing transactions
-        await loadPurchases()
+        loadPurchases()
     }
 }
 

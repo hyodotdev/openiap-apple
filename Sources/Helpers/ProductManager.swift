@@ -4,17 +4,17 @@ import StoreKit
 /// Thread-safe product manager backed by Swift actor
 @available(iOS 15.0, macOS 12.0, *)
 actor ProductManager {
-    private var products: [String: Product] = [:]
+    private var products: [String: StoreKit.Product] = [:]
     
-    func addProduct(_ product: Product) {
+    func addProduct(_ product: StoreKit.Product) {
         products[product.id] = product
     }
     
-    func getProduct(productID: String) -> Product? {
+    func getProduct(productID: String) -> StoreKit.Product? {
         return products[productID]
     }
     
-    func getAllProducts() -> [Product] {
+    func getAllProducts() -> [StoreKit.Product] {
         return Array(products.values)
     }
     
