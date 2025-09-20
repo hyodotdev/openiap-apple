@@ -935,11 +935,11 @@ public protocol MutationResolver {
     /// Consume a purchase token so it can be repurchased
     func consumePurchaseAndroid(_ purchaseToken: String) async throws -> Bool
     /// Open the native subscription management surface
-    func deepLinkToSubscriptions(_ options: DeepLinkOptions? = nil) async throws -> Void
+    func deepLinkToSubscriptions(_ options: DeepLinkOptions?) async throws -> Void
     /// Close the platform billing connection
     func endConnection() async throws -> Bool
     /// Finish a transaction after validating receipts
-    func finishTransaction(purchase: PurchaseInput, isConsumable: Bool? = nil) async throws -> Void
+    func finishTransaction(purchase: PurchaseInput, isConsumable: Bool?) async throws -> Void
     /// Establish the platform billing connection
     func initConnection() async throws -> Bool
     /// Present the App Store code redemption sheet
@@ -965,11 +965,11 @@ public protocol QueryResolver {
     /// Retrieve products or subscriptions from the store
     func fetchProducts(_ params: ProductRequest) async throws -> FetchProductsResult
     /// Get active subscriptions (filters by subscriptionIds when provided)
-    func getActiveSubscriptions(_ subscriptionIds: [String]? = nil) async throws -> [ActiveSubscription]
+    func getActiveSubscriptions(_ subscriptionIds: [String]?) async throws -> [ActiveSubscription]
     /// Fetch the current app transaction (iOS 16+)
     func getAppTransactionIOS() async throws -> AppTransaction?
     /// Get all available purchases for the current user
-    func getAvailablePurchases(_ options: PurchaseOptions? = nil) async throws -> [Purchase]
+    func getAvailablePurchases(_ options: PurchaseOptions?) async throws -> [Purchase]
     /// Retrieve all pending transactions in the StoreKit queue
     func getPendingTransactionsIOS() async throws -> [PurchaseIOS]
     /// Get the currently promoted product (iOS 11+)
@@ -981,7 +981,7 @@ public protocol QueryResolver {
     /// Get the transaction JWS (StoreKit 2)
     func getTransactionJwsIOS(_ sku: String) async throws -> String?
     /// Check whether the user has active subscriptions
-    func hasActiveSubscriptions(_ subscriptionIds: [String]? = nil) async throws -> Bool
+    func hasActiveSubscriptions(_ subscriptionIds: [String]?) async throws -> Bool
     /// Check introductory offer eligibility for a subscription group
     func isEligibleForIntroOfferIOS(_ groupID: String) async throws -> Bool
     /// Verify a StoreKit 2 transaction signature

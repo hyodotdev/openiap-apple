@@ -59,8 +59,13 @@ struct PurchaseFlowScreen: View {
         } message: {
             Text(errorMessage)
         }
-        .sheet(item: $selectedPurchase) { purchase in
-            PurchaseDetailSheet(purchase: purchase)
+        .sheet(isPresented: Binding(
+            get: { selectedPurchase != nil },
+            set: { if !$0 { selectedPurchase = nil } }
+        )) {
+            if let purchase = selectedPurchase {
+                PurchaseDetailSheet(purchase: purchase)
+            }
         }
     }
     

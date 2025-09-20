@@ -32,9 +32,6 @@ extension PurchaseIOS {
 }
 
 @available(iOS 15.0, *)
-extension PurchaseIOS: Identifiable {}
-
-@available(iOS 15.0, *)
 extension ProductIOS {
     var productIdentifier: String { id }
 }
