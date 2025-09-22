@@ -87,7 +87,13 @@ enum StoreKitTypesBridge {
         return PurchaseIOS(
             appAccountToken: transaction.appAccountToken?.uuidString,
             appBundleIdIOS: transaction.appBundleID,
-            countryCodeIOS: transaction.storefrontCountryCode,
+            countryCodeIOS: {
+                if #available(iOS 17.0, *) {
+                    transaction.storefront.countryCode
+                } else {
+                    transaction.storefrontCountryCode
+                }
+            }(),
             currencyCodeIOS: nil,
             currencySymbolIOS: nil,
             environmentIOS: environment,
@@ -110,7 +116,13 @@ enum StoreKitTypesBridge {
             reasonStringRepresentationIOS: transaction.reasonDescription,
             revocationDateIOS: revocationDate,
             revocationReasonIOS: transaction.revocationReason?.rawValue.description,
-            storefrontCountryCodeIOS: transaction.storefrontCountryCode,
+            storefrontCountryCodeIOS: {
+                if #available(iOS 17.0, *) {
+                    transaction.storefront.countryCode
+                } else {
+                    transaction.storefrontCountryCode
+                }
+            }(),
             subscriptionGroupIdIOS: transaction.subscriptionGroupID,
             transactionDate: transaction.purchaseDate.milliseconds,
             transactionId: transactionId,
