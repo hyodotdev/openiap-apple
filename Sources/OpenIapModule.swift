@@ -861,18 +861,23 @@ private func makePurchaseError(code: ErrorCode, productId: String? = nil, messag
     private func mapAppTransaction(_ transaction: StoreKit.AppTransaction) -> AppTransaction {
         let appVersionId = transaction.appVersionID.map(Double.init) ?? 0
         let appVersion = transaction.appVersion
-        let originalPlatform: String?
-        if #available(iOS 18.4, macOS 15.4, *) {
-            originalPlatform = transaction.originalPlatform.rawValue
-        } else {
-            originalPlatform = nil
-        }
-
         let appId = transaction.appID.map(Double.init) ?? 0
-
+        
+        // iOS 18.4+ properties - only compile with Xcode 16.4+ (Swift 6.1+)
+        // This prevents build failures on Xcode 16.3 and below
+        var appTransactionId: String? = nil
+        var originalPlatformValue: String? = nil
+        
+        #if swift(>=6.1)
+        if #available(iOS 18.4, *) {
+            appTransactionId = String(transaction.appTransactionID)
+            originalPlatformValue = transaction.originalPlatform.rawValue
+        }
+        #endif
+        
         return AppTransaction(
             appId: appId,
-            appTransactionId: transaction.appTransactionID,
+            appTransactionId: appTransactionId,
             appVersion: appVersion,
             appVersionId: appVersionId,
             bundleId: transaction.bundleID,
@@ -880,7 +885,7 @@ private func makePurchaseError(code: ErrorCode, productId: String? = nil, messag
             deviceVerificationNonce: transaction.deviceVerificationNonce.uuidString,
             environment: transaction.environment.rawValue,
             originalAppVersion: transaction.originalAppVersion,
-            originalPlatform: originalPlatform,
+            originalPlatform: originalPlatformValue,
             originalPurchaseDate: transaction.originalPurchaseDate.milliseconds,
             preorderDate: transaction.preorderDate?.milliseconds,
             signedDate: transaction.signedDate.milliseconds
