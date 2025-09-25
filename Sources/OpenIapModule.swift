@@ -24,32 +24,36 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
 
     // MARK: - Connection Management
 
-    private func ensureConnection() async throws {
-        if await state.isInitialized == false {
-            _ = try await initConnection()
-        }
-
-        guard await state.isInitialized else {
-            let error = makePurchaseError(code: .initConnection)
-            emitPurchaseError(error)
-            throw error
-        }
-
-        guard AppStore.canMakePayments else {
-            let error = makePurchaseError(code: .iapNotAvailable)
-            emitPurchaseError(error)
-            throw error
-        }
-    }
-
     public func initConnection() async throws -> Bool {
         if let task = initTask {
             return try await task.value
         }
 
-        let task = Task { [weak self] () -> Bool in
+        let task = Task<Bool, Error> { [weak self] () -> Bool in
             guard let self else { return false }
-            return try await self.initConnectionInternal()
+
+            await self.cleanupExistingState()
+            self.productManager = ProductManager()
+
+            #if os(iOS)
+            if !self.didRegisterPaymentQueueObserver {
+                await MainActor.run {
+                    SKPaymentQueue.default().add(self)
+                }
+                self.didRegisterPaymentQueueObserver = true
+            }
+            #endif
+
+            guard AppStore.canMakePayments else {
+                self.emitPurchaseError(self.makePurchaseError(code: .iapNotAvailable))
+                await self.state.setInitialized(false)
+                return false
+            }
+
+            await self.state.setInitialized(true)
+            self.startTransactionListener()
+            await self.processUnfinishedTransactions()
+            return true
         }
         initTask = task
 
@@ -63,56 +67,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
 
-    private func initConnectionInternal() async throws -> Bool {
-        await cleanupExistingState()
-        productManager = ProductManager()
-
-        #if os(iOS)
-        if !didRegisterPaymentQueueObserver {
-            await MainActor.run {
-                SKPaymentQueue.default().add(self)
-            }
-            didRegisterPaymentQueueObserver = true
-        }
-        #endif
-
-        guard AppStore.canMakePayments else {
-            emitPurchaseError(makePurchaseError(code: .iapNotAvailable))
-            await state.setInitialized(false)
-            return false
-        }
-
-        await state.setInitialized(true)
-        startTransactionListener()
-        await processUnfinishedTransactions()
-        return true
-    }
-
     public func endConnection() async throws -> Bool {
-        return try await endConnectionInternal()
-    }
-
-    private func endConnectionInternal() async throws -> Bool {
         initTask?.cancel()
         initTask = nil
         await cleanupExistingState()
         return true
-    }
-
-    private func cleanupExistingState() async {
-        updateListenerTask?.cancel()
-        updateListenerTask = nil
-        await state.reset()
-        #if os(iOS)
-        if didRegisterPaymentQueueObserver {
-            await MainActor.run {
-                SKPaymentQueue.default().remove(self)
-            }
-            didRegisterPaymentQueueObserver = false
-        }
-        #endif
-        if let manager = productManager { await manager.removeAll() }
-        productManager = nil
     }
 
     // MARK: - Product Management
@@ -204,7 +163,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let iosProps = try resolveIosPurchaseProps(from: params)
         let sku = iosProps.sku
         let product = try await storeProduct(for: sku)
-        let options = iosProps.storeKitPurchaseOptions()
+    let options = StoreKitTypesBridge.purchaseOptions(from: iosProps)
 
         let result: StoreKit.Product.PurchaseResult
         #if canImport(UIKit)
@@ -303,7 +262,47 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // MARK: - Transaction Management
 
     public func finishTransaction(purchase: PurchaseInput, isConsumable: Bool?) async throws -> Void {
-        try await finishTransaction(byIdentifier: purchase.id)
+        let identifier = purchase.id
+
+        if let pending = await state.getPending(id: identifier) {
+            await pending.finish()
+            await state.removePending(id: identifier)
+            return
+        }
+
+        guard let numericId = UInt64(identifier) else {
+            let error = makePurchaseError(code: .purchaseError, message: "Invalid transaction identifier")
+            emitPurchaseError(error)
+            throw error
+        }
+
+        for await result in Transaction.currentEntitlements {
+            do {
+                let transaction = try checkVerified(result)
+                if transaction.id == numericId {
+                    await transaction.finish()
+                    return
+                }
+            } catch {
+                continue
+            }
+        }
+
+        for await result in Transaction.unfinished {
+            do {
+                let transaction = try checkVerified(result)
+                if transaction.id == numericId {
+                    await transaction.finish()
+                    return
+                }
+            } catch {
+                continue
+            }
+        }
+
+        let error = makePurchaseError(code: .purchaseError, message: "Transaction not found")
+        emitPurchaseError(error)
+        throw error
     }
 
     public func getPendingTransactionsIOS() async throws -> [PurchaseIOS] {
@@ -347,48 +346,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             throw error
         }
         return result.jwsRepresentation
-    }
-
-    private func finishTransaction(byIdentifier identifier: String) async throws {
-        if let pending = await state.getPending(id: identifier) {
-            await pending.finish()
-            await state.removePending(id: identifier)
-            return
-        }
-
-        guard let numericId = UInt64(identifier) else {
-            let error = makePurchaseError(code: .purchaseError, message: "Invalid transaction identifier")
-            emitPurchaseError(error)
-            throw error
-        }
-
-        for await result in Transaction.currentEntitlements {
-            do {
-                let transaction = try checkVerified(result)
-                if transaction.id == numericId {
-                    await transaction.finish()
-                    return
-                }
-            } catch {
-                continue
-            }
-        }
-
-        for await result in Transaction.unfinished {
-            do {
-                let transaction = try checkVerified(result)
-                if transaction.id == numericId {
-                    await transaction.finish()
-                    return
-                }
-            } catch {
-                continue
-            }
-        }
-
-        let error = makePurchaseError(code: .purchaseError, message: "Transaction not found")
-        emitPurchaseError(error)
-        throw error
     }
 
     // MARK: - Validation
@@ -686,6 +643,40 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
 
     // MARK: - Private Helpers
 
+    private func ensureConnection() async throws {
+        if await state.isInitialized == false {
+            _ = try await initConnection()
+        }
+
+        guard await state.isInitialized else {
+            let error = makePurchaseError(code: .initConnection)
+            emitPurchaseError(error)
+            throw error
+        }
+
+        guard AppStore.canMakePayments else {
+            let error = makePurchaseError(code: .iapNotAvailable)
+            emitPurchaseError(error)
+            throw error
+        }
+    }
+
+    private func cleanupExistingState() async {
+        updateListenerTask?.cancel()
+        updateListenerTask = nil
+        await state.reset()
+        #if os(iOS)
+        if didRegisterPaymentQueueObserver {
+            await MainActor.run {
+                SKPaymentQueue.default().remove(self)
+            }
+            didRegisterPaymentQueueObserver = false
+        }
+        #endif
+        if let manager = productManager { await manager.removeAll() }
+        productManager = nil
+    }
+
     private func storeProduct(for sku: String) async throws -> StoreKit.Product {
         guard let productManager else {
             let error = makePurchaseError(code: .notPrepared)
@@ -810,7 +801,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         }
     }
 
-private func makePurchaseError(code: ErrorCode, productId: String? = nil, message: String? = nil) -> PurchaseError {
+    private func makePurchaseError(code: ErrorCode, productId: String? = nil, message: String? = nil) -> PurchaseError {
         PurchaseError(
             code: code,
             message: message ?? defaultMessage(for: code),
@@ -909,8 +900,3 @@ extension OpenIapModule: SKPaymentTransactionObserver {
     }
 }
 #endif
-
-@available(iOS 15.0, macOS 14.0, *)
-private extension Date {
-    var milliseconds: Double { timeIntervalSince1970 * 1000 }
-}
