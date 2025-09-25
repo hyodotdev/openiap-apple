@@ -84,6 +84,9 @@ enum StoreKitTypesBridge {
             offerInfo = nil
         }
 
+        let ownershipDescription = ownershipTypeDescription(from: transaction.ownershipType)
+        let reasonDetails = transactionReasonDetails(from: transaction)
+
         return PurchaseIOS(
             appAccountToken: transaction.appAccountToken?.uuidString,
             appBundleIdIOS: transaction.appBundleID,
@@ -105,15 +108,15 @@ enum StoreKitTypesBridge {
             offerIOS: offerInfo,
             originalTransactionDateIOS: transaction.originalPurchaseDate.milliseconds,
             originalTransactionIdentifierIOS: transaction.originalID != 0 ? String(transaction.originalID) : nil,
-            ownershipTypeIOS: transaction.ownershipType.description,
+            ownershipTypeIOS: ownershipDescription,
             platform: .ios,
             productId: transaction.productID,
             purchaseState: purchaseState,
             purchaseToken: jwsRepresentation ?? transactionId,
             quantity: transaction.purchasedQuantity,
             quantityIOS: transaction.purchasedQuantity,
-            reasonIOS: transaction.reasonDescription,
-            reasonStringRepresentationIOS: transaction.reasonDescription,
+            reasonIOS: reasonDetails.lowercased,
+            reasonStringRepresentationIOS: reasonDetails.string,
             revocationDateIOS: revocationDate,
             revocationReasonIOS: transaction.revocationReason?.rawValue.description,
             storefrontCountryCodeIOS: {
@@ -126,7 +129,7 @@ enum StoreKitTypesBridge {
             subscriptionGroupIdIOS: transaction.subscriptionGroupID,
             transactionDate: transaction.purchaseDate.milliseconds,
             transactionId: transactionId,
-            transactionReasonIOS: transaction.transactionReason ?? "PURCHASE",
+            transactionReasonIOS: reasonDetails.uppercased,
             webOrderLineItemIdIOS: transaction.webOrderLineItemID.map { String($0) }
         )
     }
@@ -298,6 +301,56 @@ private extension StoreKitTypesBridge {
             type: String(describing: offer.type)
         )
     }
+
+    static func ownershipTypeDescription(from ownership: StoreKit.Transaction.OwnershipType) -> String {
+        switch ownership {
+        case .purchased:
+            return "purchased"
+        case .familyShared:
+            return "family_shared"  // Maintain backward compatibility
+        default:
+            return "purchased"  // Default to purchased for compatibility
+        }
+    }
+
+    struct TransactionReason {
+        let lowercased: String
+        let string: String
+        let uppercased: String
+    }
+
+    static func transactionReasonDetails(from transaction: StoreKit.Transaction) -> TransactionReason {
+        if let revocation = transaction.revocationReason {
+            // Map revocation reasons to expected strings
+            let reasonString: String
+            switch revocation {
+            case .developerIssue:
+                reasonString = "developer_issue"
+            case .other:
+                reasonString = "other"
+            default:
+                reasonString = "unknown"
+            }
+            return TransactionReason(
+                lowercased: reasonString,
+                string: reasonString,
+                uppercased: reasonString.uppercased()
+            )
+        }
+
+        if transaction.isUpgraded {
+            return TransactionReason(lowercased: "upgrade", string: "upgrade", uppercased: "UPGRADE")
+        }
+
+        // Try to infer renewal for iOS <17
+        if transaction.productType == .autoRenewable,
+           let expirationDate = transaction.expirationDate,
+           expirationDate > transaction.purchaseDate {
+            return TransactionReason(lowercased: "renewal", string: "renewal", uppercased: "RENEWAL")
+        }
+
+        return TransactionReason(lowercased: "purchase", string: "purchase", uppercased: "PURCHASE")
+    }
 }
 
 @available(iOS 15.0, macOS 14.0, *)
@@ -343,50 +396,6 @@ private extension StoreKit.Product.SubscriptionPeriod.Unit {
     }
 }
 
-@available(iOS 15.0, macOS 14.0, *)
-private extension Date {
+extension Date {
     var milliseconds: Double { timeIntervalSince1970 * 1000 }
-}
-
-@available(iOS 15.0, macOS 14.0, *)
-private extension StoreKit.Transaction {
-    var reasonDescription: String? {
-        if #available(iOS 17.0, macOS 14.0, *) {
-            switch reason {
-            case .purchase: return "purchase"
-            case .renewal: return "renewal"
-            default: return "unknown"
-            }
-        }
-        return nil
-    }
-
-    var transactionReason: String? {
-        if #available(iOS 17.0, macOS 14.0, *) {
-            switch reason {
-            case .purchase: return "PURCHASE"
-            case .renewal: return "RENEWAL"
-            default: return "UNKNOWN"
-            }
-        }
-        return nil
-    }
-}
-
-@available(iOS 15.0, macOS 14.0, *)
-private extension StoreKit.Transaction.OwnershipType {
-    var description: String {
-        switch self {
-        case .purchased: return "purchased"
-        case .familyShared: return "family_shared"
-        default: return "purchased"
-        }
-    }
-}
-
-@available(iOS 15.0, macOS 14.0, *)
-extension RequestPurchaseIosProps {
-    func storeKitPurchaseOptions() -> Set<StoreKit.Product.PurchaseOption> {
-        StoreKitTypesBridge.purchaseOptions(from: self)
-    }
 }
