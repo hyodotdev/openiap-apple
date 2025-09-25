@@ -307,23 +307,49 @@ private extension StoreKitTypesBridge {
         case .purchased:
             return "purchased"
         case .familyShared:
-            return "family-shared"
+            return "family_shared"  // Maintain backward compatibility
         default:
-            return "unknown"
+            return "purchased"  // Default to purchased for compatibility
         }
     }
 
-    static func transactionReasonDetails(from transaction: StoreKit.Transaction) -> (lowercased: String, string: String, uppercased: String) {
+    struct TransactionReason {
+        let lowercased: String
+        let string: String
+        let uppercased: String
+    }
+
+    static func transactionReasonDetails(from transaction: StoreKit.Transaction) -> TransactionReason {
         if let revocation = transaction.revocationReason {
-            let description = String(describing: revocation)
-            return (description.lowercased(), description, description.uppercased())
+            // Map revocation reasons to expected strings
+            let reasonString: String
+            switch revocation {
+            case .developerIssue:
+                reasonString = "developer_issue"
+            case .other:
+                reasonString = "other"
+            default:
+                reasonString = "unknown"
+            }
+            return TransactionReason(
+                lowercased: reasonString,
+                string: reasonString,
+                uppercased: reasonString.uppercased()
+            )
         }
 
         if transaction.isUpgraded {
-            return ("upgrade", "upgrade", "UPGRADE")
+            return TransactionReason(lowercased: "upgrade", string: "upgrade", uppercased: "UPGRADE")
         }
 
-        return ("purchase", "purchase", "PURCHASE")
+        // Try to infer renewal for iOS <17
+        if transaction.productType == .autoRenewable,
+           let expirationDate = transaction.expirationDate,
+           expirationDate > transaction.purchaseDate {
+            return TransactionReason(lowercased: "renewal", string: "renewal", uppercased: "RENEWAL")
+        }
+
+        return TransactionReason(lowercased: "purchase", string: "purchase", uppercased: "PURCHASE")
     }
 }
 
