@@ -36,6 +36,12 @@ jobs:
           git config user.name "hyodotdev"
           git config user.email "hyo@hyo.dev"
 
+      - name: Install jq (for JSON processing)
+        run: |
+          if ! command -v jq &> /dev/null; then
+            brew install jq
+          fi
+
       - name: Bump version and tag
         run: |
           ./scripts/bump-version.sh "${{ env.VERSION }}"
