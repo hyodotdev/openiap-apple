@@ -23,6 +23,7 @@ public struct OpenIapVersion {
     }()
 
     private static func loadVersionFromJSON() -> String? {
+        #if SWIFT_PACKAGE
         guard let url = Bundle.module.url(forResource: "openiap-versions", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -30,9 +31,20 @@ public struct OpenIapVersion {
             return nil
         }
         return version
+        #else
+        // For CocoaPods or direct integration, use Bundle.main or return nil
+        guard let url = Bundle.main.url(forResource: "openiap-versions", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let version = json["apple"] as? String else {
+            return nil
+        }
+        return version
+        #endif
     }
 
     private static func loadGQLVersionFromJSON() -> String? {
+        #if SWIFT_PACKAGE
         guard let url = Bundle.module.url(forResource: "openiap-versions", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -40,6 +52,16 @@ public struct OpenIapVersion {
             return nil
         }
         return version
+        #else
+        // For CocoaPods or direct integration, use Bundle.main or return nil
+        guard let url = Bundle.main.url(forResource: "openiap-versions", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let version = json["gql"] as? String else {
+            return nil
+        }
+        return version
+        #endif
     }
 }
 
