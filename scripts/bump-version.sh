@@ -41,6 +41,20 @@ echo "New version: $NEW_VERSION"
 # Update VERSION file
 echo "$NEW_VERSION" > VERSION
 
+# Update openiap-versions.json
+if [ -f "Sources/openiap-versions.json" ]; then
+    # Use a temporary file to update JSON
+    jq --arg version "$NEW_VERSION" '.apple = $version' Sources/openiap-versions.json > Sources/openiap-versions.json.tmp && \
+    mv Sources/openiap-versions.json.tmp Sources/openiap-versions.json
+    echo "✅ Updated openiap-versions.json"
+fi
+
+# Update OpenIapVersion.swift fallback version
+if [ -f "Sources/OpenIapVersion.swift" ]; then
+    sed -i '' "s/return \"[0-9.]*\"/return \"$NEW_VERSION\"/" Sources/OpenIapVersion.swift
+    echo "✅ Updated OpenIapVersion.swift fallback"
+fi
+
 # Update openiap.podspec
 sed -i '' "s/s.version.*=.*'.*'/s.version          = '$NEW_VERSION'/" openiap.podspec
 
@@ -51,7 +65,7 @@ sed -i '' "s/pod 'openiap', '~> [0-9.]*'/pod 'openiap', '~> $NEW_VERSION'/" READ
 sed -i '' "s/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"[0-9.]*\")/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"$NEW_VERSION\")/" README.md
 
 # Commit changes
-git add VERSION openiap.podspec README.md
+git add VERSION openiap.podspec README.md Sources/openiap-versions.json Sources/OpenIapVersion.swift
 git commit -m "Bump version to $NEW_VERSION"
 
 # Push commits
