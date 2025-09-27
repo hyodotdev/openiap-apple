@@ -20,7 +20,10 @@ let package = Package(
         .target(
             name: "OpenIAP",
             dependencies: [],
-            path: "Sources"),
+            path: "Sources",
+            resources: [
+                .copy("openiap-versions.json")
+            ]),
         .testTarget(
             name: "OpenIapTests",
             dependencies: ["OpenIAP"],
