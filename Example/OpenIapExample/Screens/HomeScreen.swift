@@ -42,10 +42,18 @@ struct HomeScreen: View {
                     
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
                         FeatureCard(
+                            title: "OpenIAP\nExample",
+                            subtitle: "View all products",
+                            icon: "bag.fill",
+                            color: AppColors.primary,
+                            destination: AnyView(AllProductsView())
+                        )
+
+                        FeatureCard(
                             title: "Purchase\nFlow",
                             subtitle: "Test product purchases",
                             icon: "cart.fill",
-                            color: AppColors.primary,
+                            color: Color.teal,
                             destination: AnyView(PurchaseFlowScreen())
                         )
                         

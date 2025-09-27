@@ -12,6 +12,7 @@
 		C0E1F5ED2C8F1A9500123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */; };
 		C0E1F5F02C8F1A9500123456 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EF2C8F1A9500123456 /* Preview Assets.xcassets */; };
 		C0E1F5F82C8F1AA300123456 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5F72C8F1AA300123456 /* HomeScreen.swift */; };
+		C0APV0022D20000000000001 /* AllProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0APV0012D20000000000001 /* AllProductsView.swift */; };
 		C0E1F5FA2C8F1AAB00123456 /* PurchaseFlowScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5F92C8F1AAB00123456 /* PurchaseFlowScreen.swift */; };
 		C0E1F5FC2C8F1AB000123456 /* SubscriptionFlowScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */; };
 		C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */; };
@@ -48,6 +49,7 @@
 		C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFlowScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailablePurchasesScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCodeScreen.swift; sourceTree = "<group>"; };
+		C0APV0012D20000000000001 /* AllProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllProductsView.swift; sourceTree = "<group>"; };
 		C0E1F6032C8F1AC500123456 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		C0IAC0002D10000000000001 /* IapCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IapCompat.swift; sourceTree = "<group>"; };
 		C0UI10012D00000000000001 /* FeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCard.swift; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 			children = (
 				C0UI20012D00000000000001 /* uis */,
 				C0E1F5F72C8F1AA300123456 /* HomeScreen.swift */,
+				C0APV0012D20000000000001 /* AllProductsView.swift */,
 				C0E1F5F92C8F1AAB00123456 /* PurchaseFlowScreen.swift */,
 				C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */,
 				C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */,
@@ -248,6 +251,7 @@
 			files = (
 				C0E1F5EB2C8F1A9400123456 /* ContentView.swift in Sources */,
 				C0E1F5F82C8F1AA300123456 /* HomeScreen.swift in Sources */,
+				C0APV0022D20000000000001 /* AllProductsView.swift in Sources */,
 				C0E1F5FA2C8F1AAB00123456 /* PurchaseFlowScreen.swift in Sources */,
 				C0E1F5FC2C8F1AB000123456 /* SubscriptionFlowScreen.swift in Sources */,
 				C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */,
