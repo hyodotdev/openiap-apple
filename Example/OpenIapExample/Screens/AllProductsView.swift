@@ -12,9 +12,52 @@ struct AllProductsView: View {
     private let allProductIds: [String] = [
         "dev.hyo.martie.10bulbs",
         "dev.hyo.martie.30bulbs",
+        "dev.hyo.martie.certified",
         "dev.hyo.martie.premium",
         "dev.hyo.martie.premium_year"
     ]
+
+    // Enum to unify product types for display
+    private enum UnifiedProduct {
+        case regular(ProductIOS)
+        case subscription(ProductSubscriptionIOS)
+
+        var id: String {
+            switch self {
+            case .regular(let product):
+                return product.id
+            case .subscription(let sub):
+                return sub.id
+            }
+        }
+
+        var sortOrder: Int {
+            switch self {
+            case .regular(let product):
+                switch product.typeIOS {
+                case .nonConsumable:
+                    return 1  // First
+                case .consumable:
+                    return 2  // Second
+                default:
+                    return 3  // Third
+                }
+            case .subscription:
+                return 4  // Last
+            }
+        }
+    }
+
+    // All products sorted by type: non-consumable, consumable, then subscriptions
+    private var sortedAllProducts: [UnifiedProduct] {
+        let regularProducts = store.iosProducts.map { UnifiedProduct.regular($0) }
+        let subscriptionProducts = store.iosSubscriptionProducts.map { UnifiedProduct.subscription($0) }
+        let allProducts = regularProducts + subscriptionProducts
+
+        return allProducts.sorted { first, second in
+            first.sortOrder < second.sortOrder
+        }
+    }
 
 
     var body: some View {
@@ -33,18 +76,18 @@ struct AllProductsView: View {
                             loadingCard
                         }
 
-                        if !isLoading && store.iosProducts.isEmpty && store.iosSubscriptionProducts.isEmpty && store.isConnected {
+                        if !isLoading && sortedAllProducts.isEmpty && store.isConnected {
                             emptyStateCard
                         }
 
-                        // Display regular products
-                        ForEach(store.iosProducts, id: \.id) { product in
-                            productCard(for: product)
-                        }
-
-                        // Display subscription products
-                        ForEach(store.iosSubscriptionProducts, id: \.id) { subscription in
-                            subscriptionCard(for: subscription)
+                        // Display all products sorted by type: non-consumable, consumable, then subscriptions
+                        ForEach(sortedAllProducts, id: \.id) { unifiedProduct in
+                            switch unifiedProduct {
+                            case .regular(let product):
+                                productCard(for: product)
+                            case .subscription(let subscription):
+                                subscriptionCard(for: subscription)
+                            }
                         }
 
                         if let error = errorMessage {
@@ -156,15 +199,30 @@ struct AllProductsView: View {
 
                 Spacer()
 
-                // Product type badge
-                Text(product.type == .subs ? "subs" : "in-app")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(product.type == .subs ? Color.blue.opacity(0.1) : Color.green.opacity(0.1))
-                    .foregroundColor(product.type == .subs ? .blue : .green)
-                    .cornerRadius(6)
+                // Product type badges
+                HStack(spacing: 4) {
+                    // Main type badge
+                    Text(product.type == .subs ? "subs" : "in-app")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(product.type == .subs ? Color.blue.opacity(0.1) : Color.green.opacity(0.1))
+                        .foregroundColor(product.type == .subs ? .blue : .green)
+                        .cornerRadius(6)
+
+                    // Detailed type badge for non-subscription products
+                    if product.type != .subs {
+                        Text(getDetailedProductType(product.typeIOS))
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(getTypeColor(product.typeIOS).opacity(0.1))
+                            .foregroundColor(getTypeColor(product.typeIOS))
+                            .cornerRadius(4)
+                    }
+                }
             }
 
             HStack {
@@ -223,6 +281,32 @@ struct AllProductsView: View {
         }
 
         isLoading = false
+    }
+
+    private func getDetailedProductType(_ type: ProductTypeIOS) -> String {
+        switch type {
+        case .consumable:
+            return "consumable"
+        case .nonConsumable:
+            return "non-consumable"
+        case .autoRenewableSubscription:
+            return "auto-renewable"
+        case .nonRenewingSubscription:
+            return "non-renewing"
+        }
+    }
+
+    private func getTypeColor(_ type: ProductTypeIOS) -> Color {
+        switch type {
+        case .consumable:
+            return .orange
+        case .nonConsumable:
+            return .purple
+        case .autoRenewableSubscription:
+            return .blue
+        case .nonRenewingSubscription:
+            return .indigo
+        }
     }
 
     private func subscriptionCard(for subscription: ProductSubscriptionIOS) -> some View {
