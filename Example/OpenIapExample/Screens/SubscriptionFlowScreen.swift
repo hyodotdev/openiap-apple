@@ -13,9 +13,10 @@ struct SubscriptionFlowScreen: View {
     @State private var isInitialLoading = true
     
     // Product IDs for subscription testing
+    // Ordered from lowest to highest tier for upgrade scenarios
     private let subscriptionIds: [String] = [
-        "dev.hyo.martie.premium",
-        "dev.hyo.martie.premium_year"
+        "dev.hyo.martie.premium",       // Monthly subscription (lower tier)
+        "dev.hyo.martie.premium_year"    // Yearly subscription (higher tier)
     ]
     
     var body: some View {
@@ -70,6 +71,9 @@ struct SubscriptionFlowScreen: View {
                     } else {
                         ForEach(productIds, id: \.self) { productId in
                             let product = product(for: productId)
+                            let currentSubscription = getCurrentSubscription()
+                            let upgradeInfo = getUpgradeInfo(from: currentSubscription, to: productId)
+
                             SubscriptionCard(
                                 productId: productId,
                                 product: product,
@@ -77,12 +81,20 @@ struct SubscriptionFlowScreen: View {
                                 isSubscribed: isSubscribed(productId: productId),
                                 isCancelled: isCancelled(productId: productId),
                                 isLoading: iapStore.status.isPurchasing(productId),
+                                upgradeInfo: upgradeInfo,
                                 onSubscribe: {
                                     let subscribed = isSubscribed(productId: productId)
 
                                     if subscribed {
                                         Task {
                                             await manageSubscriptions()
+                                        }
+                                    } else if upgradeInfo.canUpgrade {
+                                        // Handle upgrade scenario
+                                        if let product = product {
+                                            Task {
+                                                await upgradeSubscription(from: currentSubscription, to: product)
+                                            }
                                         }
                                     } else {
                                         if let product = product {
@@ -256,7 +268,7 @@ struct SubscriptionFlowScreen: View {
     }
     
     // MARK: - Purchase Flow
-    
+
     private func purchaseProduct(_ product: OpenIapProduct) {
         print("🔄 [SubscriptionFlow] Starting subscription purchase for: \(product.id)")
         Task {
@@ -267,6 +279,92 @@ struct SubscriptionFlowScreen: View {
                 print("❌ [SubscriptionFlow] Purchase failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: - Subscription Upgrade Flow
+
+    private func upgradeSubscription(from currentSubscription: OpenIapPurchase?, to product: OpenIapProduct) async {
+        print("⬆️ [SubscriptionFlow] Starting subscription upgrade")
+        print("  From: \(currentSubscription?.productId ?? "none")")
+        print("  To: \(product.id)")
+        print("  iOS will automatically prorate the subscription")
+
+        do {
+            // Request the upgrade purchase
+            // iOS handles proration automatically when upgrading within the same subscription group
+            _ = try await iapStore.requestPurchase(
+                sku: product.id,
+                type: .subs,
+                autoFinish: true
+            )
+
+            print("✅ [SubscriptionFlow] Upgrade successful to: \(product.id)")
+
+            // Reload purchases to update UI
+            await loadPurchases()
+
+        } catch {
+            print("❌ [SubscriptionFlow] Upgrade failed: \(error.localizedDescription)")
+            await MainActor.run {
+                errorMessage = "Failed to upgrade subscription: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+
+    // Get current active subscription
+    private func getCurrentSubscription() -> OpenIapPurchase? {
+        // Find the currently active subscription with highest priority
+        let activeSubscriptions = iapStore.iosAvailablePurchases.filter { purchase in
+            if !purchase.isSubscription { return false }
+
+            // Check if subscription is active
+            if let expirationTime = purchase.expirationDateIOS {
+                let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
+                return expirationDate > Date() && purchase.isAutoRenewing
+            }
+
+            return purchase.purchaseState == .purchased && purchase.isAutoRenewing
+        }
+
+        // Return the subscription with the highest tier (yearly over monthly)
+        return activeSubscriptions.first { $0.productId.contains("year") } ?? activeSubscriptions.first
+    }
+
+    // Determine upgrade possibilities
+    private func getUpgradeInfo(from currentSubscription: OpenIapPurchase?, to targetProductId: String) -> UpgradeInfo {
+        guard let current = currentSubscription else {
+            return UpgradeInfo(canUpgrade: false, isDowngrade: false, currentTier: nil)
+        }
+
+        // Don't show upgrade for the same product
+        if current.productId == targetProductId {
+            return UpgradeInfo(canUpgrade: false, isDowngrade: false, currentTier: current.productId)
+        }
+
+        // Determine tier based on product ID
+        let currentTier = getSubscriptionTier(current.productId)
+        let targetTier = getSubscriptionTier(targetProductId)
+
+        let canUpgrade = targetTier > currentTier
+        let isDowngrade = targetTier < currentTier
+
+        return UpgradeInfo(
+            canUpgrade: canUpgrade,
+            isDowngrade: isDowngrade,
+            currentTier: current.productId,
+            message: canUpgrade ? "Upgrade available" : (isDowngrade ? "Downgrade option" : nil)
+        )
+    }
+
+    // Get subscription tier level (higher number = higher tier)
+    private func getSubscriptionTier(_ productId: String) -> Int {
+        if productId.contains("year") || productId.contains("annual") {
+            return 2  // Yearly is higher tier
+        } else if productId.contains("month") || productId.contains("premium") {
+            return 1  // Monthly is lower tier
+        }
+        return 0  // Unknown tier
     }
     
     private func restorePurchases() async {
@@ -351,6 +449,21 @@ private extension SubscriptionFlowScreen {
         guard let purchase = purchase(for: productId) else { return false }
         let active = isSubscribed(productId: productId)
         return purchase.isAutoRenewing == false && active
+    }
+}
+
+// MARK: - Upgrade Info Model
+struct UpgradeInfo {
+    let canUpgrade: Bool
+    let isDowngrade: Bool
+    let currentTier: String?
+    let message: String?
+
+    init(canUpgrade: Bool = false, isDowngrade: Bool = false, currentTier: String? = nil, message: String? = nil) {
+        self.canUpgrade = canUpgrade
+        self.isDowngrade = isDowngrade
+        self.currentTier = currentTier
+        self.message = message
     }
 }
 

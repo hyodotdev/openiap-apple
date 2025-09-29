@@ -8,6 +8,7 @@ struct SubscriptionCard: View {
     let isSubscribed: Bool
     let isCancelled: Bool
     let isLoading: Bool
+    var upgradeInfo: UpgradeInfo? = nil
     let onSubscribe: () -> Void
     let onManage: () -> Void
     
@@ -33,7 +34,7 @@ struct SubscriptionCard: View {
                     HStack {
                         Text(product?.title ?? productId)
                             .font(.headline)
-                        
+
                         if isSubscribed {
                             Label("Subscribed", systemImage: "checkmark.seal.fill")
                                 .font(.caption)
@@ -41,6 +42,22 @@ struct SubscriptionCard: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(AppColors.success.opacity(0.2))
+                                .cornerRadius(4)
+                        } else if let upgradeInfo = upgradeInfo, upgradeInfo.canUpgrade {
+                            Label("Upgrade", systemImage: "arrow.up.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(AppColors.primary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(AppColors.primary.opacity(0.2))
+                                .cornerRadius(4)
+                        } else if let upgradeInfo = upgradeInfo, upgradeInfo.isDowngrade {
+                            Label("Downgrade", systemImage: "arrow.down.circle")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color.orange.opacity(0.2))
                                 .cornerRadius(4)
                         }
                     }
@@ -172,32 +189,84 @@ struct SubscriptionCard: View {
                     }
                 }
             } else {
-                Button(action: onSubscribe) {
-                    HStack {
-                        if isLoading {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "repeat.circle")
+                // Show upgrade info message if available
+                if let upgradeInfo = upgradeInfo, let currentTier = upgradeInfo.currentTier {
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle.fill" : "info.circle.fill")
+                                .foregroundColor(upgradeInfo.canUpgrade ? AppColors.primary : .orange)
+                            Text(upgradeInfo.canUpgrade ? "Upgrade from \(currentTier)" : "Currently subscribed to \(currentTier)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
                         }
-                        
-                        Text(isLoading ? "Processing..." : "Subscribe")
-                            .fontWeight(.medium)
-                        
-                        Spacer()
-                        
-                        if !isLoading {
-                            Text(product?.displayPrice ?? "--")
-                                .fontWeight(.semibold)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(6)
+
+                        Button(action: onSubscribe) {
+                            HStack {
+                                if isLoading {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .tint(.white)
+                                } else {
+                                    Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle" : "repeat.circle")
+                                }
+
+                                Text(isLoading ? "Processing..." : (upgradeInfo.canUpgrade ? "Upgrade Now" : "Switch Plan"))
+                                    .fontWeight(.medium)
+
+                                Spacer()
+
+                                if !isLoading {
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text(product?.displayPrice ?? "--")
+                                            .fontWeight(.semibold)
+                                        if upgradeInfo.canUpgrade {
+                                            Text("Pro-rated")
+                                                .font(.caption2)
+                                                .opacity(0.8)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(isLoading ? AppColors.secondary.opacity(0.7) : (upgradeInfo.canUpgrade ? AppColors.primary : AppColors.secondary))
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                         }
+                        .disabled(isLoading)
                     }
-                    .padding()
-                    .background(isLoading ? AppColors.secondary.opacity(0.7) : AppColors.secondary)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                } else {
+                    Button(action: onSubscribe) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "repeat.circle")
+                            }
+
+                            Text(isLoading ? "Processing..." : "Subscribe")
+                                .fontWeight(.medium)
+
+                            Spacer()
+
+                            if !isLoading {
+                                Text(product?.displayPrice ?? "--")
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .padding()
+                        .background(isLoading ? AppColors.secondary.opacity(0.7) : AppColors.secondary)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                    .disabled(isLoading)
                 }
-                .disabled(isLoading)
             }
         }
         .padding()
