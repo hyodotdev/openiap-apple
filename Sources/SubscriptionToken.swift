@@ -1,6 +1,6 @@
 import Foundation
 
-public final class Subscription {
+public final class Subscription: NSObject {
     public let id: UUID
     public let eventType: IapEvent
     internal var onRemove: (() -> Void)?
@@ -9,6 +9,7 @@ public final class Subscription {
         self.id = UUID()
         self.eventType = eventType
         self.onRemove = onRemove
+        super.init()
     }
 
     deinit {

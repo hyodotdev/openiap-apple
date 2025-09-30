@@ -129,6 +129,42 @@ func requestPurchaseIOS()  // Should be requestPurchase() if cross-platform
 - **Helpers**: Use descriptive names ending with purpose (Manager, Cache, Status, etc.)
 - **Avoid confusing names**: Don't use "Store" for caching classes (use Cache, Manager instead)
 
+## Git Commit Message Guidelines
+
+### Commit Message Format
+
+- Follow Conventional Commits format: `<type>: <description>`
+- **Type MUST be lowercase** (e.g., `feat:`, `fix:`, `docs:`, `refactor:`)
+- **Description starts with lowercase** after the colon and space
+
+#### Common Types
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Test additions or changes
+- `chore:` - Maintenance tasks
+
+#### Examples
+
+##### ✅ Correct
+
+```
+feat: add Objective-C bridge for Kotlin Multiplatform
+fix: use DiscountOfferInputIOS for subscription offers
+docs: update API documentation
+refactor: simplify purchase flow logic
+```
+
+##### ❌ Incorrect
+
+```
+Feat: add new feature          // Type should be lowercase
+fix: Add new feature           // Description should start with lowercase
+FIX: something                 // Type should be lowercase
+```
+
 ## Development Notes
 
 - Purchase Flow should display real-time purchase events
