@@ -65,7 +65,7 @@ Add OpenIAP to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/hyodotdev/openiap-apple.git", from: "1.2.5")
+    .package(url: "https://github.com/hyodotdev/openiap-apple.git", from: "1.2.6")
 ]
 ```
 
@@ -80,7 +80,7 @@ Or through Xcode:
 Add to your `Podfile`:
 
 ```ruby
-pod 'openiap', '~> 1.2.5'
+pod 'openiap', '~> 1.2.6'
 ```
 
 Then run:
