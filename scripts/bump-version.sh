@@ -4,8 +4,23 @@
 
 set -e
 
-# Get current version
-CURRENT_VERSION=$(cat VERSION)
+VERSIONS_FILE="openiap-versions.json"
+
+# Get current version from openiap-versions.json
+if [ -f "${VERSIONS_FILE}" ]; then
+    if command -v jq &> /dev/null; then
+        CURRENT_VERSION=$(jq -r '.apple' "${VERSIONS_FILE}")
+    elif command -v python3 &> /dev/null; then
+        CURRENT_VERSION=$(python3 -c "import json; print(json.load(open('${VERSIONS_FILE}'))['apple'])")
+    else
+        echo "❌ Error: jq or python3 is required to read openiap-versions.json"
+        exit 1
+    fi
+else
+    echo "❌ Error: openiap-versions.json not found"
+    exit 1
+fi
+
 echo "Current version: $CURRENT_VERSION"
 
 # Parse version components
@@ -38,15 +53,28 @@ esac
 
 echo "New version: $NEW_VERSION"
 
-# Update VERSION file
-echo "$NEW_VERSION" > VERSION
-
 # Update openiap-versions.json
-if [ -f "Sources/openiap-versions.json" ]; then
-    # Use a temporary file to update JSON
-    jq --arg version "$NEW_VERSION" '.apple = $version' Sources/openiap-versions.json > Sources/openiap-versions.json.tmp && \
-    mv Sources/openiap-versions.json.tmp Sources/openiap-versions.json
-    echo "✅ Updated openiap-versions.json"
+if [ -f "openiap-versions.json" ]; then
+    if command -v jq &> /dev/null; then
+        # Use jq to update JSON
+        jq --arg version "$NEW_VERSION" '.apple = $version' openiap-versions.json > openiap-versions.json.tmp && \
+        mv openiap-versions.json.tmp openiap-versions.json
+        echo "✅ Updated openiap-versions.json"
+    elif command -v python3 &> /dev/null; then
+        # Use python3 as fallback
+        python3 -c "
+import json
+with open('openiap-versions.json', 'r') as f:
+    data = json.load(f)
+data['apple'] = '$NEW_VERSION'
+with open('openiap-versions.json', 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+        echo "✅ Updated openiap-versions.json (using python3)"
+    else
+        echo "⚠️  Warning: jq and python3 not available. Skipping openiap-versions.json update"
+    fi
 fi
 
 # Update OpenIapVersion.swift fallback version
@@ -65,7 +93,7 @@ sed -i '' "s/pod 'openiap', '~> [0-9.]*'/pod 'openiap', '~> $NEW_VERSION'/" READ
 sed -i '' "s/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"[0-9.]*\")/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"$NEW_VERSION\")/" README.md
 
 # Commit changes
-git add VERSION openiap.podspec README.md Sources/openiap-versions.json Sources/OpenIapVersion.swift
+git add openiap.podspec README.md openiap-versions.json Sources/OpenIapVersion.swift
 git commit -m "Bump version to $NEW_VERSION"
 
 # Push commits
