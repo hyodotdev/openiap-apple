@@ -1,6 +1,11 @@
+require 'json'
+
+version_file = File.join(__dir__, 'openiap-versions.json')
+versions = JSON.parse(File.read(version_file))
+
 Pod::Spec.new do |s|
   s.name             = 'openiap'
-  s.version          = '1.2.5'
+  s.version          = versions['apple']
   s.summary          = 'OpenIAP - Modern Swift library for in-app purchases'
   s.description      = <<-DESC
     OpenIAP is a modern Swift library for handling in-app purchases using StoreKit 2.

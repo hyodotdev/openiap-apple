@@ -83,8 +83,7 @@ if [ -f "Sources/OpenIapVersion.swift" ]; then
     echo "✅ Updated OpenIapVersion.swift fallback"
 fi
 
-# Update openiap.podspec
-sed -i '' "s/s.version.*=.*'.*'/s.version          = '$NEW_VERSION'/" openiap.podspec
+# Note: openiap.podspec now reads version from openiap-versions.json automatically
 
 # Update README.md - CocoaPods installation
 sed -i '' "s/pod 'openiap', '~> [0-9.]*'/pod 'openiap', '~> $NEW_VERSION'/" README.md
@@ -93,8 +92,8 @@ sed -i '' "s/pod 'openiap', '~> [0-9.]*'/pod 'openiap', '~> $NEW_VERSION'/" READ
 sed -i '' "s/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"[0-9.]*\")/.package(url: \"https:\/\/github.com\/hyodotdev\/openiap-apple.git\", from: \"$NEW_VERSION\")/" README.md
 
 # Commit changes
-git add openiap.podspec README.md openiap-versions.json Sources/OpenIapVersion.swift
-git commit -m "Bump version to $NEW_VERSION"
+git add README.md openiap-versions.json Sources/OpenIapVersion.swift
+git commit -m "chore: bump version to $NEW_VERSION"
 
 # Push commits
 git push origin main

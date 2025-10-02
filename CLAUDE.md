@@ -146,10 +146,11 @@ Version is managed in `openiap-versions.json`:
 ```
 This automatically updates:
 - `"apple"` field in `openiap-versions.json`
-- All version references (podspec, README, etc.)
+- All version references in README
 - Creates git commit and tag
 
 **Note:** The `VERSION` file has been removed. All version management is now in `openiap-versions.json`.
+`openiap.podspec` automatically reads the version from `openiap-versions.json` using Ruby's JSON parser.
 
 **Fallback behavior:**
 - If `openiap-versions.json` is not found: uses `1.0.10`
