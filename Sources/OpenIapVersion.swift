@@ -9,7 +9,7 @@ public struct OpenIapVersion {
             return version
         }
         // Fallback to hardcoded version
-        return "1.2.6"
+        return "1.2.7"
     }()
 
     /// OpenIAP GraphQL version for reference
@@ -19,7 +19,7 @@ public struct OpenIapVersion {
             return version
         }
         // Fallback to hardcoded version
-        return "1.2.6"
+        return "1.2.7"
     }()
 
     private static func loadVersionFromJSON() -> String? {
