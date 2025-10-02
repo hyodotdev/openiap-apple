@@ -526,19 +526,39 @@ public struct RequestPurchaseIosProps: Codable {
     public var andDangerouslyFinishTransactionAutomatically: Bool?
     /// App account token for user tracking
     public var appAccountToken: String?
+    /// External purchase URL for alternative billing on iOS
+    public var externalPurchaseUrlOnIOS: String?
     /// Purchase quantity
     public var quantity: Int?
     /// Product SKU
     public var sku: String
     /// Discount offer to apply
     public var withOffer: DiscountOfferInputIOS?
+
+    public init(
+        andDangerouslyFinishTransactionAutomatically: Bool? = nil,
+        appAccountToken: String? = nil,
+        externalPurchaseUrlOnIOS: String? = nil,
+        quantity: Int? = nil,
+        sku: String,
+        withOffer: DiscountOfferInputIOS? = nil
+    ) {
+        self.andDangerouslyFinishTransactionAutomatically = andDangerouslyFinishTransactionAutomatically
+        self.appAccountToken = appAccountToken
+        self.externalPurchaseUrlOnIOS = externalPurchaseUrlOnIOS
+        self.quantity = quantity
+        self.sku = sku
+        self.withOffer = withOffer
+    }
 }
 
 public struct RequestPurchaseProps: Codable {
     public var request: Request
     public var type: ProductQueryType
+    /// Enable alternative billing flow
+    public var useAlternativeBilling: Bool?
 
-    public init(request: Request, type: ProductQueryType? = nil) {
+    public init(request: Request, type: ProductQueryType? = nil, useAlternativeBilling: Bool? = nil) {
         switch request {
         case .purchase:
             let resolved = type ?? .inApp
@@ -550,17 +570,20 @@ public struct RequestPurchaseProps: Codable {
             self.type = resolved
         }
         self.request = request
+        self.useAlternativeBilling = useAlternativeBilling
     }
 
     private enum CodingKeys: String, CodingKey {
         case requestPurchase
         case requestSubscription
         case type
+        case useAlternativeBilling
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let decodedType = try container.decodeIfPresent(ProductQueryType.self, forKey: .type)
+        self.useAlternativeBilling = try container.decodeIfPresent(Bool.self, forKey: .useAlternativeBilling)
         if let purchase = try container.decodeIfPresent(RequestPurchasePropsByPlatforms.self, forKey: .requestPurchase) {
             let finalType = decodedType ?? .inApp
             guard finalType == .inApp else {
@@ -604,6 +627,11 @@ public struct RequestPurchasePropsByPlatforms: Codable {
     public var android: RequestPurchaseAndroidProps?
     /// iOS-specific purchase parameters
     public var ios: RequestPurchaseIosProps?
+
+    public init(android: RequestPurchaseAndroidProps? = nil, ios: RequestPurchaseIosProps? = nil) {
+        self.android = android
+        self.ios = ios
+    }
 }
 
 public struct RequestSubscriptionAndroidProps: Codable {
@@ -626,9 +654,27 @@ public struct RequestSubscriptionAndroidProps: Codable {
 public struct RequestSubscriptionIosProps: Codable {
     public var andDangerouslyFinishTransactionAutomatically: Bool?
     public var appAccountToken: String?
+    /// External purchase URL for alternative billing on iOS
+    public var externalPurchaseUrlOnIOS: String?
     public var quantity: Int?
     public var sku: String
     public var withOffer: DiscountOfferInputIOS?
+
+    public init(
+        andDangerouslyFinishTransactionAutomatically: Bool? = nil,
+        appAccountToken: String? = nil,
+        externalPurchaseUrlOnIOS: String? = nil,
+        quantity: Int? = nil,
+        sku: String,
+        withOffer: DiscountOfferInputIOS? = nil
+    ) {
+        self.andDangerouslyFinishTransactionAutomatically = andDangerouslyFinishTransactionAutomatically
+        self.appAccountToken = appAccountToken
+        self.externalPurchaseUrlOnIOS = externalPurchaseUrlOnIOS
+        self.quantity = quantity
+        self.sku = sku
+        self.withOffer = withOffer
+    }
 }
 
 public struct RequestSubscriptionPropsByPlatforms: Codable {
@@ -636,6 +682,11 @@ public struct RequestSubscriptionPropsByPlatforms: Codable {
     public var android: RequestSubscriptionAndroidProps?
     /// iOS-specific subscription parameters
     public var ios: RequestSubscriptionIosProps?
+
+    public init(android: RequestSubscriptionAndroidProps? = nil, ios: RequestSubscriptionIosProps? = nil) {
+        self.android = android
+        self.ios = ios
+    }
 }
 
 // MARK: - Unions
