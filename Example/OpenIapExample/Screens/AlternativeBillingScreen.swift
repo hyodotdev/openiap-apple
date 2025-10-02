@@ -329,22 +329,20 @@ struct AlternativeBillingScreen: View {
                 let request: RequestPurchaseProps.Request
                 if requestType == .subs {
                     let subscriptionProps = RequestSubscriptionIosProps(
-                        externalPurchaseUrlOnIOS: externalUrl,
+                        externalPurchaseUrl: externalUrl,
                         sku: product.id
                     )
 
                     request = .subscription(RequestSubscriptionPropsByPlatforms(
-                        android: nil,
                         ios: subscriptionProps
                     ))
                 } else {
                     let iosProps = RequestPurchaseIosProps(
-                        externalPurchaseUrlOnIOS: externalUrl,
+                        externalPurchaseUrl: externalUrl,
                         sku: product.id
                     )
 
                     request = .purchase(RequestPurchasePropsByPlatforms(
-                        android: nil,
                         ios: iosProps
                     ))
                 }

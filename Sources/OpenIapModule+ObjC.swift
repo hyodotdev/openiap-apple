@@ -235,17 +235,56 @@ import StoreKit
     ) {
         Task {
             do {
-                let purchaseInput = PurchaseInput(
+                // Try to find the actual transaction from pending transactions
+                let pendingTransactions = try await getPendingTransactionsIOS()
+
+                // Use full transaction data if available in pending
+                if let purchaseIOS = pendingTransactions.first(where: {
+                    $0.transactionId == purchaseId || $0.id == purchaseId
+                }) {
+                    let purchaseInput = Purchase.purchaseIos(purchaseIOS)
+                    try await finishTransaction(purchase: purchaseInput, isConsumable: isConsumable)
+                    completion(nil)
+                    return
+                }
+
+                // Not in pending - finishTransaction will search currentEntitlements
+                // Create minimal PurchaseIOS (only purchase.id is used by finishTransaction)
+                let minimalPurchase = PurchaseIOS(
+                    appAccountToken: nil,
+                    appBundleIdIOS: nil,
+                    countryCodeIOS: nil,
+                    currencyCodeIOS: nil,
+                    currencySymbolIOS: nil,
+                    currentPlanId: nil,
+                    environmentIOS: nil,
+                    expirationDateIOS: nil,
                     id: purchaseId,
                     ids: nil,
                     isAutoRenewing: false,
+                    isUpgradedIOS: nil,
+                    offerIOS: nil,
+                    originalTransactionDateIOS: nil,
+                    originalTransactionIdentifierIOS: nil,
+                    ownershipTypeIOS: nil,
                     platform: .ios,
                     productId: productId,
                     purchaseState: .purchased,
                     purchaseToken: nil,
                     quantity: 1,
-                    transactionDate: Date().timeIntervalSince1970
+                    quantityIOS: nil,
+                    reasonIOS: nil,
+                    reasonStringRepresentationIOS: nil,
+                    revocationDateIOS: nil,
+                    revocationReasonIOS: nil,
+                    storefrontCountryCodeIOS: nil,
+                    subscriptionGroupIdIOS: nil,
+                    transactionDate: Date().timeIntervalSince1970,
+                    transactionId: purchaseId,
+                    transactionReasonIOS: nil,
+                    webOrderLineItemIdIOS: nil
                 )
+                let purchaseInput = Purchase.purchaseIos(minimalPurchase)
                 try await finishTransaction(purchase: purchaseInput, isConsumable: isConsumable)
                 completion(nil)
             } catch {
