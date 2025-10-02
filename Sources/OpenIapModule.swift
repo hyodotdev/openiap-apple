@@ -90,9 +90,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             throw error
         }
 
+        let fetchedProducts: [StoreKit.Product]
         do {
-            let fetched = try await StoreKit.Product.products(for: params.skus)
-            for product in fetched {
+            fetchedProducts = try await StoreKit.Product.products(for: params.skus)
+            for product in fetchedProducts {
                 await productManager.addProduct(product)
             }
         } catch {
@@ -101,11 +102,11 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             throw purchaseError
         }
 
-        let storedProducts = await productManager.getAllProducts()
+        // Only process products that were actually requested, not all cached products
         var productEntries: [OpenIAP.Product] = []
         var subscriptionEntries: [OpenIAP.ProductSubscription] = []
 
-        for product in storedProducts {
+        for product in fetchedProducts {
             productEntries.append(await StoreKitTypesBridge.product(from: product))
             if let subscription = await StoreKitTypesBridge.productSubscription(from: product) {
                 subscriptionEntries.append(subscription)
@@ -114,7 +115,13 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
 
         switch params.type ?? .all {
         case .subs:
-            return .subscriptions(subscriptionEntries.isEmpty ? nil : subscriptionEntries)
+            // Only return products that are actually subscriptions
+            let validSubs = subscriptionEntries.filter { sub in
+                fetchedProducts.contains { product in
+                    product.id == sub.id && product.subscription != nil
+                }
+            }
+            return .subscriptions(validSubs.isEmpty ? nil : validSubs)
         case .inApp:
             let inApp = productEntries.compactMap { entry -> OpenIAP.Product? in
                 guard case let .productIos(value) = entry, value.type == .inApp else { return nil }
