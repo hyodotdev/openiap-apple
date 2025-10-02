@@ -7,12 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3472D7D42E8CFCB100C0714E /* AlternativeBillingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3472D7D32E8CFCB100C0714E /* AlternativeBillingScreen.swift */; };
+		C0APV0022D20000000000001 /* AllProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0APV0012D20000000000001 /* AllProductsView.swift */; };
 		C0E1F5E92C8F1A9400123456 /* OpenIapExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */; };
 		C0E1F5EB2C8F1A9400123456 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5EA2C8F1A9400123456 /* ContentView.swift */; };
 		C0E1F5ED2C8F1A9500123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EC2C8F1A9500123456 /* Assets.xcassets */; };
 		C0E1F5F02C8F1A9500123456 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0E1F5EF2C8F1A9500123456 /* Preview Assets.xcassets */; };
 		C0E1F5F82C8F1AA300123456 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5F72C8F1AA300123456 /* HomeScreen.swift */; };
-		C0APV0022D20000000000001 /* AllProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0APV0012D20000000000001 /* AllProductsView.swift */; };
 		C0E1F5FA2C8F1AAB00123456 /* PurchaseFlowScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5F92C8F1AAB00123456 /* PurchaseFlowScreen.swift */; };
 		C0E1F5FC2C8F1AB000123456 /* SubscriptionFlowScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */; };
 		C0E1F5FE2C8F1AB500123456 /* AvailablePurchasesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */; };
@@ -39,6 +40,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3472D7D32E8CFCB100C0714E /* AlternativeBillingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlternativeBillingScreen.swift; sourceTree = "<group>"; };
+		C0APV0012D20000000000001 /* AllProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllProductsView.swift; sourceTree = "<group>"; };
 		C0E1F5E52C8F1A9400123456 /* OpenIapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenIapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0E1F5E82C8F1A9400123456 /* OpenIapExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenIapExampleApp.swift; sourceTree = "<group>"; };
 		C0E1F5EA2C8F1A9400123456 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -49,7 +52,6 @@
 		C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFlowScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailablePurchasesScreen.swift; sourceTree = "<group>"; };
 		C0E1F5FF2C8F1ABA00123456 /* OfferCodeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCodeScreen.swift; sourceTree = "<group>"; };
-		C0APV0012D20000000000001 /* AllProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllProductsView.swift; sourceTree = "<group>"; };
 		C0E1F6032C8F1AC500123456 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		C0IAC0002D10000000000001 /* IapCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IapCompat.swift; sourceTree = "<group>"; };
 		C0UI10012D00000000000001 /* FeatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCard.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				C0UI20012D00000000000001 /* uis */,
 				C0E1F5F72C8F1AA300123456 /* HomeScreen.swift */,
 				C0APV0012D20000000000001 /* AllProductsView.swift */,
+				3472D7D32E8CFCB100C0714E /* AlternativeBillingScreen.swift */,
 				C0E1F5F92C8F1AAB00123456 /* PurchaseFlowScreen.swift */,
 				C0E1F5FB2C8F1AB000123456 /* SubscriptionFlowScreen.swift */,
 				C0E1F5FD2C8F1AB500123456 /* AvailablePurchasesScreen.swift */,
@@ -263,6 +266,7 @@
 				C0UI00022D00000000000002 /* LoadingCard.swift in Sources */,
 				C0UI00032D00000000000003 /* EmptyStateCard.swift in Sources */,
 				C0UI00042D00000000000004 /* SectionHeaderView.swift in Sources */,
+				3472D7D42E8CFCB100C0714E /* AlternativeBillingScreen.swift in Sources */,
 				C0UI00052D00000000000005 /* ProductListCard.swift in Sources */,
 				C0UI00062D00000000000006 /* ProductGridCard.swift in Sources */,
 				C0UI00072D00000000000007 /* ActivePurchaseCard.swift in Sources */,

@@ -456,7 +456,7 @@ import StoreKit
             let dictionary = OpenIapSerialization.purchase(purchase)
             callback(dictionary as NSDictionary)
         }
-        return subscription as! NSObject
+        return subscription as NSObject
     }
 
     @objc func addPurchaseErrorListener(_ callback: @escaping (NSDictionary) -> Void) -> NSObject {
@@ -464,14 +464,14 @@ import StoreKit
             let dictionary = OpenIapSerialization.encode(error)
             callback(dictionary as NSDictionary)
         }
-        return subscription as! NSObject
+        return subscription as NSObject
     }
 
     @objc func addPromotedProductListener(_ callback: @escaping (String?) -> Void) -> NSObject {
         let subscription = promotedProductListenerIOS { sku in
             callback(sku)
         }
-        return subscription as! NSObject
+        return subscription as NSObject
     }
 
     @objc func removeListener(_ subscription: NSObject) {

@@ -61,15 +61,15 @@ struct HomeScreen: View {
                             color: Color.teal,
                             destination: AnyView(PurchaseFlowScreen())
                         )
-                        
+
                         FeatureCard(
-                            title: "Subscription\nFlow", 
+                            title: "Subscription\nFlow",
                             subtitle: "Test subscriptions",
                             icon: "repeat.circle.fill",
                             color: AppColors.secondary,
                             destination: AnyView(SubscriptionFlowScreen())
                         )
-                        
+
                         FeatureCard(
                             title: "My\nPurchases",
                             subtitle: "View your purchases",
@@ -77,7 +77,7 @@ struct HomeScreen: View {
                             color: AppColors.success,
                             destination: AnyView(AvailablePurchasesScreen())
                         )
-                        
+
                         FeatureCard(
                             title: "Offer\nCode",
                             subtitle: "Redeem promotional codes",
@@ -85,6 +85,16 @@ struct HomeScreen: View {
                             color: AppColors.warning,
                             destination: AnyView(OfferCodeScreen())
                         )
+
+                        if #available(iOS 16.0, *) {
+                            FeatureCard(
+                                title: "Alternative\nBilling",
+                                subtitle: "External purchase links",
+                                icon: "link.circle.fill",
+                                color: Color.purple,
+                                destination: AnyView(AlternativeBillingScreen())
+                            )
+                        }
                     }
                     .padding(.horizontal)
                     

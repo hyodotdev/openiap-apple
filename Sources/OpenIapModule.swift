@@ -162,6 +162,25 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         try await ensureConnection()
         let iosProps = try resolveIosPurchaseProps(from: params)
         let sku = iosProps.sku
+
+        // Check for alternative billing with external purchase URL
+        if let externalUrl = iosProps.externalPurchaseUrlOnIOS,
+           params.useAlternativeBilling == true {
+            #if os(iOS)
+            if #available(iOS 16.0, *) {
+                return try await handleExternalPurchase(url: externalUrl, sku: sku)
+            } else {
+                let error = makePurchaseError(code: .featureNotSupported, productId: sku, message: "External purchase links require iOS 16.0 or later")
+                emitPurchaseError(error)
+                throw error
+            }
+            #else
+            let error = makePurchaseError(code: .featureNotSupported, productId: sku, message: "External purchase links are only supported on iOS")
+            emitPurchaseError(error)
+            throw error
+            #endif
+        }
+
         let product = try await storeProduct(for: sku)
         let options = StoreKitTypesBridge.purchaseOptions(from: iosProps)
 
@@ -643,6 +662,36 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
 
     // MARK: - Private Helpers
 
+    #if os(iOS)
+    @available(iOS 16.0, *)
+    private func handleExternalPurchase(url: String, sku: String) async throws -> RequestPurchaseResult? {
+        guard let externalUrl = URL(string: url) else {
+            let error = makePurchaseError(code: .purchaseError, productId: sku, message: "Invalid external purchase URL")
+            emitPurchaseError(error)
+            throw error
+        }
+
+        // Open the external URL using UIApplication
+        let canOpen = await MainActor.run {
+            UIApplication.shared.canOpenURL(externalUrl)
+        }
+
+        guard canOpen else {
+            let error = makePurchaseError(code: .purchaseError, productId: sku, message: "Cannot open external purchase URL")
+            emitPurchaseError(error)
+            throw error
+        }
+
+        await MainActor.run {
+            UIApplication.shared.open(externalUrl, options: [:], completionHandler: nil)
+        }
+
+        // Return nil as the purchase is handled externally
+        // The actual purchase completion should be handled by the external website
+        return nil
+    }
+    #endif
+
     private func ensureConnection() async throws {
         if await state.isInitialized == false {
             _ = try await initConnection()
@@ -709,6 +758,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return RequestPurchaseIosProps(
                     andDangerouslyFinishTransactionAutomatically: ios.andDangerouslyFinishTransactionAutomatically,
                     appAccountToken: ios.appAccountToken,
+                    externalPurchaseUrlOnIOS: ios.externalPurchaseUrlOnIOS,
                     quantity: ios.quantity,
                     sku: ios.sku,
                     withOffer: ios.withOffer
