@@ -171,7 +171,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let sku = iosProps.sku
 
         // Check for alternative billing with external purchase URL
-        if let externalUrl = iosProps.externalPurchaseUrlOnIOS,
+        if let externalUrl = iosProps.externalPurchaseUrl,
            params.useAlternativeBilling == true {
             #if os(iOS)
             if #available(iOS 16.0, *) {
@@ -765,7 +765,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return RequestPurchaseIosProps(
                     andDangerouslyFinishTransactionAutomatically: ios.andDangerouslyFinishTransactionAutomatically,
                     appAccountToken: ios.appAccountToken,
-                    externalPurchaseUrlOnIOS: ios.externalPurchaseUrlOnIOS,
+                    externalPurchaseUrl: ios.externalPurchaseUrl,
                     quantity: ios.quantity,
                     sku: ios.sku,
                     withOffer: ios.withOffer

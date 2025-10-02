@@ -257,18 +257,7 @@ public final class OpenIapStore: ObservableObject {
         guard let ios = purchase.asIOS() else {
             throw PurchaseError(code: .featureNotSupported, message: "Finishing only supported for iOS purchases", productId: nil)
         }
-        let input = PurchaseInput(
-            id: ios.transactionId,
-            ids: ios.ids,
-            isAutoRenewing: ios.isAutoRenewing,
-            platform: .ios,
-            productId: ios.productId,
-            purchaseState: ios.purchaseState,
-            purchaseToken: ios.purchaseToken,
-            quantity: ios.quantity,
-            transactionDate: ios.transactionDate
-        )
-        try await module.finishTransaction(purchase: input, isConsumable: isConsumable)
+        try await module.finishTransaction(purchase: purchase, isConsumable: isConsumable)
         if currentPurchase?.transactionId == ios.transactionId {
             clearCurrentPurchase()
         }

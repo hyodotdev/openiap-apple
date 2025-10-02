@@ -478,6 +478,14 @@ public struct AndroidSubscriptionOfferInput: Codable {
     public var offerToken: String
     /// Product SKU
     public var sku: String
+
+    public init(
+        offerToken: String,
+        sku: String
+    ) {
+        self.offerToken = offerToken
+        self.sku = sku
+    }
 }
 
 public struct DeepLinkOptions: Codable {
@@ -485,6 +493,14 @@ public struct DeepLinkOptions: Codable {
     public var packageNameAndroid: String?
     /// Android SKU to open (required on Android)
     public var skuAndroid: String?
+
+    public init(
+        packageNameAndroid: String? = nil,
+        skuAndroid: String? = nil
+    ) {
+        self.packageNameAndroid = packageNameAndroid
+        self.skuAndroid = skuAndroid
+    }
 }
 
 public struct DiscountOfferInputIOS: Codable {
@@ -498,6 +514,20 @@ public struct DiscountOfferInputIOS: Codable {
     public var signature: String
     /// Timestamp of discount offer
     public var timestamp: Double
+
+    public init(
+        identifier: String,
+        keyIdentifier: String,
+        nonce: String,
+        signature: String,
+        timestamp: Double
+    ) {
+        self.identifier = identifier
+        self.keyIdentifier = keyIdentifier
+        self.nonce = nonce
+        self.signature = signature
+        self.timestamp = timestamp
+    }
 }
 
 /// Connection initialization configuration
@@ -505,11 +535,25 @@ public struct InitConnectionConfig: Codable {
     /// Alternative billing mode for Android
     /// If not specified, defaults to NONE (standard Google Play billing)
     public var alternativeBillingModeAndroid: AlternativeBillingModeAndroid?
+
+    public init(
+        alternativeBillingModeAndroid: AlternativeBillingModeAndroid? = nil
+    ) {
+        self.alternativeBillingModeAndroid = alternativeBillingModeAndroid
+    }
 }
 
 public struct ProductRequest: Codable {
     public var skus: [String]
     public var type: ProductQueryType?
+
+    public init(
+        skus: [String],
+        type: ProductQueryType? = nil
+    ) {
+        self.skus = skus
+        self.type = type
+    }
 }
 
 public typealias PurchaseInput = Purchase
@@ -519,6 +563,14 @@ public struct PurchaseOptions: Codable {
     public var alsoPublishToEventListenerIOS: Bool?
     /// Limit to currently active items on iOS
     public var onlyIncludeActiveItemsIOS: Bool?
+
+    public init(
+        alsoPublishToEventListenerIOS: Bool? = nil,
+        onlyIncludeActiveItemsIOS: Bool? = nil
+    ) {
+        self.alsoPublishToEventListenerIOS = alsoPublishToEventListenerIOS
+        self.onlyIncludeActiveItemsIOS = onlyIncludeActiveItemsIOS
+    }
 }
 
 public struct ReceiptValidationAndroidOptions: Codable {
@@ -526,6 +578,18 @@ public struct ReceiptValidationAndroidOptions: Codable {
     public var isSub: Bool?
     public var packageName: String
     public var productToken: String
+
+    public init(
+        accessToken: String,
+        isSub: Bool? = nil,
+        packageName: String,
+        productToken: String
+    ) {
+        self.accessToken = accessToken
+        self.isSub = isSub
+        self.packageName = packageName
+        self.productToken = productToken
+    }
 }
 
 public struct ReceiptValidationProps: Codable {
@@ -533,6 +597,14 @@ public struct ReceiptValidationProps: Codable {
     public var androidOptions: ReceiptValidationAndroidOptions?
     /// Product SKU to validate
     public var sku: String
+
+    public init(
+        androidOptions: ReceiptValidationAndroidOptions? = nil,
+        sku: String
+    ) {
+        self.androidOptions = androidOptions
+        self.sku = sku
+    }
 }
 
 public struct RequestPurchaseAndroidProps: Codable {
@@ -544,6 +616,18 @@ public struct RequestPurchaseAndroidProps: Codable {
     public var obfuscatedProfileIdAndroid: String?
     /// List of product SKUs
     public var skus: [String]
+
+    public init(
+        isOfferPersonalized: Bool? = nil,
+        obfuscatedAccountIdAndroid: String? = nil,
+        obfuscatedProfileIdAndroid: String? = nil,
+        skus: [String]
+    ) {
+        self.isOfferPersonalized = isOfferPersonalized
+        self.obfuscatedAccountIdAndroid = obfuscatedAccountIdAndroid
+        self.obfuscatedProfileIdAndroid = obfuscatedProfileIdAndroid
+        self.skus = skus
+    }
 }
 
 public struct RequestPurchaseIosProps: Codable {
@@ -559,6 +643,22 @@ public struct RequestPurchaseIosProps: Codable {
     public var sku: String
     /// Discount offer to apply
     public var withOffer: DiscountOfferInputIOS?
+
+    public init(
+        andDangerouslyFinishTransactionAutomatically: Bool? = nil,
+        appAccountToken: String? = nil,
+        externalPurchaseUrl: String? = nil,
+        quantity: Int? = nil,
+        sku: String,
+        withOffer: DiscountOfferInputIOS? = nil
+    ) {
+        self.andDangerouslyFinishTransactionAutomatically = andDangerouslyFinishTransactionAutomatically
+        self.appAccountToken = appAccountToken
+        self.externalPurchaseUrl = externalPurchaseUrl
+        self.quantity = quantity
+        self.sku = sku
+        self.withOffer = withOffer
+    }
 }
 
 public struct RequestPurchaseProps: Codable {
@@ -636,6 +736,14 @@ public struct RequestPurchasePropsByPlatforms: Codable {
     public var android: RequestPurchaseAndroidProps?
     /// iOS-specific purchase parameters
     public var ios: RequestPurchaseIosProps?
+
+    public init(
+        android: RequestPurchaseAndroidProps? = nil,
+        ios: RequestPurchaseIosProps? = nil
+    ) {
+        self.android = android
+        self.ios = ios
+    }
 }
 
 public struct RequestSubscriptionAndroidProps: Codable {
@@ -653,6 +761,24 @@ public struct RequestSubscriptionAndroidProps: Codable {
     public var skus: [String]
     /// Subscription offers
     public var subscriptionOffers: [AndroidSubscriptionOfferInput]?
+
+    public init(
+        isOfferPersonalized: Bool? = nil,
+        obfuscatedAccountIdAndroid: String? = nil,
+        obfuscatedProfileIdAndroid: String? = nil,
+        purchaseTokenAndroid: String? = nil,
+        replacementModeAndroid: Int? = nil,
+        skus: [String],
+        subscriptionOffers: [AndroidSubscriptionOfferInput]? = nil
+    ) {
+        self.isOfferPersonalized = isOfferPersonalized
+        self.obfuscatedAccountIdAndroid = obfuscatedAccountIdAndroid
+        self.obfuscatedProfileIdAndroid = obfuscatedProfileIdAndroid
+        self.purchaseTokenAndroid = purchaseTokenAndroid
+        self.replacementModeAndroid = replacementModeAndroid
+        self.skus = skus
+        self.subscriptionOffers = subscriptionOffers
+    }
 }
 
 public struct RequestSubscriptionIosProps: Codable {
@@ -663,6 +789,22 @@ public struct RequestSubscriptionIosProps: Codable {
     public var quantity: Int?
     public var sku: String
     public var withOffer: DiscountOfferInputIOS?
+
+    public init(
+        andDangerouslyFinishTransactionAutomatically: Bool? = nil,
+        appAccountToken: String? = nil,
+        externalPurchaseUrl: String? = nil,
+        quantity: Int? = nil,
+        sku: String,
+        withOffer: DiscountOfferInputIOS? = nil
+    ) {
+        self.andDangerouslyFinishTransactionAutomatically = andDangerouslyFinishTransactionAutomatically
+        self.appAccountToken = appAccountToken
+        self.externalPurchaseUrl = externalPurchaseUrl
+        self.quantity = quantity
+        self.sku = sku
+        self.withOffer = withOffer
+    }
 }
 
 public struct RequestSubscriptionPropsByPlatforms: Codable {
@@ -670,6 +812,14 @@ public struct RequestSubscriptionPropsByPlatforms: Codable {
     public var android: RequestSubscriptionAndroidProps?
     /// iOS-specific subscription parameters
     public var ios: RequestSubscriptionIosProps?
+
+    public init(
+        android: RequestSubscriptionAndroidProps? = nil,
+        ios: RequestSubscriptionIosProps? = nil
+    ) {
+        self.android = android
+        self.ios = ios
+    }
 }
 
 // MARK: - Unions
