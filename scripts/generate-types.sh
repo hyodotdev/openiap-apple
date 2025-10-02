@@ -37,4 +37,8 @@ echo "Extracting ${SWIFT_FILE}..."
 # Extract generated file
 TMP_SWIFT="${TMP_DIR}/${SWIFT_FILE}"
 unzip -p "${TMP_DIR}/${ZIP_NAME}" "${SWIFT_FILE}" > "${TMP_SWIFT}"
-export TMP_SWIFT OUTPUT_PATH
+
+# Copy to output location
+mv "${TMP_SWIFT}" "${OUTPUT_PATH}"
+
+echo "✅ Successfully updated ${OUTPUT_PATH}"
