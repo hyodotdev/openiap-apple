@@ -69,6 +69,7 @@ public enum IapEvent: String, Codable, CaseIterable {
     case purchaseUpdated = "purchase-updated"
     case purchaseError = "purchase-error"
     case promotedProductIos = "promoted-product-ios"
+    case userChoiceBillingAndroid = "user-choice-billing-android"
 }
 
 public enum IapPlatform: String, Codable, CaseIterable {
