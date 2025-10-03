@@ -169,25 +169,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         try await ensureConnection()
         let iosProps = try resolveIosPurchaseProps(from: params)
         let sku = iosProps.sku
-
-        // Check for alternative billing with external purchase URL
-        if let externalUrl = iosProps.externalPurchaseUrl,
-           params.useAlternativeBilling == true {
-            #if os(iOS)
-            if #available(iOS 16.0, *) {
-                return try await handleExternalPurchase(url: externalUrl, sku: sku)
-            } else {
-                let error = makePurchaseError(code: .featureNotSupported, productId: sku, message: "External purchase links require iOS 16.0 or later")
-                emitPurchaseError(error)
-                throw error
-            }
-            #else
-            let error = makePurchaseError(code: .featureNotSupported, productId: sku, message: "External purchase links are only supported on iOS")
-            emitPurchaseError(error)
-            throw error
-            #endif
-        }
-
         let product = try await storeProduct(for: sku)
         let options = StoreKitTypesBridge.purchaseOptions(from: iosProps)
 
@@ -638,6 +619,85 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         return []
     }
 
+    // MARK: - External Purchase (iOS 18.2+)
+
+    public func canPresentExternalPurchaseNoticeIOS() async throws -> Bool {
+        #if os(iOS)
+        if #available(iOS 18.2, *) {
+            return await ExternalPurchase.canPresent
+        } else {
+            return false
+        }
+        #else
+        return false
+        #endif
+    }
+
+    public func presentExternalPurchaseNoticeSheetIOS() async throws -> ExternalPurchaseNoticeResultIOS {
+        #if os(iOS)
+        if #available(iOS 18.2, *) {
+            guard await ExternalPurchase.canPresent else {
+                return ExternalPurchaseNoticeResultIOS(
+                    error: "External purchase notice sheet is not available",
+                    result: .dismissed
+                )
+            }
+
+            do {
+                let result = try await ExternalPurchase.presentNoticeSheet()
+                switch result {
+                case .continuedWithExternalPurchaseToken(_):
+                    return ExternalPurchaseNoticeResultIOS(error: nil, result: .continue)
+                @unknown default:
+                    return ExternalPurchaseNoticeResultIOS(
+                        error: "User dismissed notice sheet",
+                        result: .dismissed
+                    )
+                }
+            } catch {
+                return ExternalPurchaseNoticeResultIOS(
+                    error: error.localizedDescription,
+                    result: .dismissed
+                )
+            }
+        } else {
+            throw makePurchaseError(
+                code: .featureNotSupported,
+                message: "External purchase notice sheet requires iOS 18.2 or later"
+            )
+        }
+        #else
+        throw makePurchaseError(code: .featureNotSupported)
+        #endif
+    }
+
+    public func presentExternalPurchaseLinkIOS(_ url: String) async throws -> ExternalPurchaseLinkResultIOS {
+        #if canImport(UIKit)
+        guard let customLink = URL(string: url) else {
+            return ExternalPurchaseLinkResultIOS(
+                error: "Invalid URL",
+                success: false
+            )
+        }
+
+        return await MainActor.run {
+            if UIApplication.shared.canOpenURL(customLink) {
+                UIApplication.shared.open(customLink, options: [:]) { success in
+                    // Completion handler - link opened
+                }
+                return ExternalPurchaseLinkResultIOS(error: nil, success: true)
+            } else {
+                return ExternalPurchaseLinkResultIOS(
+                    error: "Cannot open URL",
+                    success: false
+                )
+            }
+        }
+        #else
+        throw makePurchaseError(code: .featureNotSupported)
+        #endif
+    }
+
     // MARK: - Event Listener Registration
 
     public func purchaseUpdatedListener(_ listener: @escaping PurchaseUpdatedListener) -> Subscription {
@@ -668,36 +728,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     }
 
     // MARK: - Private Helpers
-
-    #if os(iOS)
-    @available(iOS 16.0, *)
-    private func handleExternalPurchase(url: String, sku: String) async throws -> RequestPurchaseResult? {
-        guard let externalUrl = URL(string: url) else {
-            let error = makePurchaseError(code: .purchaseError, productId: sku, message: "Invalid external purchase URL")
-            emitPurchaseError(error)
-            throw error
-        }
-
-        // Open the external URL using UIApplication
-        let canOpen = await MainActor.run {
-            UIApplication.shared.canOpenURL(externalUrl)
-        }
-
-        guard canOpen else {
-            let error = makePurchaseError(code: .purchaseError, productId: sku, message: "Cannot open external purchase URL")
-            emitPurchaseError(error)
-            throw error
-        }
-
-        await MainActor.run {
-            UIApplication.shared.open(externalUrl, options: [:], completionHandler: nil)
-        }
-
-        // Return nil as the purchase is handled externally
-        // The actual purchase completion should be handled by the external website
-        return nil
-    }
-    #endif
 
     private func ensureConnection() async throws {
         if await state.isInitialized == false {
@@ -765,7 +795,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 return RequestPurchaseIosProps(
                     andDangerouslyFinishTransactionAutomatically: ios.andDangerouslyFinishTransactionAutomatically,
                     appAccountToken: ios.appAccountToken,
-                    externalPurchaseUrl: ios.externalPurchaseUrl,
                     quantity: ios.quantity,
                     sku: ios.sku,
                     withOffer: ios.withOffer
