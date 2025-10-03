@@ -70,7 +70,39 @@ public enum OpenIapSerialization {
     }
 
     public static func purchaseInput(from object: Any) throws -> PurchaseInput {
-        try decode(object: object, as: PurchaseInput.self)
+        guard let dict = object as? [String: Any] else {
+            print("❌ [OpenIapSerialization] purchaseInput: object is not a dictionary - \(type(of: object))")
+            throw PurchaseError.make(code: .developerError, message: "Purchase must be a dictionary")
+        }
+
+        print("📦 [OpenIapSerialization] purchaseInput received dict keys: \(dict.keys.sorted())")
+
+        // Check if already wrapped as Purchase union
+        if dict["purchaseIos"] != nil || dict["purchaseAndroid"] != nil {
+            print("✅ [OpenIapSerialization] Already wrapped as Purchase union")
+            // Already wrapped, decode as-is
+            return try decode(object: dict, as: PurchaseInput.self)
+        }
+
+        print("🔄 [OpenIapSerialization] Auto-wrapping as iOS purchase")
+
+        // Map common field aliases for backward compatibility
+        var normalizedDict = dict
+        if normalizedDict["transactionId"] == nil, let id = normalizedDict["id"] {
+            normalizedDict["transactionId"] = id
+        }
+
+        // Decode as PurchaseIOS first, then wrap in Purchase enum
+        do {
+            let purchaseIOS = try decode(object: normalizedDict, as: PurchaseIOS.self)
+            let result = Purchase.purchaseIos(purchaseIOS)
+            print("✅ [OpenIapSerialization] Successfully decoded and wrapped PurchaseInput")
+            return result
+        } catch {
+            print("❌ [OpenIapSerialization] Decode failed: \(error)")
+            print("📦 [OpenIapSerialization] Dict keys: \(dict.keys.sorted())")
+            throw error
+        }
     }
 
     public static func purchaseOptions(from object: Any) throws -> PurchaseOptions {
