@@ -131,7 +131,7 @@ struct AlternativeBillingScreen: View {
                 .autocapitalization(.none)
                 .keyboardType(.URL)
 
-            Text("This URL will be opened when a user taps Purchase. Make sure the URL is valid and accessible.")
+            Text("Tap Purchase on any product below. The ExternalPurchase API (iOS 18.2+) will show Apple's notice sheet before opening this URL.")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -221,14 +221,18 @@ struct AlternativeBillingScreen: View {
                 )
                 InstructionRow(
                     number: "2",
-                    text: "Tap Purchase on any product"
+                    text: "Tap Purchase on any product below"
                 )
                 InstructionRow(
                     number: "3",
-                    text: "User will be redirected to the external URL"
+                    text: "Apple's notice sheet appears (iOS 18.2+)"
                 )
                 InstructionRow(
                     number: "4",
+                    text: "User taps Continue → Opens external URL"
+                )
+                InstructionRow(
+                    number: "5",
                     text: "Complete purchase on your website"
                 )
             }
@@ -239,7 +243,7 @@ struct AlternativeBillingScreen: View {
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.warning)
 
-                Text("• iOS 16.0 or later required\n• Valid external URL needed\n• useAlternativeBilling: true is set\n• onPurchaseUpdated will NOT fire\n• Implement deep link to return to app")
+                Text("• iOS 18.2+ required for ExternalPurchase API\n• Apple's official alternative billing compliance\n• Notice sheet shows App Store warning\n• Purchase completes on external website\n• Deep link needed to return to app")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -315,65 +319,74 @@ struct AlternativeBillingScreen: View {
         }
     }
 
-    // MARK: - Purchase Flow with Alternative Billing
+    // MARK: - Purchase Flow with Alternative Billing (iOS 18.2+)
 
     private func purchaseProduct(_ product: OpenIapProduct) {
         print("🛒 [AlternativeBilling] Starting alternative billing purchase for: \(product.id)")
         print("🌐 [AlternativeBilling] External URL: \(externalUrl)")
 
-        Task {
-            do {
-                let requestType: ProductQueryType = product.type == .subs ? .subs : .inApp
+        if #available(iOS 18.2, *) {
+            Task { await testExternalPurchaseFlow() }
+        } else {
+            errorMessage = "Alternative billing with ExternalPurchase API requires iOS 18.2 or later"
+            showError = true
+        }
+    }
 
-                // Create request based on product type
-                let request: RequestPurchaseProps.Request
-                if requestType == .subs {
-                    let subscriptionProps = RequestSubscriptionIosProps(
-                        externalPurchaseUrl: externalUrl,
-                        sku: product.id
-                    )
+    // MARK: - External Purchase Flow (iOS 18.2+)
 
-                    request = .subscription(RequestSubscriptionPropsByPlatforms(
-                        ios: subscriptionProps
-                    ))
-                } else {
-                    let iosProps = RequestPurchaseIosProps(
-                        externalPurchaseUrl: externalUrl,
-                        sku: product.id
-                    )
+    @available(iOS 18.2, *)
+    private func testExternalPurchaseFlow() async {
+        print("🔷 [AlternativeBilling] Testing external purchase flow...")
 
-                    request = .purchase(RequestPurchasePropsByPlatforms(
-                        ios: iosProps
-                    ))
-                }
+        do {
+            // Step 1: Check if notice sheet can be presented
+            let canPresent = try await OpenIapModule.shared.canPresentExternalPurchaseNoticeIOS()
+            print("✅ [AlternativeBilling] Can present notice sheet: \(canPresent)")
 
-                let params = RequestPurchaseProps(
-                    request: request,
-                    type: requestType,
-                    useAlternativeBilling: true
-                )
-
-                _ = try await OpenIapModule.shared.requestPurchase(params)
-
-                // When using external URL, the purchase is handled externally
+            guard canPresent else {
                 await MainActor.run {
-                    purchaseResultMessage = """
-                    🌐 Redirected to external URL
-                    Product: \(product.id)
-                    URL: \(externalUrl)
-
-                    Complete the purchase on the external website.
-                    Note: onPurchaseUpdated will NOT be called.
-                    """
-                    showPurchaseResult = true
-                }
-
-            } catch {
-                print("❌ [AlternativeBilling] Purchase failed: \(error.localizedDescription)")
-                await MainActor.run {
-                    errorMessage = "Alternative billing error: \(error.localizedDescription)"
+                    errorMessage = "External purchase notice sheet is not available on this device"
                     showError = true
                 }
+                return
+            }
+
+            // Step 2: Present notice sheet
+            let noticeResult = try await OpenIapModule.shared.presentExternalPurchaseNoticeSheetIOS()
+            print("✅ [AlternativeBilling] Notice sheet result: \(noticeResult.result)")
+
+            if noticeResult.result == .continue {
+                // Step 3: Present external purchase link
+                let linkResult = try await OpenIapModule.shared.presentExternalPurchaseLinkIOS(externalUrl)
+                print("✅ [AlternativeBilling] Link result: \(linkResult.success)")
+
+                await MainActor.run {
+                    if linkResult.success {
+                        purchaseResultMessage = """
+                        🌐 External purchase flow completed
+                        User was redirected to: \(externalUrl)
+                        """
+                    } else {
+                        purchaseResultMessage = """
+                        ❌ External purchase link failed
+                        Error: \(linkResult.error ?? "Unknown error")
+                        """
+                    }
+                    showPurchaseResult = true
+                }
+            } else {
+                await MainActor.run {
+                    purchaseResultMessage = "User dismissed the notice sheet"
+                    showPurchaseResult = true
+                }
+            }
+
+        } catch {
+            print("❌ [AlternativeBilling] External purchase flow error: \(error)")
+            await MainActor.run {
+                errorMessage = "External purchase flow error: \(error.localizedDescription)"
+                showError = true
             }
         }
     }

@@ -226,7 +226,7 @@ struct AllProductsView: View {
             }
 
             HStack {
-                Text(product.displayPrice ?? "--")
+                Text(product.displayPrice)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
