@@ -55,6 +55,9 @@ actor IapState {
             purchaseErrorListeners.removeAll { $0.id == id }
         case .promotedProductIos:
             promotedProductListeners.removeAll { $0.id == id }
+        case .userChoiceBillingAndroid:
+            // Android-only event, no-op on iOS
+            break
         @unknown default:
             break
         }
