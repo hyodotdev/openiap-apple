@@ -488,6 +488,44 @@ import StoreKit
         }
     }
 
+    @available(iOS 16.0, macOS 14.0, *)
+    @objc func presentExternalPurchaseLinkIOSWithUrl(_ url: String, completion: @escaping (Any?, Error?) -> Void) {
+        Task {
+            do {
+                let result = try await presentExternalPurchaseLinkIOS(url)
+                let dictionary = OpenIapSerialization.encode(result)
+                completion(dictionary, nil)
+            } catch {
+                completion(nil, error)
+            }
+        }
+    }
+
+    @available(iOS 17.4, macOS 14.4, *)
+    @objc func presentExternalPurchaseNoticeSheetIOSWithCompletion(_ completion: @escaping (Any?, Error?) -> Void) {
+        Task {
+            do {
+                let result = try await presentExternalPurchaseNoticeSheetIOS()
+                let dictionary = OpenIapSerialization.encode(result)
+                completion(dictionary, nil)
+            } catch {
+                completion(nil, error)
+            }
+        }
+    }
+
+    @available(iOS 17.4, macOS 14.4, *)
+    @objc func canPresentExternalPurchaseNoticeIOSWithCompletion(_ completion: @escaping (Bool, Error?) -> Void) {
+        Task {
+            do {
+                let canPresent = try await canPresentExternalPurchaseNoticeIOS()
+                completion(canPresent, nil)
+            } catch {
+                completion(false, error)
+            }
+        }
+    }
+
     // MARK: - Event Listeners
 
     @objc func addPurchaseUpdatedListener(_ callback: @escaping (NSDictionary) -> Void) -> NSObject {
