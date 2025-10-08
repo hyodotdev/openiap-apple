@@ -167,7 +167,7 @@ enum StoreKitTypesBridge {
         return nil
     }
 
-    static func purchaseOptions(from props: RequestPurchaseIosProps) -> Set<StoreKit.Product.PurchaseOption> {
+    static func purchaseOptions(from props: RequestPurchaseIosProps) throws -> Set<StoreKit.Product.PurchaseOption> {
         var options: Set<StoreKit.Product.PurchaseOption> = []
         if let quantity = props.quantity, quantity > 1 {
             options.insert(.quantity(quantity))
@@ -175,7 +175,14 @@ enum StoreKitTypesBridge {
         if let token = props.appAccountToken, let uuid = UUID(uuidString: token) {
             options.insert(.appAccountToken(uuid))
         }
-        if let offerInput = props.withOffer, let option = promotionalOffer(from: offerInput) {
+        if let offerInput = props.withOffer {
+            guard let option = promotionalOffer(from: offerInput) else {
+                throw PurchaseError.make(
+                    code: .developerError,
+                    productId: props.sku,
+                    message: "Invalid promotional offer: nonce must be valid UUID and signature must be base64 encoded"
+                )
+            }
             options.insert(option)
         }
         return options
@@ -278,11 +285,19 @@ private extension StoreKitTypesBridge {
     }
 
     static func promotionalOffer(from offer: DiscountOfferInputIOS) -> StoreKit.Product.PurchaseOption? {
-        guard let nonce = UUID(uuidString: offer.nonce),
-              let signature = Data(base64Encoded: offer.signature) else {
+        guard let nonce = UUID(uuidString: offer.nonce) else {
+            OpenIapLog.error("❌ Invalid nonce format: \(offer.nonce)")
             return nil
         }
+
+        guard let signature = Data(base64Encoded: offer.signature) else {
+            OpenIapLog.error("❌ Invalid signature format (must be base64): \(offer.signature)")
+            return nil
+        }
+
         let timestamp = Int(offer.timestamp)
+        OpenIapLog.debug("✅ Creating promotional offer - ID: \(offer.identifier), KeyID: \(offer.keyIdentifier), Timestamp: \(timestamp)")
+
         return .promotionalOffer(
             offerID: offer.identifier,
             keyID: offer.keyIdentifier,
