@@ -170,26 +170,51 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let iosProps = try resolveIosPurchaseProps(from: params)
         let sku = iosProps.sku
         let product = try await storeProduct(for: sku)
-        let options = StoreKitTypesBridge.purchaseOptions(from: iosProps)
+        let options = try StoreKitTypesBridge.purchaseOptions(from: iosProps)
 
         let result: StoreKit.Product.PurchaseResult
-        #if canImport(UIKit)
-        if #available(iOS 17.0, *) {
-            let scene: UIWindowScene? = await MainActor.run {
-                UIApplication.shared.connectedScenes.first as? UIWindowScene
+        do {
+            #if canImport(UIKit)
+            if #available(iOS 17.0, *) {
+                let scene: UIWindowScene? = await MainActor.run {
+                    UIApplication.shared.connectedScenes.first as? UIWindowScene
+                }
+                guard let scene else {
+                    let error = makePurchaseError(code: .purchaseError, message: "Could not find window scene")
+                    emitPurchaseError(error)
+                    throw error
+                }
+                result = try await product.purchase(confirmIn: scene, options: options)
+            } else {
+                result = try await product.purchase(options: options)
             }
-            guard let scene else {
-                let error = makePurchaseError(code: .purchaseError, message: "Could not find window scene")
-                emitPurchaseError(error)
-                throw error
-            }
-            result = try await product.purchase(confirmIn: scene, options: options)
-        } else {
+            #else
             result = try await product.purchase(options: options)
+            #endif
+        } catch {
+            // Enhanced error handling for promotional offers
+            if iosProps.withOffer != nil {
+                OpenIapLog.error("Purchase with promotional offer failed: \(error.localizedDescription)")
+                let enhancedMessage = """
+                    Promotional offer purchase failed: \(error.localizedDescription)
+
+                    Common causes:
+                    1. Invalid signature - verify server generates correct signature
+                    2. Sandbox testing - ensure current subscription has expired before testing offers
+                    3. Offer eligibility - user may not be eligible for this promotional offer
+                    4. Key mismatch - verify using correct In-App Purchase key for environment
+                    """
+                let purchaseError = makePurchaseError(
+                    code: .purchaseError,
+                    productId: sku,
+                    message: enhancedMessage
+                )
+                emitPurchaseError(purchaseError)
+                throw purchaseError
+            }
+            // Re-throw original error for non-promotional purchases
+            throw error
         }
-        #else
-        result = try await product.purchase(options: options)
-        #endif
 
         switch result {
         case .success(let verification):
