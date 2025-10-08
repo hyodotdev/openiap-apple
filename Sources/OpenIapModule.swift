@@ -170,7 +170,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let iosProps = try resolveIosPurchaseProps(from: params)
         let sku = iosProps.sku
         let product = try await storeProduct(for: sku)
-        let options = StoreKitTypesBridge.purchaseOptions(from: iosProps)
+        let options = try StoreKitTypesBridge.purchaseOptions(from: iosProps)
 
         let result: StoreKit.Product.PurchaseResult
         #if canImport(UIKit)
