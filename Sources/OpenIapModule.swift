@@ -838,9 +838,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     let transaction = try self.checkVerified(verification)
                     let transactionId = String(transaction.id)
 
-                    // Skip revoked transactions (happens during subscription upgrades)
-                    if transaction.revocationDate != nil {
-                        OpenIapLog.debug("⏭️ Skipping revoked transaction: \(transactionId)")
+                    // Skip revoked or upgraded transactions (happens during subscription upgrades)
+                    if transaction.revocationDate != nil || transaction.isUpgraded {
+                        OpenIapLog.debug("⏭️ Skipping revoked/upgraded transaction: \(transactionId)")
                         continue
                     }
 
