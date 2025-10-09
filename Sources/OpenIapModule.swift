@@ -199,10 +199,10 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     Promotional offer purchase failed: \(error.localizedDescription)
 
                     Common causes:
-                    1. Invalid signature - verify server generates correct signature
-                    2. Sandbox testing - ensure current subscription has expired before testing offers
-                    3. Offer eligibility - user may not be eligible for this promotional offer
-                    4. Key mismatch - verify using correct In-App Purchase key for environment
+                    1. Invalid signature - verify server generates correct signature with exact parameter order
+                    2. Empty appAccountToken - ensure empty string ('') is used in signature, not null
+                    3. Sandbox testing - ensure current subscription has expired before testing offers
+                    4. Offer eligibility - user may not be eligible for this promotional offer
                     """
                 let purchaseError = makePurchaseError(
                     code: .purchaseError,
