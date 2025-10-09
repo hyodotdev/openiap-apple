@@ -838,7 +838,15 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     let transaction = try self.checkVerified(verification)
                     let transactionId = String(transaction.id)
 
+                    // Skip revoked transactions (happens during subscription upgrades)
+                    if transaction.revocationDate != nil {
+                        OpenIapLog.debug("⏭️ Skipping revoked transaction: \(transactionId)")
+                        continue
+                    }
+
                     if await self.state.isProcessed(transactionId) {
+                        OpenIapLog.debug("⏭️ Skipping already processed transaction: \(transactionId)")
+                        // Remove from processed set for future updates (e.g., subscription renewals)
                         await self.state.unmarkProcessed(transactionId)
                         continue
                     }
