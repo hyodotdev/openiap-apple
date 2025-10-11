@@ -8,6 +8,9 @@ actor IapState {
     private var pendingTransactions: [String: Transaction] = [:]
     private var promotedProductId: String?
 
+    // Track latest transaction date per subscription group to filter out superseded transactions
+    private var latestTransactionDateByGroup: [String: Date] = [:]
+
     // Event listeners
     private var purchaseUpdatedListeners: [(id: UUID, listener: PurchaseUpdatedListener)] = []
     private var purchaseErrorListeners: [(id: UUID, listener: PurchaseErrorListener)] = []
@@ -18,6 +21,7 @@ actor IapState {
     func reset() {
         processedTransactionIds.removeAll()
         pendingTransactions.removeAll()
+        latestTransactionDateByGroup.removeAll()
         isInitialized = false
         promotedProductId = nil
     }
@@ -31,6 +35,27 @@ actor IapState {
     func getPending(id: String) -> Transaction? { pendingTransactions[id] }
     func removePending(id: String) { pendingTransactions.removeValue(forKey: id) }
     func pendingSnapshot() -> [Transaction] { Array(pendingTransactions.values) }
+
+    // MARK: - Subscription Group Tracking
+    func shouldProcessSubscriptionTransaction(_ transaction: Transaction) -> Bool {
+        guard let groupId = transaction.subscriptionGroupID else {
+            // Not a subscription, always process
+            return true
+        }
+
+        let transactionDate = transaction.purchaseDate
+
+        if let latestDate = latestTransactionDateByGroup[groupId] {
+            // If this transaction is older than or equal to the latest we've seen, skip it
+            if transactionDate <= latestDate {
+                return false
+            }
+        }
+
+        // Update latest transaction date for this group
+        latestTransactionDateByGroup[groupId] = transactionDate
+        return true
+    }
 
     // MARK: - Promoted Products
     func setPromotedProductId(_ id: String?) { promotedProductId = id }
