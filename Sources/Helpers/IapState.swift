@@ -8,8 +8,8 @@ actor IapState {
     private var pendingTransactions: [String: Transaction] = [:]
     private var promotedProductId: String?
 
-    // Track latest transaction date per subscription group to filter out superseded transactions
-    private var latestTransactionDateByGroup: [String: Date] = [:]
+    // Track latest transaction date and ID per subscription group to filter out superseded transactions
+    private var latestTransactionByGroup: [String: (date: Date, id: UInt64)] = [:]
 
     // Event listeners
     private var purchaseUpdatedListeners: [(id: UUID, listener: PurchaseUpdatedListener)] = []
@@ -21,7 +21,7 @@ actor IapState {
     func reset() {
         processedTransactionIds.removeAll()
         pendingTransactions.removeAll()
-        latestTransactionDateByGroup.removeAll()
+        latestTransactionByGroup.removeAll()
         isInitialized = false
         promotedProductId = nil
     }
@@ -44,16 +44,23 @@ actor IapState {
         }
 
         let transactionDate = transaction.purchaseDate
+        let transactionId = transaction.id
 
-        if let latestDate = latestTransactionDateByGroup[groupId] {
-            // If this transaction is older than or equal to the latest we've seen, skip it
-            if transactionDate <= latestDate {
+        if let latest = latestTransactionByGroup[groupId] {
+            // Skip if this transaction is older than the latest
+            if transactionDate < latest.date {
+                return false
+            }
+
+            // If dates are equal, use transaction ID as tie-breaker
+            // Skip if this transaction ID is less than or equal to the latest
+            if transactionDate == latest.date && transactionId <= latest.id {
                 return false
             }
         }
 
-        // Update latest transaction date for this group
-        latestTransactionDateByGroup[groupId] = transactionDate
+        // Update latest transaction for this group
+        latestTransactionByGroup[groupId] = (date: transactionDate, id: transactionId)
         return true
     }
 
