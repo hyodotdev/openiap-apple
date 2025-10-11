@@ -334,7 +334,7 @@ private extension StoreKitTypesBridge {
         let uppercased: String
     }
     
-    struct JSONTransactionReason: Codable {
+    struct JsonTransactionReason: Codable {
         let transactionReason: String
     }
 
@@ -362,7 +362,7 @@ private extension StoreKitTypesBridge {
         }
 
         // Try to infer renewal for iOS <17
-        if let decodedReason = try? JSONDecoder().decode(JSONTransactionReason.self, from: transaction.jsonRepresentation),
+        if let decodedReason = try? JSONDecoder().decode(JsonTransactionReason.self, from: transaction.jsonRepresentation),
             decodedReason.transactionReason == "RENEWAL" {
             return TransactionReason(lowercased: "renewal", string: "renewal", uppercased: "RENEWAL")
         }
