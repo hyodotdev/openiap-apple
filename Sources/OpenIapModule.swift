@@ -838,9 +838,26 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     let transaction = try self.checkVerified(verification)
                     let transactionId = String(transaction.id)
 
-                    // Skip revoked or upgraded transactions (happens during subscription upgrades)
-                    if transaction.revocationDate != nil || transaction.isUpgraded {
-                        OpenIapLog.debug("⏭️ Skipping revoked/upgraded transaction: \(transactionId)")
+                    // Log all transaction details for debugging
+                    OpenIapLog.debug("""
+                        📦 Transaction received:
+                        - ID: \(transactionId)
+                        - Product: \(transaction.productID)
+                        - purchaseDate: \(transaction.purchaseDate)
+                        - subscriptionGroupID: \(transaction.subscriptionGroupID ?? "nil")
+                        - revocationDate: \(transaction.revocationDate?.description ?? "nil")
+                        """)
+
+                    // Skip revoked transactions
+                    if transaction.revocationDate != nil {
+                        OpenIapLog.debug("⏭️ Skipping revoked transaction: \(transactionId)")
+                        continue
+                    }
+
+                    // For subscriptions, skip if we've already seen a newer transaction in the same group
+                    // This handles subscription upgrades where isUpgraded is not reliably set
+                    if await self.state.shouldProcessSubscriptionTransaction(transaction) == false {
+                        OpenIapLog.debug("⏭️ Skipping older subscription transaction: \(transactionId) (superseded by newer transaction in same group)")
                         continue
                     }
 
@@ -896,6 +913,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     private func emitPurchaseUpdate(_ purchase: Purchase) {
         Task { [state] in
             let listeners = await state.snapshotPurchaseUpdated()
+            OpenIapLog.debug("✅ Emitting purchase update: Product=\(purchase.productId), Listeners=\(listeners.count)")
             await MainActor.run {
                 listeners.forEach { $0(purchase) }
             }
