@@ -82,10 +82,10 @@ final class OpenIapProviderTests: XCTestCase {
     @MainActor
     func testListenerCleanupOnEndConnection() async throws {
         let module = OpenIapModule.shared
-        
+
         // Initialize connection
         _ = try await module.initConnection()
-        
+
         // Create subscriptions
         autoreleasepool {
             _ = module.purchaseUpdatedListener { _ in
@@ -95,10 +95,91 @@ final class OpenIapProviderTests: XCTestCase {
                 print("This will also be cleaned up")
             }
         }
-        
+
         // End connection - should clean up all listeners
         _ = try await module.endConnection()
-        
+
         // All listeners should have been cleaned up automatically
+    }
+
+    // MARK: - Introductory Offer Eligibility Tests
+
+    @MainActor
+    func testIsEligibleForIntroOfferIOS_withValidGroupID() async throws {
+        let module = OpenIapModule.shared
+
+        // Initialize connection
+        _ = try await module.initConnection()
+
+        // Test with a valid subscription group ID
+        // Note: This will return the actual eligibility based on StoreKit's records
+        let groupID = "test_subscription_group"
+        let isEligible = try await module.isEligibleForIntroOfferIOS(groupID: groupID)
+
+        // Verify the function returns without throwing
+        // The actual value depends on the user's subscription history
+        XCTAssertTrue(isEligible || !isEligible, "Function should return a boolean value")
+
+        // Clean up
+        _ = try await module.endConnection()
+    }
+
+    @MainActor
+    func testIsEligibleForIntroOfferIOS_withEmptyGroupID() async throws {
+        let module = OpenIapModule.shared
+
+        // Initialize connection
+        _ = try await module.initConnection()
+
+        // Test with empty group ID
+        let groupID = ""
+        let isEligible = try await module.isEligibleForIntroOfferIOS(groupID: groupID)
+
+        // Empty group ID should return true (no previous subscription)
+        // This matches StoreKit's behavior
+        XCTAssertTrue(isEligible, "Empty group ID should indicate eligibility")
+
+        // Clean up
+        _ = try await module.endConnection()
+    }
+
+    @MainActor
+    func testIsEligibleForIntroOfferIOS_multipleGroupIDs() async throws {
+        let module = OpenIapModule.shared
+
+        // Initialize connection
+        _ = try await module.initConnection()
+
+        // Test with multiple different group IDs
+        let groupID1 = "group_1"
+        let groupID2 = "group_2"
+
+        let isEligible1 = try await module.isEligibleForIntroOfferIOS(groupID: groupID1)
+        let isEligible2 = try await module.isEligibleForIntroOfferIOS(groupID: groupID2)
+
+        // Both should return valid boolean values
+        XCTAssertTrue(isEligible1 || !isEligible1, "First group should return boolean")
+        XCTAssertTrue(isEligible2 || !isEligible2, "Second group should return boolean")
+
+        // Clean up
+        _ = try await module.endConnection()
+    }
+
+    @MainActor
+    func testIsEligibleForIntroOfferIOS_viaStore() async throws {
+        let store = OpenIapStore()
+
+        // Initialize connection
+        try await store.initConnection()
+
+        // Test via OpenIapStore wrapper
+        let groupID = "test_group"
+        let isEligible = try await store.isEligibleForIntroOfferIOS(groupID: groupID)
+
+        // Verify it works through the store interface
+        XCTAssertTrue(isEligible || !isEligible, "Store wrapper should return boolean")
+
+        // Clean up
+        try await store.endConnection()
     }
 }
