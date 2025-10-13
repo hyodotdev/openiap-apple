@@ -606,17 +606,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
     // MARK: - Misc
 
     public func isEligibleForIntroOfferIOS(groupID: String) async throws -> Bool {
-        for await verification in Transaction.currentEntitlements {
-            do {
-                let transaction = try checkVerified(verification)
-                if transaction.subscriptionGroupID == groupID {
-                    return false
-                }
-            } catch {
-                continue
-            }
-        }
-        return true
+        await StoreKit.Product.SubscriptionInfo.isEligibleForIntroOffer(for: groupID)
     }
 
     public func syncIOS() async throws -> Bool {
