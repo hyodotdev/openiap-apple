@@ -71,7 +71,8 @@ enum StoreKitTypesBridge {
         let expirationDate = transaction.expirationDate?.milliseconds
         let revocationDate = transaction.revocationDate?.milliseconds
         let renewalInfoIOS = await subscriptionRenewalInfo(for: transaction)
-        let autoRenewing = renewalInfoIOS?.willAutoRenew ?? (transaction.productType == .autoRenewable)
+        // Default to false if renewalInfo unavailable - safer to underreport than falsely claim auto-renewal
+        let autoRenewing = renewalInfoIOS?.willAutoRenew ?? false
         let environment: String?
         if #available(iOS 16.0, *) {
             environment = transaction.environment.rawValue
