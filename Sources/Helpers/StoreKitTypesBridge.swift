@@ -206,7 +206,7 @@ enum StoreKitTypesBridge {
                         isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
                         jsonRepresentation: nil,
                         pendingUpgradeProductId: pendingProductId,
-                        priceIncreaseStatus: nil,  // TODO: Add when API confirmed
+                        priceIncreaseStatus: String(describing: info.priceIncreaseStatus),
                         renewalDate: info.renewalDate?.milliseconds,
                         renewalOfferId: offerInfo?.id,
                         renewalOfferType: offerInfo?.type,
@@ -233,7 +233,7 @@ enum StoreKitTypesBridge {
                         isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
                         jsonRepresentation: nil,
                         pendingUpgradeProductId: pendingProductId,
-                        priceIncreaseStatus: nil,  // TODO: Add when API confirmed
+                        priceIncreaseStatus: String(describing: info.priceIncreaseStatus),
                         renewalDate: info.renewalDate?.milliseconds,
                         renewalOfferId: offerInfo?.id,
                         renewalOfferType: offerInfo?.type,
