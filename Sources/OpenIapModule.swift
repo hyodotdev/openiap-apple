@@ -465,6 +465,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                     environment = nil
                 }
 
+                // Fetch renewal info for subscription
+                let renewalInfo = await StoreKitTypesBridge.subscriptionRenewalInfoIOS(for: transaction)
+
                 subscriptions.append(
                     ActiveSubscription(
                         autoRenewingAndroid: nil,
@@ -474,6 +477,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                         isActive: isActive,
                         productId: transaction.productID,
                         purchaseToken: verification.jwsRepresentation,
+                        renewalInfoIOS: renewalInfo,
                         transactionDate: transaction.purchaseDate.milliseconds,
                         transactionId: String(transaction.id),
                         willExpireSoon: willExpireSoon

@@ -175,6 +175,9 @@ public struct ActiveSubscription: Codable {
     public var purchaseToken: String?
     /// Required for subscription upgrade/downgrade on Android
     public var purchaseTokenAndroid: String?
+    /// Renewal information from StoreKit 2 (iOS only). Contains details about subscription renewal status,
+    /// pending upgrades/downgrades, and auto-renewal preferences.
+    public var renewalInfoIOS: RenewalInfoIOS?
     public var transactionDate: Double
     public var transactionId: String
     public var willExpireSoon: Bool?

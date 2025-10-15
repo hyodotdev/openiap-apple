@@ -192,52 +192,76 @@ struct SubscriptionCard: View {
                 // Show upgrade info message if available
                 if let upgradeInfo = upgradeInfo, let currentTier = upgradeInfo.currentTier {
                     VStack(spacing: 8) {
-                        HStack {
-                            Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle.fill" : "info.circle.fill")
-                                .foregroundColor(upgradeInfo.canUpgrade ? AppColors.primary : .orange)
-                            Text(upgradeInfo.canUpgrade ? "Upgrade from \(currentTier)" : "Currently subscribed to \(currentTier)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(6)
-
-                        Button(action: onSubscribe) {
+                        // Check if this is a pending upgrade
+                        if let message = upgradeInfo.message, message.contains("pending") {
+                            // Show pending upgrade status
                             HStack {
-                                if isLoading {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .tint(.white)
-                                } else {
-                                    Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle" : "repeat.circle")
-                                }
-
-                                Text(isLoading ? "Processing..." : (upgradeInfo.canUpgrade ? "Upgrade Now" : "Switch Plan"))
-                                    .fontWeight(.medium)
-
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundColor(.orange)
+                                Text("Upgrade pending from \(currentTier)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 Spacer()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.orange.opacity(0.1))
+                            .cornerRadius(6)
 
-                                if !isLoading {
-                                    VStack(alignment: .trailing, spacing: 2) {
-                                        Text(product?.displayPrice ?? "--")
-                                            .fontWeight(.semibold)
-                                        if upgradeInfo.canUpgrade {
-                                            Text("Pro-rated")
-                                                .font(.caption2)
-                                                .opacity(0.8)
+                            Text("This plan will activate on your next renewal date")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            // Show regular upgrade/switch option
+                            HStack {
+                                Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle.fill" : "info.circle.fill")
+                                    .foregroundColor(upgradeInfo.canUpgrade ? AppColors.primary : .orange)
+                                Text(upgradeInfo.canUpgrade ? "Upgrade from \(currentTier)" : "Currently subscribed to \(currentTier)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(6)
+
+                            Button(action: onSubscribe) {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: upgradeInfo.canUpgrade ? "arrow.up.circle" : "repeat.circle")
+                                    }
+
+                                    Text(isLoading ? "Processing..." : (upgradeInfo.canUpgrade ? "Upgrade Now" : "Switch Plan"))
+                                        .fontWeight(.medium)
+
+                                    Spacer()
+
+                                    if !isLoading {
+                                        VStack(alignment: .trailing, spacing: 2) {
+                                            Text(product?.displayPrice ?? "--")
+                                                .fontWeight(.semibold)
+                                            if upgradeInfo.canUpgrade {
+                                                Text("Pro-rated")
+                                                    .font(.caption2)
+                                                    .opacity(0.8)
+                                            }
                                         }
                                     }
                                 }
+                                .padding()
+                                .background(isLoading ? AppColors.secondary.opacity(0.7) : (upgradeInfo.canUpgrade ? AppColors.primary : AppColors.secondary))
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
                             }
-                            .padding()
-                            .background(isLoading ? AppColors.secondary.opacity(0.7) : (upgradeInfo.canUpgrade ? AppColors.primary : AppColors.secondary))
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                            .disabled(isLoading)
                         }
-                        .disabled(isLoading)
                     }
                 } else {
                     Button(action: onSubscribe) {
