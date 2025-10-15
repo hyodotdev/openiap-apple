@@ -289,6 +289,18 @@ public final class OpenIapStore: ObservableObject {
 
     public func getActiveSubscriptions(subscriptionIds: [String]? = nil) async throws {
         activeSubscriptions = try await module.getActiveSubscriptions(subscriptionIds)
+        OpenIapLog.debug("📊 activeSubscriptions: \(activeSubscriptions.count) subscriptions")
+
+        // Show renewal info details
+        for sub in activeSubscriptions where sub.renewalInfoIOS != nil {
+            if let info = sub.renewalInfoIOS {
+                OpenIapLog.debug("   📋 \(sub.productId) renewalInfo:")
+                OpenIapLog.debug("      • willAutoRenew: \(info.willAutoRenew)")
+                if let pendingUpgrade = info.pendingUpgradeProductId {
+                    OpenIapLog.debug("      • pendingUpgradeProductId: \(pendingUpgrade) ⚠️ UPGRADE PENDING")
+                }
+            }
+        }
     }
 
     public func hasActiveSubscriptions(subscriptionIds: [String]? = nil) async throws -> Bool {

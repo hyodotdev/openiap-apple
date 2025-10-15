@@ -170,7 +170,7 @@ enum StoreKitTypesBridge {
         return nil
     }
 
-    private static func subscriptionRenewalInfoIOS(for transaction: StoreKit.Transaction) async -> RenewalInfoIOS? {
+    static func subscriptionRenewalInfoIOS(for transaction: StoreKit.Transaction) async -> RenewalInfoIOS? {
         guard transaction.productType == .autoRenewable else {
             return nil
         }

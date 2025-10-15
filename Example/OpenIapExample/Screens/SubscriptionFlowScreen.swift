@@ -258,7 +258,8 @@ struct SubscriptionFlowScreen: View {
     
     private func loadPurchases() async {
         do {
-            try await iapStore.getAvailablePurchases()
+            // Only use activeSubscriptions - demonstrates it contains all necessary info
+            try await iapStore.getActiveSubscriptions()
         } catch {
             await MainActor.run {
                 errorMessage = "Failed to load purchases: \(error.localizedDescription)"
@@ -283,7 +284,7 @@ struct SubscriptionFlowScreen: View {
 
     // MARK: - Subscription Upgrade Flow
 
-    private func upgradeSubscription(from currentSubscription: OpenIapPurchase?, to product: OpenIapProduct) async {
+    private func upgradeSubscription(from currentSubscription: ActiveSubscription?, to product: OpenIapProduct) async {
         print("⬆️ [SubscriptionFlow] Starting subscription upgrade")
         print("  From: \(currentSubscription?.productId ?? "none")")
         print("  To: \(product.id)")
@@ -313,28 +314,32 @@ struct SubscriptionFlowScreen: View {
     }
 
     // Get current active subscription
-    private func getCurrentSubscription() -> OpenIapPurchase? {
-        // Find the currently active subscription with highest priority
-        let activeSubscriptions = iapStore.iosAvailablePurchases.filter { purchase in
-            if !purchase.isSubscription { return false }
-
-            // Check if subscription is active
-            if let expirationTime = purchase.expirationDateIOS {
-                let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-                return expirationDate > Date() && purchase.isAutoRenewing
-            }
-
-            return purchase.purchaseState == .purchased && purchase.isAutoRenewing
-        }
+    private func getCurrentSubscription() -> ActiveSubscription? {
+        // Use activeSubscriptions from store (includes renewalInfo)
+        let activeSubs = iapStore.activeSubscriptions.filter { $0.isActive }
 
         // Return the subscription with the highest tier (yearly over monthly)
-        return activeSubscriptions.first { $0.productId.contains("year") } ?? activeSubscriptions.first
+        return activeSubs.first { $0.productId.contains("year") } ?? activeSubs.first
     }
 
     // Determine upgrade possibilities
-    private func getUpgradeInfo(from currentSubscription: OpenIapPurchase?, to targetProductId: String) -> UpgradeInfo {
+    private func getUpgradeInfo(from currentSubscription: ActiveSubscription?, to targetProductId: String) -> UpgradeInfo {
         guard let current = currentSubscription else {
             return UpgradeInfo(canUpgrade: false, isDowngrade: false, currentTier: nil)
+        }
+
+        // Check renewalInfo for pending upgrade
+        if let renewalInfo = current.renewalInfoIOS,
+           let pendingUpgrade = renewalInfo.pendingUpgradeProductId {
+            if pendingUpgrade == targetProductId {
+                return UpgradeInfo(
+                    canUpgrade: false,
+                    isDowngrade: false,
+                    currentTier: current.productId,
+                    message: "This upgrade will activate on your next renewal date",
+                    isPending: true
+                )
+            }
         }
 
         // Don't show upgrade for the same product
@@ -370,8 +375,9 @@ struct SubscriptionFlowScreen: View {
     private func restorePurchases() async {
         do {
             try await iapStore.refreshPurchases(forceSync: true)
+            try await iapStore.getActiveSubscriptions()
             await MainActor.run {
-                print("✅ [SubscriptionFlow] Restored \(iapStore.iosAvailablePurchases.count) purchases")
+                print("✅ [SubscriptionFlow] Restored \(iapStore.activeSubscriptions.count) active subscriptions")
             }
         } catch {
             await MainActor.run {
@@ -422,7 +428,7 @@ private extension SubscriptionFlowScreen {
 
         subscriptionIds.forEach { appendIfNeeded($0) }
         iapStore.iosProducts.filter { $0.type == .subs }.forEach { appendIfNeeded($0.id) }
-        iapStore.iosAvailablePurchases.filter { $0.isSubscription }.forEach { appendIfNeeded($0.productId) }
+        iapStore.activeSubscriptions.forEach { appendIfNeeded($0.productId) }
         return orderedIds
     }
 
@@ -435,20 +441,19 @@ private extension SubscriptionFlowScreen {
     }
 
     func isSubscribed(productId: String) -> Bool {
-        guard let purchase = purchase(for: productId) else { return false }
-        if let expirationTime = purchase.expirationDateIOS {
-            let expirationDate = Date(timeIntervalSince1970: expirationTime / 1000)
-            if expirationDate > Date() { return true }
+        // Check activeSubscriptions first (more accurate)
+        if let subscription = iapStore.activeSubscriptions.first(where: { $0.productId == productId }) {
+            return subscription.isActive
         }
-        if purchase.isAutoRenewing { return true }
-        if purchase.purchaseState == .purchased || purchase.purchaseState == .restored { return true }
-        return purchase.isSubscription
+        return false
     }
 
     func isCancelled(productId: String) -> Bool {
-        guard let purchase = purchase(for: productId) else { return false }
-        let active = isSubscribed(productId: productId)
-        return purchase.isAutoRenewing == false && active
+        // Check if subscription is active but won't auto-renew (cancelled)
+        if let subscription = iapStore.activeSubscriptions.first(where: { $0.productId == productId }) {
+            return subscription.isActive && subscription.renewalInfoIOS?.willAutoRenew == false
+        }
+        return false
     }
 }
 
@@ -458,12 +463,14 @@ struct UpgradeInfo {
     let isDowngrade: Bool
     let currentTier: String?
     let message: String?
+    let isPending: Bool  // True if upgrade is pending (already scheduled)
 
-    init(canUpgrade: Bool = false, isDowngrade: Bool = false, currentTier: String? = nil, message: String? = nil) {
+    init(canUpgrade: Bool = false, isDowngrade: Bool = false, currentTier: String? = nil, message: String? = nil, isPending: Bool = false) {
         self.canUpgrade = canUpgrade
         self.isDowngrade = isDowngrade
         self.currentTier = currentTier
         self.message = message
+        self.isPending = isPending
     }
 }
 
