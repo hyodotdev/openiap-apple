@@ -193,26 +193,30 @@ struct SubscriptionCard: View {
                 if let upgradeInfo = upgradeInfo, let currentTier = upgradeInfo.currentTier {
                     VStack(spacing: 8) {
                         // Check if this is a pending upgrade
-                        if let message = upgradeInfo.message, message.contains("pending") {
+                        if upgradeInfo.isPending {
                             // Show pending upgrade status
-                            HStack {
-                                Image(systemName: "clock.arrow.circlepath")
-                                    .foregroundColor(.orange)
-                                Text("Upgrade pending from \(currentTier)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(6)
-
-                            Text("This plan will activate on your next renewal date")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .foregroundColor(.orange)
+                                    Text("Upgrade pending from \(currentTier)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
                                 .padding(.horizontal, 12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 8)
+                                .background(Color.orange.opacity(0.1))
+                                .cornerRadius(6)
+
+                                if let message = upgradeInfo.message {
+                                    Text(message)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 12)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
                         } else {
                             // Show regular upgrade/switch option
                             HStack {

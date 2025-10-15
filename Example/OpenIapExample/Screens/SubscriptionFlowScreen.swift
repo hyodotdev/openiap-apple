@@ -336,7 +336,8 @@ struct SubscriptionFlowScreen: View {
                     canUpgrade: false,
                     isDowngrade: false,
                     currentTier: current.productId,
-                    message: "Upgrade pending to this plan"
+                    message: "This upgrade will activate on your next renewal date",
+                    isPending: true
                 )
             }
         }
@@ -462,12 +463,14 @@ struct UpgradeInfo {
     let isDowngrade: Bool
     let currentTier: String?
     let message: String?
+    let isPending: Bool  // True if upgrade is pending (already scheduled)
 
-    init(canUpgrade: Bool = false, isDowngrade: Bool = false, currentTier: String? = nil, message: String? = nil) {
+    init(canUpgrade: Bool = false, isDowngrade: Bool = false, currentTier: String? = nil, message: String? = nil, isPending: Bool = false) {
         self.canUpgrade = canUpgrade
         self.isDowngrade = isDowngrade
         self.currentTier = currentTier
         self.message = message
+        self.isPending = isPending
     }
 }
 
