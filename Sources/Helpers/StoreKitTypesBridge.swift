@@ -70,7 +70,7 @@ enum StoreKitTypesBridge {
         let purchaseState: PurchaseState = .purchased
         let expirationDate = transaction.expirationDate?.milliseconds
         let revocationDate = transaction.revocationDate?.milliseconds
-        let renewalInfoIOS = await subscriptionRenewalInfo(for: transaction)
+        let renewalInfoIOS = await subscriptionRenewalInfoIOS(for: transaction)
         // Default to false if renewalInfo unavailable - safer to underreport than falsely claim auto-renewal
         let autoRenewing = renewalInfoIOS?.willAutoRenew ?? false
         let environment: String?
@@ -170,7 +170,7 @@ enum StoreKitTypesBridge {
         return nil
     }
 
-    private static func subscriptionRenewalInfo(for transaction: StoreKit.Transaction) async -> RenewalInfoIOS? {
+    private static func subscriptionRenewalInfoIOS(for transaction: StoreKit.Transaction) async -> RenewalInfoIOS? {
         guard transaction.productType == .autoRenewable else {
             return nil
         }
@@ -189,11 +189,13 @@ enum StoreKitTypesBridge {
                 case .verified(let info):
                     let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
                     let offerInfo: (id: String?, type: String?)?
+                    #if swift(>=6.1)
                     if #available(iOS 18.0, macOS 15.0, *) {
                         // Map type only when present to avoid "nil" literal strings
                         let offerTypeString = info.offer.map { String(describing: $0.type) }
                         offerInfo = (id: info.offer?.id, type: offerTypeString)
                     } else {
+                    #endif
                         // Fallback to deprecated properties
                         #if compiler(>=5.9)
                         let offerTypeString = info.offerType.map { String(describing: $0) }
@@ -201,7 +203,9 @@ enum StoreKitTypesBridge {
                         #else
                         offerInfo = nil
                         #endif
+                    #if swift(>=6.1)
                     }
+                    #endif
                     // priceIncreaseStatus only available on iOS 15.0+
                     let priceIncrease: String? = {
                         if #available(iOS 15.0, macOS 12.0, *) {
@@ -226,11 +230,13 @@ enum StoreKitTypesBridge {
                 case .unverified(let info, _):
                     let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
                     let offerInfo: (id: String?, type: String?)?
+                    #if swift(>=6.1)
                     if #available(iOS 18.0, macOS 15.0, *) {
                         // Map type only when present to avoid "nil" literal strings
                         let offerTypeString = info.offer.map { String(describing: $0.type) }
                         offerInfo = (id: info.offer?.id, type: offerTypeString)
                     } else {
+                    #endif
                         // Fallback to deprecated properties
                         #if compiler(>=5.9)
                         let offerTypeString = info.offerType.map { String(describing: $0) }
@@ -238,7 +244,9 @@ enum StoreKitTypesBridge {
                         #else
                         offerInfo = nil
                         #endif
+                    #if swift(>=6.1)
                     }
+                    #endif
                     // priceIncreaseStatus only available on iOS 15.0+
                     let priceIncrease: String? = {
                         if #available(iOS 15.0, macOS 12.0, *) {
