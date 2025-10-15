@@ -190,15 +190,25 @@ enum StoreKitTypesBridge {
                     let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
                     let offerInfo: (id: String?, type: String?)?
                     if #available(iOS 18.0, macOS 15.0, *) {
-                        offerInfo = (id: info.offer?.id, type: info.offer?.type.rawValue.description)
+                        // Map type only when present to avoid "nil" literal strings
+                        let offerTypeString = info.offer.map { String(describing: $0.type) }
+                        offerInfo = (id: info.offer?.id, type: offerTypeString)
                     } else {
                         // Fallback to deprecated properties
                         #if compiler(>=5.9)
-                        offerInfo = (id: info.offerID, type: info.offerType?.rawValue.description)
+                        let offerTypeString = info.offerType.map { String(describing: $0) }
+                        offerInfo = (id: info.offerID, type: offerTypeString)
                         #else
                         offerInfo = nil
                         #endif
                     }
+                    // priceIncreaseStatus only available on iOS 15.0+
+                    let priceIncrease: String? = {
+                        if #available(iOS 15.0, macOS 12.0, *) {
+                            return String(describing: info.priceIncreaseStatus)
+                        }
+                        return nil
+                    }()
                     let renewalInfo = RenewalInfoIOS(
                         autoRenewPreference: info.autoRenewPreference,
                         expirationReason: info.expirationReason?.rawValue.description,
@@ -206,7 +216,7 @@ enum StoreKitTypesBridge {
                         isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
                         jsonRepresentation: nil,
                         pendingUpgradeProductId: pendingProductId,
-                        priceIncreaseStatus: String(describing: info.priceIncreaseStatus),
+                        priceIncreaseStatus: priceIncrease,
                         renewalDate: info.renewalDate?.milliseconds,
                         renewalOfferId: offerInfo?.id,
                         renewalOfferType: offerInfo?.type,
@@ -217,15 +227,25 @@ enum StoreKitTypesBridge {
                     let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
                     let offerInfo: (id: String?, type: String?)?
                     if #available(iOS 18.0, macOS 15.0, *) {
-                        offerInfo = (id: info.offer?.id, type: info.offer?.type.rawValue.description)
+                        // Map type only when present to avoid "nil" literal strings
+                        let offerTypeString = info.offer.map { String(describing: $0.type) }
+                        offerInfo = (id: info.offer?.id, type: offerTypeString)
                     } else {
                         // Fallback to deprecated properties
                         #if compiler(>=5.9)
-                        offerInfo = (id: info.offerID, type: info.offerType?.rawValue.description)
+                        let offerTypeString = info.offerType.map { String(describing: $0) }
+                        offerInfo = (id: info.offerID, type: offerTypeString)
                         #else
                         offerInfo = nil
                         #endif
                     }
+                    // priceIncreaseStatus only available on iOS 15.0+
+                    let priceIncrease: String? = {
+                        if #available(iOS 15.0, macOS 12.0, *) {
+                            return String(describing: info.priceIncreaseStatus)
+                        }
+                        return nil
+                    }()
                     let renewalInfo = RenewalInfoIOS(
                         autoRenewPreference: info.autoRenewPreference,
                         expirationReason: info.expirationReason?.rawValue.description,
@@ -233,7 +253,7 @@ enum StoreKitTypesBridge {
                         isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
                         jsonRepresentation: nil,
                         pendingUpgradeProductId: pendingProductId,
-                        priceIncreaseStatus: String(describing: info.priceIncreaseStatus),
+                        priceIncreaseStatus: priceIncrease,
                         renewalDate: info.renewalDate?.milliseconds,
                         renewalOfferId: offerInfo?.id,
                         renewalOfferType: offerInfo?.type,
@@ -243,6 +263,7 @@ enum StoreKitTypesBridge {
                 }
             }
         } catch {
+            OpenIapLog.debug("⚠️ Failed to fetch renewalInfo: \(error.localizedDescription)")
             return nil
         }
 
