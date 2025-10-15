@@ -266,8 +266,6 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         let onlyActive = options?.onlyIncludeActiveItemsIOS ?? false
         var purchasedItems: [Purchase] = []
 
-        OpenIapLog.debug("🔍 getAvailablePurchases called. onlyActive=\(onlyActive)")
-
         for await verification in (onlyActive ? Transaction.currentEntitlements : Transaction.all) {
             do {
                 let transaction = try checkVerified(verification)
@@ -287,7 +285,7 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
             }
         }
 
-        OpenIapLog.debug("🔍 getAvailablePurchases returning \(purchasedItems.count) purchases")
+        OpenIapLog.debug("🔍 getAvailablePurchases: \(purchasedItems.count) purchases (onlyActive=\(onlyActive))")
         return purchasedItems
     }
 
@@ -652,9 +650,9 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
         #if os(iOS)
         if #available(iOS 18.2, *) {
             guard await ExternalPurchase.canPresent else {
-                return ExternalPurchaseNoticeResultIOS(
-                    error: "External purchase notice sheet is not available",
-                    result: .dismissed
+                throw makePurchaseError(
+                    code: .featureNotSupported,
+                    message: "External purchase notice sheet is not available"
                 )
             }
 
@@ -663,15 +661,25 @@ public final class OpenIapModule: NSObject, OpenIapModuleProtocol {
                 switch result {
                 case .continuedWithExternalPurchaseToken(_):
                     return ExternalPurchaseNoticeResultIOS(error: nil, result: .continue)
-                @unknown default:
-                    return ExternalPurchaseNoticeResultIOS(
-                        error: "User dismissed notice sheet",
-                        result: .dismissed
+                default:
+                    // Unexpected result type - should not normally happen
+                    throw makePurchaseError(
+                        code: .unknown,
+                        message: "Unexpected result from external purchase notice sheet"
                     )
                 }
-            } catch {
+            } catch let error as PurchaseError {
                 return ExternalPurchaseNoticeResultIOS(
-                    error: error.localizedDescription,
+                    error: error.message,
+                    result: .dismissed
+                )
+            } catch {
+                let purchaseError = makePurchaseError(
+                    code: .serviceError,
+                    message: "Failed to present external purchase notice: \(error.localizedDescription)"
+                )
+                return ExternalPurchaseNoticeResultIOS(
+                    error: purchaseError.message,
                     result: .dismissed
                 )
             }

@@ -70,7 +70,9 @@ enum StoreKitTypesBridge {
         let purchaseState: PurchaseState = .purchased
         let expirationDate = transaction.expirationDate?.milliseconds
         let revocationDate = transaction.revocationDate?.milliseconds
-        let autoRenewing = await determineAutoRenewStatus(for: transaction)
+        let renewalInfoIOS = await subscriptionRenewalInfoIOS(for: transaction)
+        // Default to false if renewalInfo unavailable - safer to underreport than falsely claim auto-renewal
+        let autoRenewing = renewalInfoIOS?.willAutoRenew ?? false
         let environment: String?
         if #available(iOS 16.0, *) {
             environment = transaction.environment.rawValue
@@ -117,6 +119,7 @@ enum StoreKitTypesBridge {
             quantityIOS: transaction.purchasedQuantity,
             reasonIOS: reasonDetails.lowercased,
             reasonStringRepresentationIOS: reasonDetails.string,
+            renewalInfoIOS: renewalInfoIOS,
             revocationDateIOS: revocationDate,
             revocationReasonIOS: transaction.revocationReason?.rawValue.description,
             storefrontCountryCodeIOS: {
@@ -161,6 +164,114 @@ enum StoreKitTypesBridge {
                 }
             }
         } catch {
+            return nil
+        }
+
+        return nil
+    }
+
+    private static func subscriptionRenewalInfoIOS(for transaction: StoreKit.Transaction) async -> RenewalInfoIOS? {
+        guard transaction.productType == .autoRenewable else {
+            return nil
+        }
+        guard let groupId = transaction.subscriptionGroupID else {
+            return nil
+        }
+
+        do {
+            let statuses = try await StoreKit.Product.SubscriptionInfo.status(for: groupId)
+
+            for status in statuses {
+                guard case .verified(let statusTransaction) = status.transaction else { continue }
+                guard statusTransaction.productID == transaction.productID else { continue }
+
+                switch status.renewalInfo {
+                case .verified(let info):
+                    let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
+                    let offerInfo: (id: String?, type: String?)?
+                    #if swift(>=6.1)
+                    if #available(iOS 18.0, macOS 15.0, *) {
+                        // Map type only when present to avoid "nil" literal strings
+                        let offerTypeString = info.offer.map { String(describing: $0.type) }
+                        offerInfo = (id: info.offer?.id, type: offerTypeString)
+                    } else {
+                    #endif
+                        // Fallback to deprecated properties
+                        #if compiler(>=5.9)
+                        let offerTypeString = info.offerType.map { String(describing: $0) }
+                        offerInfo = (id: info.offerID, type: offerTypeString)
+                        #else
+                        offerInfo = nil
+                        #endif
+                    #if swift(>=6.1)
+                    }
+                    #endif
+                    // priceIncreaseStatus only available on iOS 15.0+
+                    let priceIncrease: String? = {
+                        if #available(iOS 15.0, macOS 12.0, *) {
+                            return String(describing: info.priceIncreaseStatus)
+                        }
+                        return nil
+                    }()
+                    let renewalInfo = RenewalInfoIOS(
+                        autoRenewPreference: info.autoRenewPreference,
+                        expirationReason: info.expirationReason?.rawValue.description,
+                        gracePeriodExpirationDate: info.gracePeriodExpirationDate?.milliseconds,
+                        isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
+                        jsonRepresentation: nil,
+                        pendingUpgradeProductId: pendingProductId,
+                        priceIncreaseStatus: priceIncrease,
+                        renewalDate: info.renewalDate?.milliseconds,
+                        renewalOfferId: offerInfo?.id,
+                        renewalOfferType: offerInfo?.type,
+                        willAutoRenew: info.willAutoRenew
+                    )
+                    return renewalInfo
+                case .unverified(let info, _):
+                    let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
+                    let offerInfo: (id: String?, type: String?)?
+                    #if swift(>=6.1)
+                    if #available(iOS 18.0, macOS 15.0, *) {
+                        // Map type only when present to avoid "nil" literal strings
+                        let offerTypeString = info.offer.map { String(describing: $0.type) }
+                        offerInfo = (id: info.offer?.id, type: offerTypeString)
+                    } else {
+                    #endif
+                        // Fallback to deprecated properties
+                        #if compiler(>=5.9)
+                        let offerTypeString = info.offerType.map { String(describing: $0) }
+                        offerInfo = (id: info.offerID, type: offerTypeString)
+                        #else
+                        offerInfo = nil
+                        #endif
+                    #if swift(>=6.1)
+                    }
+                    #endif
+                    // priceIncreaseStatus only available on iOS 15.0+
+                    let priceIncrease: String? = {
+                        if #available(iOS 15.0, macOS 12.0, *) {
+                            return String(describing: info.priceIncreaseStatus)
+                        }
+                        return nil
+                    }()
+                    let renewalInfo = RenewalInfoIOS(
+                        autoRenewPreference: info.autoRenewPreference,
+                        expirationReason: info.expirationReason?.rawValue.description,
+                        gracePeriodExpirationDate: info.gracePeriodExpirationDate?.milliseconds,
+                        isInBillingRetry: nil,  // Not available in RenewalInfo, available in Status
+                        jsonRepresentation: nil,
+                        pendingUpgradeProductId: pendingProductId,
+                        priceIncreaseStatus: priceIncrease,
+                        renewalDate: info.renewalDate?.milliseconds,
+                        renewalOfferId: offerInfo?.id,
+                        renewalOfferType: offerInfo?.type,
+                        willAutoRenew: info.willAutoRenew
+                    )
+                    return renewalInfo
+                }
+            }
+        } catch {
+            OpenIapLog.debug("⚠️ Failed to fetch renewalInfo: \(error.localizedDescription)")
             return nil
         }
 

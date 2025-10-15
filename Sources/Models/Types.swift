@@ -403,6 +403,7 @@ public struct PurchaseIOS: Codable, PurchaseCommon {
     public var quantityIOS: Int?
     public var reasonIOS: String?
     public var reasonStringRepresentationIOS: String?
+    public var renewalInfoIOS: RenewalInfoIOS?
     public var revocationDateIOS: Double?
     public var revocationReasonIOS: String?
     public var storefrontCountryCodeIOS: String?
@@ -456,9 +457,34 @@ public struct RefundResultIOS: Codable {
     public var status: String
 }
 
+/// Subscription renewal information from Product.SubscriptionInfo.RenewalInfo
+/// https://developer.apple.com/documentation/storekit/product/subscriptioninfo/renewalinfo
 public struct RenewalInfoIOS: Codable {
     public var autoRenewPreference: String?
+    /// When subscription expires due to cancellation/billing issue
+    /// Possible values: "VOLUNTARY", "BILLING_ERROR", "DID_NOT_AGREE_TO_PRICE_INCREASE", "PRODUCT_NOT_AVAILABLE", "UNKNOWN"
+    public var expirationReason: String?
+    /// Grace period expiration date (milliseconds since epoch)
+    /// When set, subscription is in grace period (billing issue but still has access)
+    public var gracePeriodExpirationDate: Double?
+    /// True if subscription failed to renew due to billing issue and is retrying
+    /// Note: Not directly available in RenewalInfo, available in Status
+    public var isInBillingRetry: Bool?
     public var jsonRepresentation: String?
+    /// Product ID that will be used on next renewal (when user upgrades/downgrades)
+    /// If set and different from current productId, subscription will change on expiration
+    public var pendingUpgradeProductId: String?
+    /// User's response to subscription price increase
+    /// Possible values: "AGREED", "PENDING", null (no price increase)
+    public var priceIncreaseStatus: String?
+    /// Expected renewal date (milliseconds since epoch)
+    /// For active subscriptions, when the next renewal/charge will occur
+    public var renewalDate: Double?
+    /// Offer ID applied to next renewal (promotional offer, subscription offer code, etc.)
+    public var renewalOfferId: String?
+    /// Type of offer applied to next renewal
+    /// Possible values: "PROMOTIONAL", "SUBSCRIPTION_OFFER_CODE", "WIN_BACK", etc.
+    public var renewalOfferType: String?
     public var willAutoRenew: Bool
 }
 
