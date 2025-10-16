@@ -187,7 +187,9 @@ enum StoreKitTypesBridge {
 
                 switch status.renewalInfo {
                 case .verified(let info):
-                    let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
+                    // Always return autoRenewPreference as pendingUpgradeProductId
+                    // Client can compare with current productId to detect plan changes
+                    let pendingProductId = info.autoRenewPreference
                     let offerInfo: (id: String?, type: String?)?
                     #if swift(>=6.1)
                     if #available(iOS 18.0, macOS 15.0, *) {
@@ -228,7 +230,9 @@ enum StoreKitTypesBridge {
                     )
                     return renewalInfo
                 case .unverified(let info, _):
-                    let pendingProductId = (info.autoRenewPreference != transaction.productID) ? info.autoRenewPreference : nil
+                    // Always return autoRenewPreference as pendingUpgradeProductId
+                    // Client can compare with current productId to detect plan changes
+                    let pendingProductId = info.autoRenewPreference
                     let offerInfo: (id: String?, type: String?)?
                     #if swift(>=6.1)
                     if #available(iOS 18.0, macOS 15.0, *) {
