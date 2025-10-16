@@ -1,5 +1,23 @@
 # OpenIAP Apple
 
+> ## ⚠️ DEPRECATED - This repository has been moved to a monorepo
+>
+> **This repository is no longer maintained.** All development has moved to the [OpenIAP monorepo](https://github.com/hyodotdev/openiap).
+>
+> ### 🔄 New Location
+>
+> **Swift Package:** [`packages/apple`](https://github.com/hyodotdev/openiap/tree/main/packages/apple) in the OpenIAP monorepo
+>
+> **Installation:**
+> - **Swift Package Manager**: Use `https://github.com/hyodotdev/openiap` with product `OpenIAP`
+> - **CocoaPods**: `pod 'openiap'` (still published from monorepo)
+>
+> **No code changes required** - the package name and API remain the same.
+>
+> 📖 **[Visit OpenIAP monorepo →](https://github.com/hyodotdev/openiap)**
+>
+> ---
+
 <div align="center">
   <img src="./logo.png" alt="OpenIAP Apple Logo" width="120" height="120">
 </div>
