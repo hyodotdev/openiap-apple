@@ -567,29 +567,53 @@ public struct DeepLinkOptions: Codable {
 }
 
 public struct DiscountOfferInputIOS: Codable {
-    /// Discount identifier
     public var identifier: String
-    /// Key identifier for validation
     public var keyIdentifier: String
-    /// Cryptographic nonce
     public var nonce: String
-    /// Signature for validation
     public var signature: String
-    /// Timestamp of discount offer
     public var timestamp: Double
 
-    public init(
-        identifier: String,
-        keyIdentifier: String,
-        nonce: String,
-        signature: String,
-        timestamp: Double
-    ) {
+    public init(identifier: String, keyIdentifier: String, nonce: String, signature: String, timestamp: Double) {
         self.identifier = identifier
         self.keyIdentifier = keyIdentifier
         self.nonce = nonce
         self.signature = signature
         self.timestamp = timestamp
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identifier, keyIdentifier, nonce, signature, timestamp
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        identifier = try container.decode(String.self, forKey: .identifier)
+        keyIdentifier = try container.decode(String.self, forKey: .keyIdentifier)
+        nonce = try container.decode(String.self, forKey: .nonce)
+        signature = try container.decode(String.self, forKey: .signature)
+
+        // Flexible timestamp decoding: accept Double or String
+        if let timestampDouble = try? container.decode(Double.self, forKey: .timestamp) {
+            timestamp = timestampDouble
+        } else if let timestampString = try? container.decode(String.self, forKey: .timestamp),
+                  let timestampDouble = Double(timestampString) {
+            timestamp = timestampDouble
+        } else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .timestamp,
+                in: container,
+                debugDescription: "timestamp must be a number or numeric string"
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(identifier, forKey: .identifier)
+        try container.encode(keyIdentifier, forKey: .keyIdentifier)
+        try container.encode(nonce, forKey: .nonce)
+        try container.encode(signature, forKey: .signature)
+        try container.encode(timestamp, forKey: .timestamp)
     }
 }
 
